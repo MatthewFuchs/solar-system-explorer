@@ -39,6 +39,8 @@ export interface CelestialBody {
   orbitSpeed: number;
   /** Short one-line description shown under the body's name. */
   tagline: string;
+  /** Mean distance from the Sun in astronomical units (real value, shown in labels). Omitted for the Sun. */
+  distanceAU?: number;
   pois: POI[];
 }
 
@@ -76,6 +78,7 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 8,
     orbitSpeed: 0.9,
     tagline: "The smallest and innermost planet.",
+    distanceAU: 0.39,
     pois: [
       {
         id: "mercury-caloris",
@@ -100,6 +103,7 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 11,
     orbitSpeed: 0.7,
     tagline: "A scorched world hidden under thick clouds.",
+    distanceAU: 0.72,
     pois: [
       {
         id: "venus-maxwell",
@@ -124,6 +128,7 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 15,
     orbitSpeed: 0.6,
     tagline: "Home.",
+    distanceAU: 1.00,
     pois: [
       {
         id: "earth-iss",
@@ -161,6 +166,7 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 19,
     orbitSpeed: 0.48,
     tagline: "The red planet, long a target for exploration.",
+    distanceAU: 1.52,
     pois: [
       {
         id: "mars-olympus-mons",
@@ -198,6 +204,7 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 28,
     orbitSpeed: 0.26,
     tagline: "The largest planet, a swirling giant of gas.",
+    distanceAU: 5.20,
     pois: [
       {
         id: "jupiter-great-red-spot",
@@ -235,6 +242,7 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 36,
     orbitSpeed: 0.19,
     tagline: "Famous for its sweeping ring system.",
+    distanceAU: 9.58,
     pois: [
       {
         id: "saturn-rings",
@@ -259,6 +267,7 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 43,
     orbitSpeed: 0.13,
     tagline: "An ice giant tilted almost on its side.",
+    distanceAU: 19.2,
     pois: [
       {
         id: "uranus-axial-tilt",
@@ -283,6 +292,7 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 50,
     orbitSpeed: 0.1,
     tagline: "The farthest planet, battered by the solar system's fastest winds.",
+    distanceAU: 30.07,
     pois: [
       {
         id: "neptune-winds",

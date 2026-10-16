@@ -20,9 +20,27 @@ surface, and click a POI to read facts.
   a design inspiration. No Destiny or Bungie art, icons, fonts, sounds, names,
   or trademarks. All assets must be original or properly licensed.
 
+## Art direction: "Night Plate"
+The overview is a fixed composition, like an antique engraved astronomical plate.
+- **Nothing moves on its own.** No orbiting, spinning, or drifting. The only motion
+  answers the user: custom cursor, and on hover the planet brightens, its label
+  eases in, and the others dim. Respect `prefers-reduced-motion`.
+- **Easing:** ease-out only (`--ease` in CSS, exponential damping in R3F). No bouncy
+  or linear easing.
+- **Palette** (`src/lib/palette.ts`, mirrored in `src/index.css`): Prussian ink
+  `#101A2B` / `#0A1220`, bone `#D9D0BC`, gilt `#C9973F` reserved for the Sun and
+  active states. Planet tones are muted versions of the data colors.
+- **Type:** Bodoni Moda (display, numerals, names) + Hanken Grotesk (body).
+  Don't use Inter, Roboto, or Space Grotesk.
+- **Rendering:** planets are halftone-shaded spheres (`src/scene/halftoneShader.ts`),
+  never photo textures. Film grain over the page. The canvas renders on demand.
+- **Layout:** `src/scene/plateLayout.ts` places everything (art-directed, not
+  astronomical). Placement is presentation; planet facts still come from the data file.
+
 ## Folder structure
-- `src/scene/`: 3D scene components (R3F)
-- `src/components/`: 2D UI overlays
+- `src/scene/`: 3D layer (R3F) and plate layout
+- `src/components/`: 2D layers and UI (SVG arcs, labels, cursor, overview shell)
+- `src/lib/`, `src/hooks/`: small shared helpers
 - `src/data/`: typed content data
 
 ## Git workflow
