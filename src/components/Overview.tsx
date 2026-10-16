@@ -132,6 +132,9 @@ export function Overview() {
   const navigate = useCallback(
     (id: string | null) => {
       if (id === targetRef.current) return;
+      // Choosing a world sings its song (only when sound is on).
+      const body = id ? VIEWABLE.find((b) => b.id === id) : undefined;
+      if (body) sound.sing(body);
       const url = id ? `#${id}` : window.location.pathname + window.location.search;
       const change = () => {
         window.history.pushState(null, "", url);
@@ -145,7 +148,7 @@ export function Overview() {
         setVeil(false);
       }, VEIL_MS);
     },
-    [go, reducedMotion],
+    [go, reducedMotion, sound],
   );
 
   useEffect(() => {

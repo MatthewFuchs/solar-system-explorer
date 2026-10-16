@@ -145,6 +145,95 @@ function playNote(g: Graph, freq: number, delay = 0) {
   }
 }
 
+// ---------- Planet songs ----------
+// Clicking a world plays its song, after Kepler's Harmonices Mundi (1619): a planet's pitch
+// follows its speed, rising as it swings in close to the Sun and falling as it slows at the
+// far end of its orbit. The width of that glide is real, ((1 + e) / (1 - e))^2 for the
+// orbit's eccentricity e, so Venus holds nearly one note, Earth sings a semitone (Kepler's
+// mi-fa-mi), and Mercury and Pluto leap more than an octave. Where the song sits follows the
+// mean orbital speed (Kepler's third law), compressed into a singable range and tuned to the
+// ambient scale, so near worlds sing high and far ones low. The Sun answers with a low chord.
+
+/** The ambient D major pentatonic, from D2 to D6, for tuning each song's lowest note. */
+const SONG_SCALE = Array.from({ length: 5 }, (_, octave) => [0, 2, 4, 7, 9].map((s) => 73.42 * 2 ** (octave + s / 12))).flat();
+/** Earth's speed maps to E4; SONG_SPREAD compresses the 10 octaves from Mercury to Pluto to about 3. */
+const SONG_EARTH = 330;
+const SONG_SPREAD = 0.33;
+/** One orbit, played in seconds: from the far end, in close, and back out. */
+const SONG_ORBIT = 3.4;
+const SONG_ATTACK = 0.5;
+const SONG_RELEASE = 3.5;
+const SONG_LEVEL = 0.085;
+/** The Sun's chord: D2, A2, D3. */
+const SUN_CHORD = [73.42, 110, 146.83];
+
+export interface SongSource {
+  kind?: "star" | "planet" | "dwarf";
+  distanceAU?: number;
+  eccentricity?: number;
+}
+
+function nearestInScale(freq: number) {
+  return SONG_SCALE.reduce((best, f) => (Math.abs(Math.log(f / freq)) < Math.abs(Math.log(best / freq)) ? f : best));
+}
+
+/** A voice: a sine with a soft octave and a whisper of the twelfth, so low songs still carry on small speakers. */
+function voice(ctx: AudioContext, out: AudioNode, freq: number, t0: number, end: number) {
+  const oscs = [
+    [1, 1],
+    [2, 0.3],
+    [3, 0.06],
+  ].map(([mult, level]) => {
+    const osc = ctx.createOscillator();
+    osc.frequency.value = freq * mult;
+    const partial = ctx.createGain();
+    partial.gain.value = level;
+    osc.connect(partial).connect(out);
+    osc.start(t0);
+    osc.stop(end);
+    return { osc, mult };
+  });
+  return oscs;
+}
+
+/** Plays one body's song into the notes bus; returns its envelope so a new song can cut it short. */
+function playSong(g: Graph, body: SongSource) {
+  const { ctx, notes } = g;
+  const t0 = ctx.currentTime + 0.02;
+  const env = ctx.createGain();
+  env.connect(notes);
+  env.gain.setValueAtTime(0, t0);
+
+  if (body.kind === "star" || body.distanceAU === undefined || body.eccentricity === undefined) {
+    // The Sun doesn't travel, so it doesn't glide: a low chord swells and settles.
+    const end = t0 + 1.2 + 1.6 + SONG_RELEASE * 1.4 + 0.1;
+    env.gain.linearRampToValueAtTime(SONG_LEVEL * 0.8, t0 + 1.2);
+    env.gain.setValueAtTime(SONG_LEVEL * 0.8, t0 + 2.8);
+    env.gain.exponentialRampToValueAtTime(0.0001, end - 0.1);
+    SUN_CHORD.forEach((f) => voice(ctx, env, f, t0, end));
+    return env;
+  }
+
+  const low = nearestInScale(SONG_EARTH * body.distanceAU ** -SONG_SPREAD);
+  const e = body.eccentricity;
+  const ratio = ((1 + e) / (1 - e)) ** 2;
+  const glideStart = t0 + SONG_ATTACK * 0.6;
+  const end = glideStart + SONG_ORBIT + SONG_RELEASE + 0.1;
+  env.gain.linearRampToValueAtTime(SONG_LEVEL, t0 + SONG_ATTACK);
+  env.gain.setValueAtTime(SONG_LEVEL, glideStart + SONG_ORBIT * 0.75);
+  env.gain.exponentialRampToValueAtTime(0.0001, end - 0.1);
+
+  // Speed along an orbit swells and ebbs smoothly, so the pitch follows a raised cosine
+  // (in log frequency) from the far end up to the near end and back.
+  const steps = 64;
+  for (const { osc, mult } of voice(ctx, env, low, t0, end)) {
+    const curve = new Float32Array(steps);
+    for (let i = 0; i < steps; i++) curve[i] = low * mult * ratio ** ((1 - Math.cos((2 * Math.PI * i) / (steps - 1))) / 2);
+    osc.frequency.setValueCurveAtTime(curve, glideStart, SONG_ORBIT);
+  }
+  return env;
+}
+
 const between = (min: number, max: number) => min + Math.random() * (max - min);
 
 export class AmbientSound {
@@ -152,9 +241,12 @@ export class AmbientSound {
   private suspendTimer = 0;
   private noteTimer = 0;
   private lastNote = -1;
+  private on = false;
+  private song: GainNode | null = null;
 
   /** Must be called from a user gesture (a click), so the browser allows audio. */
   enable() {
+    this.on = true;
     window.clearTimeout(this.suspendTimer);
     if (!this.graph) this.graph = build();
     const { ctx, master } = this.graph;
@@ -166,6 +258,7 @@ export class AmbientSound {
   }
 
   disable() {
+    this.on = false;
     window.clearTimeout(this.noteTimer);
     if (!this.graph) return;
     const { ctx, master } = this.graph;
@@ -180,6 +273,18 @@ export class AmbientSound {
     window.clearTimeout(this.noteTimer);
     void this.graph?.ctx.close();
     this.graph = null;
+  }
+
+  /** Sing a body's song when it is chosen. Silent unless sound is on; a new song cuts off the last. */
+  sing(body: SongSource) {
+    const g = this.graph;
+    if (!this.on || !g) return;
+    if (this.song) {
+      const { gain } = this.song;
+      gain.cancelScheduledValues(g.ctx.currentTime);
+      gain.setTargetAtTime(0, g.ctx.currentTime, 0.08);
+    }
+    this.song = playSong(g, body);
   }
 
   /** Play a note (now and then a pair), then wait a while in silence before the next. */
