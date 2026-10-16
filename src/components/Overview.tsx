@@ -271,8 +271,8 @@ export function Overview() {
               <span>The Solar</span> <span>System</span>
             </h1>
             <p>
-              Eight planets and Pluto, arranged for clarity rather than to scale. Distances are in
-              astronomical units, the mean distance from Earth to the Sun. Select a planet to travel to it.
+              Nine worlds turn about a single star. Their order here is true; their sizes and spacing
+              are not. Distances are in AU, the span between Earth and the Sun. Choose a world to draw near.
             </p>
           </div>
           {layout && (

@@ -45,18 +45,25 @@ export function PlateCursor({ active }: PlateCursorProps) {
     const hide = () => {
       el.dataset.visible = "false";
     };
-    // pointerleave on the root misses exits into browser chrome; mouseout with no
-    // relatedTarget fires whenever the pointer leaves the document.
+    // mouseout with no relatedTarget fires when the pointer leaves the document, but some
+    // browsers also send it when the element under a still pointer disappears (e.g. after
+    // a click changes the view). Only hide if the pointer is really outside the window.
     const onOut = (e: MouseEvent) => {
-      if (!e.relatedTarget) hide();
+      if (e.relatedTarget) return;
+      const outside = e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth - 1 || e.clientY >= window.innerHeight - 1;
+      if (outside) hide();
     };
+    // A press always means the pointer is here: make sure the cursor is showing.
+    const onDown = (e: PointerEvent) => onMove(e);
 
     window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerdown", onDown);
     document.addEventListener("mouseout", onOut);
     window.addEventListener("blur", hide);
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onDown);
       document.removeEventListener("mouseout", onOut);
       window.removeEventListener("blur", hide);
     };

@@ -24,12 +24,15 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
         const au = p.body.distanceAU;
         // Room between the label node and the screen edge, so the expanded tagline never clips.
         const room = p.labelSide === 1 ? layout.width - p.connector.x2 : p.connector.x2;
+        // Left-side labels are anchored by their right edge, so the browser sizes them
+        // against the space to their left (where they grow), not the sliver to the right.
         const style = {
-          left: p.connector.x2,
           top: p.connector.y1,
           "--label-room": `${Math.max(120, room - layout.inset - 24)}px`,
           "--i": p.order,
         } as CSSProperties;
+        if (p.labelSide === 1) style.left = p.connector.x2;
+        else style.right = layout.width - p.connector.x2;
         return (
           <div key={p.body.id}>
             <div
