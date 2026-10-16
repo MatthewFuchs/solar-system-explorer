@@ -29,8 +29,8 @@ solar system, with planets lit by the Sun out of a violet-black abyss.
   retrograde). No orbiting, drifting, or twinkling. Everything else answers the
   user: the point-of-light cursor, and on hover a gold halo fades in, the label
   unfolds its tagline, and other planets dim.
-- **Reduced motion:** with `prefers-reduced-motion`, planets don't spin and state
-  changes are instant.
+- **Reduced motion:** with `prefers-reduced-motion`, planets don't spin, and the
+  zoom, turns, and state changes are instant.
 - **Easing:** unhurried ease-out (`--ease`, `--dur: 380ms` in CSS; exponential
   damping in R3F). No bouncy or linear easing.
 - **Avoid game/HUD tropes:** no glass bars, corner brackets, reticles, crosshair
@@ -52,6 +52,25 @@ solar system, with planets lit by the Sun out of a violet-black abyss.
   `src/scene/bodyAppearance.ts`. That is presentation; facts stay in the data file.
 - **Textures** are from Solar System Scope (CC BY 4.0), in `public/textures/`.
   Keep the in-app credit line, the Credits panel, and `public/textures/CREDITS.md`.
+
+## Planet view
+Clicking a planet (or loading `#<planet-id>`) opens its planet view. This is the
+site's signature moment; keep it intact.
+- **The zoom** (`ZOOM_MS` = 1.5s, ease-in-out, `src/scene/viewTransition.ts`): one
+  `Timeline` drives the 3D scene. The planet travels to its feature placement while
+  everything else scales outward from it and fades out completely. The numeral and
+  name FLIP from the overview label into the column with Web Animations on the same
+  duration and curve (`ZOOM_EASING_CSS`), and reverse with `Animation.reverse()`, so
+  interrupting mid-flight stays in sync.
+- **Layout:** magazine spread. Planet large on the right (`computeFeaturePlacement`
+  in `plateLayout.ts`), text column on the left; planet above text in portrait.
+- **The planet is static** in planet view (no spin, no free rotation). Next / Previous
+  turn it to face a point of interest (`TURN_MS`). Full-size `2k/` textures swap in.
+- **POI markers** are DOM buttons positioned every frame from the 3D surface point
+  (`PlanetBody`), hidden on the far side. They brighten on hover and never animate
+  on their own.
+- **Leaving:** "Back to the system", Escape, the Overview link, or the browser back
+  button all run the reverse transition. The URL hash is the source of truth.
 
 ## Performance rules
 - **No SVG or CSS blur filters on large or full-screen layers** (`feGaussianBlur`,

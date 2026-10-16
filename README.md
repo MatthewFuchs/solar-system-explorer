@@ -33,6 +33,9 @@ src/
   data/        solarSystem.ts, which holds all planet and POI content
 ```
 
+Click a planet to zoom into its planet view; link to one directly with its id,
+for example `/#mars`. Escape or "Back to the system" returns to the overview.
+
 To add or edit planets and POIs, change `src/data/solarSystem.ts`.
 Components never hardcode content.
 

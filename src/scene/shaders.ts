@@ -26,6 +26,7 @@ export const planetShader = {
     uniform float uRim;
     uniform float uLight;
     uniform float uDim;
+    uniform float uFade;
     varying vec2 vUv;
     varying vec3 vWorldPos;
     varying vec3 vWorldNormal;
@@ -47,7 +48,7 @@ export const planetShader = {
       float rimLit = smoothstep(-0.35, 0.55, ndl);
       col += uAtmosphere * fresnel * uRim * (0.1 + rimLit) * (1.0 + uLight * 0.7);
 
-      col *= 1.0 - uDim * 0.55;
+      col *= (1.0 - uDim * 0.55) * (1.0 - uFade);
       gl_FragColor = vec4(col, 1.0);
       #include <colorspace_fragment>
     }
@@ -64,6 +65,7 @@ export const atmosphereShader = {
     uniform float uInner;
     uniform float uLight;
     uniform float uDim;
+    uniform float uFade;
     varying vec3 vViewNormal;
 
     void main() {
@@ -71,7 +73,7 @@ export const atmosphereShader = {
       // 0 at the shell's outer edge, 1 where it meets the planet's silhouette.
       float glow = pow(smoothstep(0.0, uInner, abs(vn.z)), 2.2);
       float lit = smoothstep(-0.45, 0.8, dot(normalize(vn.xy), uSunDir));
-      float a = glow * (0.12 + 0.88 * lit) * uRim * 0.55 * (1.0 + uLight * 0.9) * (1.0 - uDim * 0.6);
+      float a = glow * (0.12 + 0.88 * lit) * uRim * 0.55 * (1.0 + uLight * 0.9) * (1.0 - uDim * 0.6) * (1.0 - uFade);
       gl_FragColor = vec4(uAtmosphere * a, 1.0);
       #include <colorspace_fragment>
     }
@@ -91,11 +93,12 @@ export const ringShader = {
     uniform sampler2D uMap;
     uniform float uLight;
     uniform float uDim;
+    uniform float uFade;
     varying vec2 vUv;
     void main() {
       vec4 t = texture2D(uMap, vUv);
       vec3 col = t.rgb * (0.8 + uLight * 0.3) * (1.0 - uDim * 0.55);
-      gl_FragColor = vec4(col, t.a * 0.95);
+      gl_FragColor = vec4(col, t.a * 0.95 * (1.0 - uFade));
       #include <colorspace_fragment>
     }
   `,
@@ -107,6 +110,7 @@ export const sunShader = {
   fragmentShader: /* glsl */ `
     uniform sampler2D uMap;
     uniform float uIntensity;
+    uniform float uFade;
     varying vec2 vUv;
     varying vec3 vViewNormal;
     void main() {
@@ -114,7 +118,7 @@ export const sunShader = {
       vec3 tex = texture2D(uMap, vUv).rgb;
       float limb = mix(0.5, 1.0, pow(mu, 0.45));
       vec3 col = tex * limb * uIntensity + vec3(1.0, 0.82, 0.55) * pow(mu, 2.0) * 0.9;
-      gl_FragColor = vec4(col, 1.0);
+      gl_FragColor = vec4(col * (1.0 - uFade), 1.0);
       #include <colorspace_fragment>
     }
   `,

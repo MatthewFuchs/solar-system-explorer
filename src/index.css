@@ -86,6 +86,7 @@ body,
 
 .space-sunglow {
   z-index: 3;
+  transition: opacity 1500ms var(--ease);
 }
 
 /* Edges fall away into shadow, keeping the eye near the lit planets. */
@@ -488,7 +489,8 @@ body,
   .plate,
   .plate-hit,
   .masthead a,
-  .masthead button {
+  .masthead button,
+  .feature button {
     cursor: none;
   }
 
@@ -541,6 +543,30 @@ body,
 
 .plate-cursor[data-active='true'] .plate-cursor__dot {
   transform: scale(0.7);
+}
+
+/* ---------- Overview ⇄ planet view ---------- */
+
+/* The overview line work and labels fade out as the zoom begins, and return near its end. */
+.hud-layer,
+.overview-layer {
+  transition: opacity 650ms var(--ease) 850ms;
+}
+
+.plate[data-overview='hidden'] .hud-layer,
+.plate[data-overview='hidden'] .overview-layer {
+  opacity: 0;
+  transition: opacity 420ms var(--ease);
+}
+
+.plate[data-overview='hidden'] .space-sunglow {
+  opacity: 0.45;
+}
+
+/* The open planet's own label hides: its numeral and name are animating into the column. */
+.dest-label[data-focus='true'] {
+  opacity: 0 !important;
+  transition: none;
 }
 
 /* ---------- Narrow screens ---------- */
@@ -600,5 +626,364 @@ body,
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
+}
+
+/* ---------- Planet view ---------- */
+
+.feature {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.feature button {
+  pointer-events: auto;
+}
+
+/* Supporting text arrives once the zoom has mostly settled, and leaves first. */
+.feature__rest {
+  animation: feature-in 700ms var(--ease) 1050ms both;
+}
+
+.feature[data-phase='leaving'] .feature__rest {
+  animation: feature-out 280ms var(--ease) both;
+}
+
+@keyframes feature-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes feature-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.feature__back {
+  position: absolute;
+  top: 0;
+  left: calc(var(--hud-inset) + 14px);
+  height: var(--bar-h);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ivory-soft);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+
+.feature__back-rule {
+  width: 22px;
+  height: 1px;
+  background: var(--gold);
+  transform-origin: right center;
+  transition: transform var(--dur) var(--ease);
+}
+
+.feature__back:hover {
+  color: var(--ivory);
+}
+
+.feature__back:hover .feature__back-rule {
+  transform: scaleX(1.5);
+}
+
+.feature__column {
+  position: absolute;
+  top: var(--bar-h);
+  bottom: var(--bar-h);
+  left: calc(var(--hud-inset) + clamp(18px, 4vw, 72px));
+  width: min(36vw, 500px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.feature__numeral,
+.feature__name {
+  /* FLIP animations scale these from the overview label's top-left corner. */
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.feature__numeral {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.4vw, 52px);
+  line-height: 1;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+
+.feature__name {
+  margin: 0.1em 0 0;
+  font-family: var(--font-body);
+  font-size: clamp(64px, 9.5vw, 156px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 0.92;
+  color: var(--ivory);
+}
+
+.feature__tagline {
+  max-width: 26ch;
+  margin: 0.7em 0 0;
+  font-size: clamp(20px, 1.7vw, 26px);
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--ivory);
+}
+
+.feature__meta {
+  margin: 1em 0 0;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.feature__poi {
+  max-width: 34ch;
+  margin-top: clamp(28px, 4vh, 48px);
+  padding-top: 18px;
+  border-top: 1px solid var(--gold-faint);
+}
+
+.feature__poi-name {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 26px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--ivory);
+}
+
+.feature__poi-category {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.feature__poi-summary {
+  margin: 10px 0 0;
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--ivory-soft);
+}
+
+.feature__nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 22px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.feature__nav button {
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 1px solid var(--gold-faint);
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ivory-soft);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.feature__nav button:hover {
+  color: var(--ivory);
+  border-color: var(--gold);
+}
+
+.feature__count {
+  color: var(--gold-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.feature button:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 4px;
+}
+
+/* ---------- Points of interest ---------- */
+
+.poi-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Positioned every frame by the 3D layer via transform; the mark centers on that point. */
+.poi-marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  cursor: pointer;
+  will-change: transform, opacity;
+}
+
+.poi-marker__mark {
+  position: absolute;
+  left: -12px;
+  top: -12px;
+  overflow: visible;
+}
+
+/* A larger, invisible hit area around the mark. */
+.poi-marker::before {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: -18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.poi-marker__ring,
+.poi-marker__ticks {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1;
+  stroke-opacity: 0.7;
+  transition: stroke-opacity var(--dur) var(--ease), stroke var(--dur) var(--ease);
+}
+
+.poi-marker__ticks {
+  stroke-opacity: 0.5;
+}
+
+.poi-marker__dot {
+  fill: var(--ivory);
+  fill-opacity: 0.8;
+}
+
+.poi-marker__name {
+  position: absolute;
+  left: 18px;
+  top: -11px;
+  white-space: nowrap;
+  font-size: 17px;
+  font-style: italic;
+  color: var(--ivory);
+  text-shadow: 0 0 10px var(--abyss), 0 0 3px var(--abyss);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  pointer-events: none;
+}
+
+.poi-marker:hover .poi-marker__ring,
+.poi-marker:focus-visible .poi-marker__ring,
+.poi-marker[data-active='true'] .poi-marker__ring {
+  stroke: #f3d79c;
+  stroke-opacity: 1;
+}
+
+.poi-marker:hover .poi-marker__ticks,
+.poi-marker:focus-visible .poi-marker__ticks,
+.poi-marker[data-active='true'] .poi-marker__ticks {
+  stroke-opacity: 0.95;
+}
+
+.poi-marker:hover .poi-marker__name,
+.poi-marker:focus-visible .poi-marker__name,
+.poi-marker[data-active='true'] .poi-marker__name {
+  opacity: 1;
+  transform: none;
+}
+
+.poi-marker:focus-visible {
+  outline: none;
+}
+
+.poi-marker:focus-visible .poi-marker__mark {
+  outline: 1px dotted var(--gold);
+  outline-offset: 3px;
+  border-radius: 50%;
+}
+
+/* Portrait: planet above, text below. Matches PORTRAIT_ASPECT in plateLayout.ts. */
+@media (max-aspect-ratio: 17/20) {
+  .feature__column {
+    top: 49%;
+    bottom: calc(var(--hud-inset) + 22px);
+    overflow-y: auto;
+    pointer-events: auto;
+    left: calc(var(--hud-inset) + 18px);
+    right: calc(var(--hud-inset) + 18px);
+    width: auto;
+    justify-content: flex-start;
+  }
+
+  .feature__numeral {
+    font-size: 24px;
+  }
+
+  .feature__name {
+    font-size: clamp(48px, 13vw, 88px);
+  }
+
+  .feature__tagline {
+    margin-top: 0.4em;
+    font-size: 18px;
+  }
+
+  .feature__meta {
+    margin-top: 0.7em;
+  }
+
+  .feature__poi {
+    margin-top: 14px;
+    padding-top: 10px;
+  }
+
+  .feature__poi-name {
+    font-size: 22px;
+  }
+
+  .feature__poi-summary {
+    margin-top: 6px;
+    font-size: 16px;
+  }
+
+  .feature__nav {
+    margin-top: 14px;
   }
 }

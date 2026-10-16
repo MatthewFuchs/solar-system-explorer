@@ -1,25 +1,44 @@
 import { Canvas } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense } from "react";
+import type { POI } from "../data/solarSystem";
 import { PALETTE } from "../lib/palette";
 import { appearanceFor } from "./bodyAppearance";
 import type { PlateLayout } from "./plateLayout";
 import { PlanetBody } from "./PlanetBody";
 import { Starfield } from "./Starfield";
 import { SunBody } from "./SunBody";
+import type { Timeline, ZoomFrame } from "./viewTransition";
 
 interface PlateSceneProps {
   layout: PlateLayout;
   hoveredId: string | null;
   reducedMotion: boolean;
+  zoom: Timeline;
+  zoomFrame: ZoomFrame | null;
+  focusId: string | null;
+  facing: POI | null;
+  turnMs: number;
+  markerEls: Map<string, HTMLElement>;
 }
 
 /**
  * The 3D layer: stars, the Sun, and lit planets. A fixed orthographic camera maps
- * one world unit to one CSS pixel, so bodies line up with the SVG and HTML HUD.
- * The only autonomous motion is each planet's slow spin on its own axis.
+ * one world unit to one CSS pixel, so bodies line up with the SVG and HTML layers.
+ * Autonomous motion is limited to each planet's slow spin; the zoom into a planet
+ * and turns toward its points of interest answer the user.
  */
-export function PlateScene({ layout, hoveredId, reducedMotion }: PlateSceneProps) {
+export function PlateScene({
+  layout,
+  hoveredId,
+  reducedMotion,
+  zoom,
+  zoomFrame,
+  focusId,
+  facing,
+  turnMs,
+  markerEls,
+}: PlateSceneProps) {
   const { width, height, sun, planets } = layout;
 
   return (
@@ -36,20 +55,28 @@ export function PlateScene({ layout, hoveredId, reducedMotion }: PlateSceneProps
       <color attach="background" args={[PALETTE.abyss]} />
       <Starfield width={width} height={height} />
       <Suspense fallback={null}>
-        <SunBody x={sun.x} y={sun.y} r={sun.r} />
-        {planets.map((p) => (
-          <PlanetBody
-            key={p.body.id}
-            x={p.x}
-            y={p.y}
-            r={p.r}
-            sun={sun}
-            appearance={appearanceFor(p.body.id)}
-            active={hoveredId === p.body.id}
-            dimmed={hoveredId !== null && hoveredId !== p.body.id}
-            reducedMotion={reducedMotion}
-          />
-        ))}
+        <SunBody base={sun} zoom={zoom} zoomFrame={zoomFrame} />
+        {planets.map((p) => {
+          const isFocus = focusId === p.body.id;
+          return (
+            <PlanetBody
+              key={p.body.id}
+              base={{ x: p.x, y: p.y, r: p.r }}
+              sun={sun}
+              appearance={appearanceFor(p.body.id)}
+              active={hoveredId === p.body.id}
+              dimmed={hoveredId !== null && hoveredId !== p.body.id}
+              reducedMotion={reducedMotion}
+              zoom={zoom}
+              zoomFrame={zoomFrame}
+              isFocus={isFocus}
+              facing={isFocus ? facing : null}
+              turnMs={turnMs}
+              pois={isFocus ? p.body.pois : undefined}
+              markerEls={isFocus ? markerEls : undefined}
+            />
+          );
+        })}
       </Suspense>
       {/* Threshold 1 means only the over-bright Sun blooms. */}
       <EffectComposer multisampling={4}>
