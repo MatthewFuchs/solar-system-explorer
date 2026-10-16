@@ -80,6 +80,23 @@ site's signature moment; keep it intact.
   spot on the texture itself; features that drift (e.g. Jupiter's Great Red Spot) use
   the texture's position, with a comment saying so.
 
+## Spacecraft, belts, and Pluto (overview)
+All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in components.
+- **Spacecraft** (`SPACECRAFT`): placed by `anchor` body, `bearing` (degrees from the
+  anchor's away-from-Sun direction, counterclockwise; 0 = straight behind it, as for
+  Webb at L2), and `distance` (in the anchor's overview radii). The layout treats this
+  as a preference and nudges to the clearest nearby spot (`placeSpacecraft`). Drawings
+  are hairline SVGs in `src/components/spacecraftDrawings.tsx`, chosen by `drawing`.
+  Hover shows name and launch year; click opens the shared detail panel. The masthead
+  toggle hides them.
+- **Belts** (`BELTS`): static stipple rendered in WebGL (`BeltField`), bounded by two
+  bodies' orbits (`between`, `fill`), with a clickable label that slides along the band
+  to a clear spot. `density` is dots per 10,000 square pixels.
+- **Pluto** (`DWARF_PLANETS`, `kind: "dwarf"`): a full destination with a planet view,
+  but no Roman numeral, a dashed orbit, and "Dwarf planet" in place of a numeral. Its
+  texture is NASA's New Horizons mosaic, shifted to our longitude convention.
+- Everything stays static and fades or flies out with the zoom like the planets.
+
 ## Point-of-interest panel
 - Clicking a marker (or "Open details") opens `PoiPanel`: an editorial sidebar on the
   right, a bottom sheet on phones. Non-modal: closes with its X, Escape, or a click

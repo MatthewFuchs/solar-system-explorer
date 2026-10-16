@@ -46,6 +46,8 @@ const APPEARANCE: Record<string, BodyAppearance> = {
   },
   uranus: { texture: textureUrl("uranus.jpg"), textureHd: textureUrl("2k/uranus.jpg"), atmosphere: "#A6F0F2", rim: 0.75, spin: 0, spinSpeed: -0.06, tilt: 0.3 },
   neptune: { texture: textureUrl("neptune.jpg"), textureHd: textureUrl("2k/neptune.jpg"), atmosphere: "#7FA2FF", rim: 0.85, spin: 0.5, spinSpeed: 0.065, tilt: 0.49 },
+  // Pluto map: NASA/JHUAPL/SwRI New Horizons global mosaic (public domain); see public/textures/CREDITS.md.
+  pluto: { texture: textureUrl("pluto.jpg"), textureHd: textureUrl("2k/pluto.jpg"), atmosphere: "#A9C2EE", rim: 0.3, spin: 0, spinSpeed: -0.02, tilt: 0.35 },
 };
 
 const FALLBACK: BodyAppearance = APPEARANCE.mercury;

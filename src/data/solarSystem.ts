@@ -33,7 +33,8 @@ export interface POISource {
   url: string;
 }
 
-interface POIBase {
+/** The content every point of interest shares; spacecraft and belts use it too. */
+export interface POIContent {
   id: string;
   name: string;
   category: POICategory;
@@ -53,7 +54,7 @@ interface POIBase {
  * A place on the body's surface. Coordinates must match where the feature appears in
  * the body's texture (equirectangular, left edge = -180°, east positive).
  */
-export interface SurfacePOI extends POIBase {
+export interface SurfacePOI extends POIContent {
   /** Latitude, -90 (south pole) to 90 (north pole). */
   lat: number;
   /** Longitude, -180 to 180, east positive. */
@@ -64,7 +65,7 @@ export interface SurfacePOI extends POIBase {
  * Something near the body rather than on it (a moon, a ring, a spacecraft). Its marker
  * floats beside the planet in the planet view.
  */
-export interface OrbitPOI extends POIBase {
+export interface OrbitPOI extends POIContent {
   orbit: {
     /** Screen angle in degrees, counterclockwise from the right (90 = above the planet). */
     angle: number;
@@ -82,6 +83,8 @@ export function isSurfacePOI(poi: POI): poi is SurfacePOI {
 export interface CelestialBody {
   id: string;
   name: string;
+  /** Dwarf planets get a destination but no Roman numeral. Defaults to planet. */
+  kind?: "planet" | "dwarf";
   /** Hex color used for the stylized sphere/material. */
   color: string;
   /** Stylized display radius in scene units (not to scale). */
@@ -161,24 +164,6 @@ export const SUN: CelestialBody = {
       ],
       stats: [{ label: "Temperature", value: "> 1 million", unit: "°C" }],
       source: NASA("https://science.nasa.gov/sun/facts/"),
-    },
-    {
-      id: "sun-parker",
-      name: "Parker Solar Probe",
-      orbit: { angle: 150, distance: 1.45 },
-      category: "mission",
-      summary: "The spacecraft that touches the Sun, closer than anything humans have ever sent.",
-      facts: [
-        "Launched in 2018, it holds the record as the closest human-made object to a star.",
-        "On its nearest passes it skims about 6.1 million kilometers above the solar surface.",
-        "It is also the fastest object ever built, reaching around 690,000 km/h.",
-        "A thick carbon-composite shield keeps its instruments near room temperature while its sunward face glows at over 1,000 °C.",
-      ],
-      stats: [
-        { label: "Closest pass", value: "~6.1 million", unit: "km" },
-        { label: "Top speed", value: "~690,000", unit: "km/h" },
-      ],
-      source: NASA("https://science.nasa.gov/mission/parker-solar-probe/"),
     },
   ],
 };
@@ -801,4 +786,299 @@ export const PLANETS: CelestialBody[] = [
   },
 ];
 
-export const SOLAR_SYSTEM: CelestialBody[] = [SUN, ...PLANETS];
+/** Dwarf planets get a destination and planet view, but no Roman numeral. */
+export const DWARF_PLANETS: CelestialBody[] = [
+  {
+    id: "pluto",
+    name: "Pluto",
+    kind: "dwarf",
+    color: "#c9a88a",
+    displayRadius: 0.35,
+    orbitDistance: 56,
+    orbitSpeed: 0.08,
+    tagline: "A small, frozen world with a heart of nitrogen ice.",
+    distanceAU: 39.5,
+    stats: [
+      { label: "Diameter", value: "2,377", unit: "km" },
+      { label: "Day", value: "6.4", unit: "Earth days" },
+    ],
+    pois: [
+      {
+        id: "pluto-sputnik-planitia",
+        name: "Sputnik Planitia",
+        lat: 20,
+        lon: 175,
+        category: "geology",
+        summary: "The bright western lobe of Pluto's heart, a vast plain of nitrogen ice.",
+        facts: [
+          "It stretches roughly 1,000 km across, a glacier of frozen nitrogen with no impact craters at all.",
+          "Its surface is a mosaic of slowly churning cells, each tens of kilometers wide, constantly renewing the ice.",
+          "It probably fills an ancient impact basin, and its weight may have helped tip Pluto into its present orientation.",
+          "The whole heart-shaped region is named Tombaugh Regio, after Clyde Tombaugh, who discovered Pluto in 1930.",
+        ],
+        stats: [{ label: "Width", value: "~1,000", unit: "km" }],
+        source: NASA("https://science.nasa.gov/dwarf-planets/pluto/"),
+      },
+      {
+        id: "pluto-cthulhu",
+        name: "Cthulhu Macula",
+        lat: -5,
+        lon: 105,
+        category: "surface",
+        summary: "A long, dark stain along Pluto's equator, the color of rust and old blood.",
+        facts: [
+          "It stretches about 3,000 km along the equator.",
+          "Its reddish darkness likely comes from tholins, complex organic molecules made when sunlight strikes methane ice.",
+          "Its name, after a creature from H. P. Lovecraft's fiction, began as a nickname among the mission team.",
+          "Much of Pluto's southern hemisphere lay in seasonal darkness during the flyby, so it was never mapped in detail.",
+        ],
+        stats: [{ label: "Length", value: "~3,000", unit: "km" }],
+        source: NASA("https://science.nasa.gov/mission/new-horizons/"),
+      },
+      {
+        id: "pluto-wright-mons",
+        name: "Wright Mons",
+        lat: -21.5,
+        lon: 173.7,
+        category: "geology",
+        summary: "A broad mountain with a deep summit pit, possibly an ice volcano.",
+        facts: [
+          "It rises about 4 km and spreads some 150 km across, with a deep depression at its summit.",
+          "It may be a cryovolcano, which erupted slushy water ice rather than molten rock.",
+          "Its sparse cratering suggests it is young, by the standards of the outer solar system.",
+        ],
+        stats: [
+          { label: "Height", value: "~4", unit: "km" },
+          { label: "Width", value: "~150", unit: "km" },
+        ],
+        source: NASA("https://science.nasa.gov/dwarf-planets/pluto/"),
+      },
+      {
+        id: "pluto-charon",
+        name: "Charon",
+        orbit: { angle: 120, distance: 1.6 },
+        category: "moon",
+        summary: "Pluto's companion, so large that the two circle a point in space between them.",
+        facts: [
+          "Charon is about half Pluto's width, making the pair almost a double world.",
+          "They are tidally locked: each always shows the other the same face.",
+          "Its north pole wears a dark red cap, nicknamed Mordor Macula, thought to form from gas escaping Pluto.",
+        ],
+        stats: [{ label: "Diameter", value: "1,212", unit: "km" }],
+        source: NASA("https://science.nasa.gov/dwarf-planets/pluto/moons/charon/"),
+      },
+    ],
+  },
+];
+
+/** Every body with a planet view: the eight planets, then dwarf planets. */
+export const DESTINATIONS: CelestialBody[] = [...PLANETS, ...DWARF_PLANETS];
+
+/**
+ * Where a spacecraft sits in the overview, relative to a body (or the Sun).
+ * `bearing` is in degrees from the direction pointing away from the Sun, turning
+ * counterclockwise on screen; 0 puts it straight behind the body, as at Earth's L2.
+ * `distance` is in multiples of the body's radius in the overview.
+ */
+export interface OverviewPlacement {
+  anchor: string;
+  bearing: number;
+  distance: number;
+}
+
+/** Line illustrations live in src/components/spacecraftDrawings.tsx, keyed by these names. */
+export type SpacecraftDrawing = "voyager" | "jwst" | "juno" | "parker" | "new-horizons";
+
+export interface Spacecraft extends POIContent {
+  launchYear: number;
+  drawing: SpacecraftDrawing;
+  placement: OverviewPlacement;
+}
+
+export const SPACECRAFT: Spacecraft[] = [
+  {
+    id: "voyager-1",
+    name: "Voyager 1",
+    launchYear: 1977,
+    drawing: "voyager",
+    // Saturn was its last planetary encounter; it climbed north out of the plane of the planets.
+    placement: { anchor: "saturn", bearing: 100, distance: 5 },
+    category: "mission",
+    summary: "The most distant human-made object, still calling home from interstellar space.",
+    facts: [
+      "Launched in September 1977, it swept past Jupiter and Saturn before climbing out of the plane of the planets.",
+      "In 2012 it became the first spacecraft to cross into interstellar space.",
+      "It is now about 170 times farther from the Sun than Earth is; its radio whispers take nearly a full day to reach us.",
+      "It carries the Golden Record, a disc of sounds and images from Earth, for anyone who might one day find it.",
+    ],
+    stats: [
+      { label: "Launched", value: "1977" },
+      { label: "Distance", value: "~170", unit: "AU" },
+    ],
+    source: NASA("https://science.nasa.gov/mission/voyager/voyager-1/"),
+  },
+  {
+    id: "voyager-2",
+    name: "Voyager 2",
+    launchYear: 1977,
+    drawing: "voyager",
+    // Neptune was its last planetary encounter; it is heading south.
+    placement: { anchor: "neptune", bearing: -70, distance: 3 },
+    category: "mission",
+    summary: "The only spacecraft to have visited Uranus and Neptune.",
+    facts: [
+      "It launched in August 1977, sixteen days before its twin, and toured all four giant planets.",
+      "It crossed into interstellar space in 2018.",
+      "It is heading south of the plane of the planets, about 140 times farther from the Sun than Earth.",
+      "To stretch its fading power, engineers have been switching off its instruments one by one.",
+    ],
+    stats: [
+      { label: "Launched", value: "1977" },
+      { label: "Distance", value: "~140", unit: "AU" },
+    ],
+    source: NASA("https://science.nasa.gov/mission/voyager/voyager-2/"),
+  },
+  {
+    id: "jwst",
+    name: "James Webb Space Telescope",
+    launchYear: 2021,
+    drawing: "jwst",
+    // Straight behind Earth, as seen from the Sun: the second Lagrange point.
+    placement: { anchor: "earth", bearing: 0, distance: 2.6 },
+    category: "mission",
+    summary: "The largest space telescope ever launched, gazing back toward the first galaxies.",
+    facts: [
+      "Launched on December 25, 2021, it orbits the Sun near the second Lagrange point, about 1.5 million km beyond Earth.",
+      "Its 6.5-meter golden mirror is built from 18 hexagonal segments that unfolded in space.",
+      "A sunshield the size of a tennis court keeps its instruments below −223 °C, cold enough to sense faint infrared light.",
+      "It can see galaxies that formed within a few hundred million years of the Big Bang.",
+    ],
+    stats: [
+      { label: "Mirror", value: "6.5", unit: "m" },
+      { label: "From Earth", value: "~1.5 million", unit: "km" },
+    ],
+    source: NASA("https://science.nasa.gov/mission/webb/"),
+  },
+  {
+    id: "juno",
+    name: "Juno",
+    launchYear: 2011,
+    drawing: "juno",
+    placement: { anchor: "jupiter", bearing: 90, distance: 1.7 },
+    category: "mission",
+    summary: "A solar-powered spacecraft looping over Jupiter's poles.",
+    facts: [
+      "Launched in 2011, it arrived at Jupiter on July 4, 2016.",
+      "Three solar arrays, each about 9 meters long, power it farther from the Sun than any solar-powered craft before it.",
+      "Its looping polar orbit revealed clusters of giant cyclones swirling at Jupiter's poles.",
+      "Its extended mission carried it past the moons Ganymede, Europa, and Io.",
+    ],
+    stats: [
+      { label: "Arrived", value: "July 4, 2016" },
+      { label: "Solar arrays", value: "~9", unit: "m" },
+    ],
+    source: NASA("https://science.nasa.gov/mission/juno/"),
+  },
+  {
+    id: "parker-solar-probe",
+    name: "Parker Solar Probe",
+    launchYear: 2018,
+    drawing: "parker",
+    placement: { anchor: "sun", bearing: -8, distance: 1.2 },
+    category: "mission",
+    summary: "The spacecraft that touches the Sun, closer than anything humans have ever sent.",
+    facts: [
+      "Launched in 2018, it holds the record as the closest human-made object to a star.",
+      "On its nearest passes it skims about 6.1 million kilometers above the solar surface.",
+      "It is also the fastest object ever built, reaching around 690,000 km/h.",
+      "A thick carbon-composite shield keeps its instruments near room temperature while its sunward face glows at over 1,000 °C.",
+    ],
+    stats: [
+      { label: "Closest pass", value: "~6.1 million", unit: "km" },
+      { label: "Top speed", value: "~690,000", unit: "km/h" },
+    ],
+    source: NASA("https://science.nasa.gov/mission/parker-solar-probe/"),
+  },
+  {
+    id: "new-horizons",
+    name: "New Horizons",
+    launchYear: 2006,
+    drawing: "new-horizons",
+    placement: { anchor: "pluto", bearing: 20, distance: 4 },
+    category: "mission",
+    summary: "The first spacecraft to visit Pluto, now crossing the Kuiper Belt.",
+    facts: [
+      "When it launched in January 2006 it was the fastest spacecraft ever sent from Earth.",
+      "It flew past Pluto on July 14, 2015, revealing glaciers of nitrogen and mountains of water ice.",
+      "On New Year's Day 2019 it flew past Arrokoth, the most distant object ever explored up close.",
+      "It is about the size of a grand piano, powered by a single plutonium generator.",
+    ],
+    stats: [
+      { label: "Launched", value: "2006" },
+      { label: "Pluto flyby", value: "July 14, 2015" },
+    ],
+    source: NASA("https://science.nasa.gov/mission/new-horizons/"),
+  },
+];
+
+/**
+ * A belt of small bodies, drawn as a static stippled band around the Sun in the overview.
+ * `between` names the bodies whose orbits bound it; `fill` places its inner and outer edge
+ * as fractions of the gap between them (values past 1 extend beyond the second body).
+ * `arc` is its angular extent in degrees from the overview's diagonal, positive toward the
+ * top of the screen; `labelAt` is where along that arc its clickable label sits.
+ */
+export interface Belt extends POIContent {
+  between: [string, string];
+  fill: [number, number];
+  arc: [number, number];
+  labelAt: number;
+  /** Dots per 10,000 square pixels. */
+  density: number;
+}
+
+export const BELTS: Belt[] = [
+  {
+    id: "asteroid-belt",
+    name: "Asteroid Belt",
+    between: ["mars", "jupiter"],
+    fill: [0.3, 0.72],
+    arc: [-24, 13],
+    labelAt: -14,
+    density: 85,
+    category: "geology",
+    summary: "A loose ring of rocky leftovers between Mars and Jupiter.",
+    facts: [
+      "Millions of asteroids orbit here, yet all together they hold only about 3 percent of the Moon's mass.",
+      "For all its crowded reputation it is mostly empty space, with asteroids typically about a million kilometers apart.",
+      "Its largest member, Ceres, is a dwarf planet about 940 km across.",
+      "Jupiter's gravity kept these fragments from ever gathering into a planet.",
+    ],
+    stats: [
+      { label: "Largest body", value: "Ceres, ~940", unit: "km" },
+      { label: "Total mass", value: "~3", unit: "% of the Moon" },
+    ],
+    source: NASA("https://science.nasa.gov/solar-system/asteroids/"),
+  },
+  {
+    id: "kuiper-belt",
+    name: "Kuiper Belt",
+    between: ["neptune", "pluto"],
+    fill: [0.35, 2.6],
+    arc: [-22, 12],
+    labelAt: 2,
+    density: 60,
+    category: "geology",
+    summary: "A vast, icy realm beyond Neptune, home to Pluto and countless frozen worlds.",
+    facts: [
+      "It stretches from about 30 to 50 times Earth's distance from the Sun.",
+      "It holds icy bodies left over from the birth of the solar system, including the dwarf planets Pluto, Haumea, and Makemake.",
+      "Many short-period comets are thought to begin their journeys here.",
+      "It is named for astronomer Gerard Kuiper, who wrote about such a region in 1951.",
+    ],
+    stats: [{ label: "Extent", value: "30–50", unit: "AU" }],
+    source: NASA("https://science.nasa.gov/solar-system/kuiper-belt/"),
+  },
+];
+
+export const SOLAR_SYSTEM: CelestialBody[] = [SUN, ...PLANETS, ...DWARF_PLANETS];

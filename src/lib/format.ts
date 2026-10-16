@@ -20,3 +20,8 @@ export function toRoman(n: number): string {
 export function formatAU(au: number): string {
   return `${au < 10 ? au.toFixed(2) : au.toFixed(1)} AU`;
 }
+
+/** The mark a body carries in labels: its Roman numeral, or "Dwarf planet". */
+export function bodyMark(kind: "planet" | "dwarf" | undefined, order: number): string {
+  return kind === "dwarf" ? "Dwarf planet" : toRoman(order);
+}

@@ -1,13 +1,13 @@
 import { useEffect, useRef, type AnimationEvent, type CSSProperties } from "react";
-import type { POI } from "../data/solarSystem";
+import type { POIContent } from "../data/solarSystem";
 import { StatList } from "./StatList";
 
 export type PanelState = "open" | "closing";
 
 interface PoiPanelProps {
-  poi: POI;
-  planetName: string;
-  numeral: string;
+  poi: POIContent;
+  /** Context line above the title: a short mark (numeral, launch year) and a label. */
+  eyebrow: { mark?: string; label: string };
   state: PanelState;
   onClose: () => void;
   /** Called once the closing animation has finished, to unmount the panel. */
@@ -18,11 +18,11 @@ interface PoiPanelProps {
 const line = (i: number) => ({ "--i": i }) as CSSProperties;
 
 /**
- * Point-of-interest details as an editorial sidebar (a bottom sheet on phones).
+ * Details for a point of interest, spacecraft, or belt, as an editorial sidebar (a bottom sheet on phones).
  * Non-modal: it closes with its X, Escape, or a click on empty space, while clicks
  * on markers or Previous / Next switch the point of interest instead.
  */
-export function PoiPanel({ poi, planetName, numeral, state, onClose, onClosed }: PoiPanelProps) {
+export function PoiPanel({ poi, eyebrow, state, onClose, onClosed }: PoiPanelProps) {
   const panelRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -73,9 +73,13 @@ export function PoiPanel({ poi, planetName, numeral, state, onClose, onClosed }:
       {/* Keyed so the staggered reveal replays when the point of interest changes. */}
       <div className="poi-panel__body" key={poi.id}>
         <p className="poi-panel__context poi-panel__line" style={line(i++)}>
-          <span className="poi-panel__numeral">{numeral}</span>
-          <span className="poi-panel__rule" aria-hidden="true" />
-          {planetName}
+          {eyebrow.mark && (
+            <>
+              <span className="poi-panel__numeral">{eyebrow.mark}</span>
+              <span className="poi-panel__rule" aria-hidden="true" />
+            </>
+          )}
+          {eyebrow.label}
         </p>
         <h2 id="poi-panel-title" className="poi-panel__title poi-panel__line" style={line(i++)} ref={titleRef} tabIndex={-1}>
           {poi.name}

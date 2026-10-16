@@ -2,9 +2,10 @@ import { Canvas } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense } from "react";
 import type { POI } from "../data/solarSystem";
+import { BeltField } from "./BeltField";
 import { PALETTE } from "../lib/palette";
 import { appearanceFor } from "./bodyAppearance";
-import type { PlateLayout } from "./plateLayout";
+import type { BeltShape, PlateLayout } from "./plateLayout";
 import { PlanetBody } from "./PlanetBody";
 import { Starfield } from "./Starfield";
 import { SunBody } from "./SunBody";
@@ -12,6 +13,7 @@ import type { Timeline, ZoomFrame } from "./viewTransition";
 
 interface PlateSceneProps {
   layout: PlateLayout;
+  belts: BeltShape[];
   hoveredId: string | null;
   reducedMotion: boolean;
   zoom: Timeline;
@@ -30,6 +32,7 @@ interface PlateSceneProps {
  */
 export function PlateScene({
   layout,
+  belts,
   hoveredId,
   reducedMotion,
   zoom,
@@ -54,6 +57,7 @@ export function PlateScene({
     >
       <color attach="background" args={[PALETTE.abyss]} />
       <Starfield width={width} height={height} />
+      <BeltField belts={belts} width={width} height={height} zoom={zoom} zoomFrame={zoomFrame} />
       <Suspense fallback={null}>
         <SunBody base={sun} zoom={zoom} zoomFrame={zoomFrame} />
         {planets.map((p) => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CelestialBody } from "../data/solarSystem";
-import { formatAU, toRoman } from "../lib/format";
+import { bodyMark, formatAU } from "../lib/format";
 import { ZOOM_EASING_CSS } from "../scene/viewTransition";
 import { PoiMarkers } from "./PoiMarkers";
 import { PoiPanel, type PanelState } from "./PoiPanel";
@@ -65,7 +65,7 @@ export function PlanetFeature({
   const numeralRef = useRef<HTMLParagraphElement>(null);
   const nameRef = useRef<HTMLHeadingElement>(null);
   const anims = useRef<Animation[]>([]);
-  const numeral = toRoman(order);
+  const numeral = bodyMark(planet.kind, order);
   const pois = planet.pois;
   const poi = pois[poiIndex];
   const au = planet.distanceAU;
@@ -164,8 +164,7 @@ export function PlanetFeature({
       {panel !== "closed" && poi && (
         <PoiPanel
           poi={poi}
-          planetName={planet.name}
-          numeral={numeral}
+          eyebrow={{ mark: planet.kind === "dwarf" ? undefined : numeral, label: planet.name }}
           state={panel}
           onClose={closePanel}
           onClosed={closedPanel}
