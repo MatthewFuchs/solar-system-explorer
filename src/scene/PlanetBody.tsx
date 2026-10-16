@@ -45,7 +45,7 @@ const MARKER_LIMB = [0.12, 0.38] as const;
 
 /** The Sun's brightness: values above 1 feed the bloom. Eased down up close so its surface reads. */
 const SUN_GLOW = 3.0;
-const SUN_GLOW_CLOSE = 1.3;
+const SUN_GLOW_CLOSE = 0.95;
 
 interface PlanetBodyProps {
   /** Render as the Sun: an emissive star with no atmosphere shell or sunlight shading. */
