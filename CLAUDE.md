@@ -29,8 +29,16 @@ solar system, with planets lit by the Sun out of a violet-black abyss.
   retrograde). No orbiting, drifting, or twinkling. Everything else answers the
   user: the point-of-light cursor, and on hover a gold halo fades in, the label
   unfolds its tagline, and other planets dim.
-- **Reduced motion:** with `prefers-reduced-motion`, planets don't spin, and the
-  zoom, turns, and state changes are instant.
+- **Entrance:** on first load (once per session, `sessionStorage`), the scene, orbit
+  arcs, names, belts, spacecraft, title, and masthead reveal in one ~2.7s sequence
+  (`data-entrance` in `Overview`, keyframes in `index.css`), then everything is still.
+  It waits for the 3D scene to be ready (max 2.5s). Never add a second load animation.
+- **Reduced motion:** with `prefers-reduced-motion`, planets don't spin; the entrance is
+  a single fade; the zoom becomes a short dark dissolve (`.view-veil`); panels fade in
+  without sliding. Nothing moves across the screen.
+- **Sound:** optional ambient drone, generated live with Web Audio
+  (`src/lib/ambientSound.ts`). Off by default; it may only start from the toggle's click.
+  Keep it quiet and slow.
 - **Easing:** unhurried ease-out (`--ease`, `--dur: 380ms` in CSS; exponential
   damping in R3F). No bouncy or linear easing.
 - **Avoid game/HUD tropes:** no glass bars, corner brackets, reticles, crosshair
@@ -97,6 +105,13 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   texture is NASA's New Horizons mosaic, shifted to our longitude convention.
 - Everything stays static and fades or flies out with the zoom like the planets.
 
+## Small screens
+- Phones (< 640px wide): name-only labels at rest, planet above text in the planet view,
+  bottom-sheet panels, no Overview link (Back and the title cover it).
+- Short landscape (< 520px tall): compact one-line title, name-only labels, smaller
+  scrolling planet-view column. `SHORT_HEIGHT` in `plateLayout.ts` matches the CSS.
+- Test at 390×844, 360×740, 375×667, 844×390, and 768×1024 after layout changes.
+
 ## Point-of-interest panel
 - Clicking a marker (or "Open details") opens `PoiPanel`: an editorial sidebar on the
   right, a bottom sheet on phones. Non-modal: closes with its X, Escape, or a click
@@ -106,6 +121,9 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   (licensed and credited only), and `source` for "Learn more".
 - Lines reveal with a short stagger. The panel is solid, not translucent, and uses no
   blur. Focus moves to its heading on open and returns on close.
+- `SidePanel` is the shared shell (dialog, focus, Escape, outside click, animation);
+  `PoiPanel` and `CreditsPanel` are its contents. Credits list fonts, textures, data
+  sources, and software; keep them current when adding any asset or source.
 
 ## Performance rules
 - **No SVG or CSS blur filters on large or full-screen layers** (`feGaussianBlur`,
@@ -118,6 +136,13 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   Measured: 60fps idle on an M2.
 - Animate only `opacity` and `transform` where possible; the cursor moves by
   `transform` on its own layer.
+- **First load:** the 3D scene (three.js) is a lazily loaded chunk; the main chunk stays
+  small so typography paints fast. Textures are WebP (first load about 450 KB); 2K maps
+  load only for the open planet. Don't add JPEG/PNG textures or import three.js from
+  non-scene modules (e.g. `textures.ts` must stay three-free).
+- **Re-renders:** hover changes state in `Overview`; layers that don't depend on hover
+  (`TopBar`, `SpacecraftLayer`, `BeltLabels`, `SpaceBackdrop`) are memoized, so pass
+  them stable callbacks (`useCallback`).
 
 ## Folder structure
 - `src/scene/`: 3D layer (R3F), shaders, per-body appearance, and plate layout

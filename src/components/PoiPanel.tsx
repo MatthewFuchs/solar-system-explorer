@@ -1,8 +1,10 @@
-import { useEffect, useRef, type AnimationEvent, type CSSProperties } from "react";
+import { useRef } from "react";
 import type { POIContent } from "../data/solarSystem";
+import { SidePanel, type PanelState } from "./SidePanel";
+import { line } from "./panelLine";
 import { StatList } from "./StatList";
 
-export type PanelState = "open" | "closing";
+export type { PanelState };
 
 interface PoiPanelProps {
   poi: POIContent;
@@ -14,61 +16,20 @@ interface PoiPanelProps {
   onClosed: () => void;
 }
 
-/** Stagger index for the reveal; each line enters a beat after the one above it. */
-const line = (i: number) => ({ "--i": i }) as CSSProperties;
 
-/**
- * Details for a point of interest, spacecraft, or belt, as an editorial sidebar (a bottom sheet on phones).
- * Non-modal: it closes with its X, Escape, or a click on empty space, while clicks
- * on markers or Previous / Next switch the point of interest instead.
- */
+/** Details for a point of interest, spacecraft, or belt. */
 export function PoiPanel({ poi, eyebrow, state, onClose, onClosed }: PoiPanelProps) {
-  const panelRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
-
-  // Move focus into the panel when it opens, and give it back when it closes.
-  useEffect(() => {
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    titleRef.current?.focus({ preventScroll: true });
-    return () => {
-      if (previous?.isConnected) previous.focus({ preventScroll: true });
-    };
-  }, []);
-
-  useEffect(() => {
-    if (state !== "open") return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      // Closing the panel takes this Escape; it shouldn't also leave the planet view.
-      e.preventDefault();
-      onClose();
-    };
-    const onPointerDown = (e: PointerEvent) => {
-      const target = e.target instanceof Element ? e.target : null;
-      if (!target || panelRef.current?.contains(target) || target.closest("button, a, [role='dialog']")) return;
-      onClose();
-    };
-    window.addEventListener("keydown", onKey, true);
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => {
-      window.removeEventListener("keydown", onKey, true);
-      document.removeEventListener("pointerdown", onPointerDown);
-    };
-  }, [state, onClose]);
-
-  const onAnimationEnd = (e: AnimationEvent) => {
-    if (e.target === e.currentTarget && state === "closing") onClosed();
-  };
 
   let i = 0;
   return (
-    <aside
-      ref={panelRef}
-      className="poi-panel"
-      data-state={state}
-      role="dialog"
-      aria-labelledby="poi-panel-title"
-      onAnimationEnd={onAnimationEnd}
+    <SidePanel
+      state={state}
+      labelledBy="poi-panel-title"
+      focusRef={titleRef}
+      closeLabel="Close details"
+      onClose={onClose}
+      onClosed={onClosed}
     >
       {/* Keyed so the staggered reveal replays when the point of interest changes. */}
       <div className="poi-panel__body" key={poi.id}>
@@ -123,13 +84,6 @@ export function PoiPanel({ poi, eyebrow, state, onClose, onClosed }: PoiPanelPro
           </a>
         )}
       </div>
-
-      {/* Last in tab order (after the content), though it sits top-right. */}
-      <button type="button" className="poi-panel__close" onClick={onClose} aria-label="Close details">
-        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-          <path d="M2 2 14 14M14 2 2 14" />
-        </svg>
-      </button>
-    </aside>
+    </SidePanel>
   );
 }

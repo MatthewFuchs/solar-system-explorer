@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BELTS, DESTINATIONS, SPACECRAFT, type Belt, type Spacecraft } from "../data/solarSystem";
 import { useElementSize } from "../hooks/useElementSize";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { reachFactor } from "../scene/bodyAppearance";
 import { computeFeaturePlacement, computePlateLayout, placeBelts, placeSpacecraft } from "../scene/plateLayout";
-import { PlateScene } from "../scene/PlateScene";
 import { Timeline, TURN_MS, ZOOM_MS, type ZoomFrame } from "../scene/viewTransition";
 import { BeltLabels } from "./BeltLabels";
 import { DestinationLabels } from "./DestinationLabels";
@@ -15,6 +14,33 @@ import { PoiPanel, type PanelState } from "./PoiPanel";
 import { SpaceBackdrop } from "./SpaceBackdrop";
 import { SpacecraftLayer } from "./SpacecraftLayer";
 import { TopBar } from "./TopBar";
+import { AmbientSound } from "../lib/ambientSound";
+
+// The 3D engine (three.js and friends) is most of the JavaScript; load it in its own
+// chunk so the typography and HUD can paint while it downloads.
+const PlateScene = lazy(() => import("../scene/PlateScene").then((m) => ({ default: m.PlateScene })));
+
+/** The entrance plays once per browser session. */
+const ENTRANCE_KEY = "sse-entrance-played";
+/** Full length of the entrance sequence (matches the delays in index.css). */
+const ENTRANCE_MS = 2700;
+/** Reduced motion: a plain fade instead of the sequence. */
+const FADE_MS = 500;
+/** If the scene is slow to arrive, start the entrance anyway. */
+const ENTRANCE_WAIT_MS = 2500;
+/** Reduced motion: the dissolve that replaces the zoom, each way. */
+const VEIL_MS = 220;
+
+/** waiting: hidden until the scene is ready; playing: the sequence; fade: reduced motion. */
+type Entrance = "waiting" | "playing" | "fade" | "done";
+
+function entrancePlayed() {
+  try {
+    return sessionStorage.getItem(ENTRANCE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 /** The destination named in the URL hash (e.g. #mars), if it exists. */
 function planetFromHash(): string | null {
@@ -43,6 +69,10 @@ export function Overview() {
   const [detailState, setDetailState] = useState<PanelState>("open");
   const [zoom] = useState(() => new Timeline(initialFocus ? 1 : 0));
   const [markerEls] = useState(() => new Map<string, HTMLElement>());
+  const [entrance, setEntrance] = useState<Entrance>(() => (initialFocus || entrancePlayed() ? "done" : "waiting"));
+  const [veil, setVeil] = useState(false);
+  const [sound] = useState(() => new AmbientSound());
+  const [soundOn, setSoundOn] = useState(false);
   const targetRef = useRef<string | null>(initialFocus);
   const timerRef = useRef(0);
 
@@ -103,10 +133,19 @@ export function Overview() {
     (id: string | null) => {
       if (id === targetRef.current) return;
       const url = id ? `#${id}` : window.location.pathname + window.location.search;
-      window.history.pushState(null, "", url);
-      go(id);
+      const change = () => {
+        window.history.pushState(null, "", url);
+        go(id);
+      };
+      if (!reducedMotion) return change();
+      // Reduced motion: no zoom; dissolve to the abyss, change the view, dissolve back.
+      setVeil(true);
+      window.setTimeout(() => {
+        change();
+        setVeil(false);
+      }, VEIL_MS);
     },
-    [go],
+    [go, reducedMotion],
   );
 
   useEffect(() => {
@@ -128,21 +167,60 @@ export function Overview() {
   }, [navigate]);
 
   useEffect(() => () => window.clearTimeout(timerRef.current), []);
+  useEffect(() => () => sound.dispose(), [sound]);
 
-  const openDetail = (d: OverviewDetail) => {
+  // Entrance: start once the scene has drawn (or after a wait), then settle to still.
+  const startEntrance = useCallback(() => {
+    setEntrance((e) => (e === "waiting" ? (reducedMotion ? "fade" : "playing") : e));
+    try {
+      sessionStorage.setItem(ENTRANCE_KEY, "1");
+    } catch {
+      // Storage unavailable (private mode): the entrance simply plays again next time.
+    }
+  }, [reducedMotion]);
+  useEffect(() => {
+    if (entrance === "waiting") {
+      const t = window.setTimeout(startEntrance, ENTRANCE_WAIT_MS);
+      return () => window.clearTimeout(t);
+    }
+    if (entrance === "playing" || entrance === "fade") {
+      const t = window.setTimeout(() => setEntrance("done"), entrance === "fade" ? FADE_MS : ENTRANCE_MS);
+      return () => window.clearTimeout(t);
+    }
+  }, [entrance, startEntrance]);
+
+  const openDetail = useCallback((d: OverviewDetail) => {
     setDetail(d);
     setDetailState("open");
-  };
+  }, []);
+  const openBelt = useCallback((item: Belt) => openDetail({ kind: "belt", item }), [openDetail]);
+  const openCraft = useCallback((item: Spacecraft) => openDetail({ kind: "spacecraft", item }), [openDetail]);
   const closeDetail = useCallback(() => setDetailState((s) => (s === "open" ? "closing" : s)), []);
   const closedDetail = useCallback(() => setDetail(null), []);
 
-  const toggleSpacecraft = () => {
+  const detailKind = detail?.kind;
+  const toggleSpacecraft = useCallback(() => {
     setShowSpacecraft((on) => !on);
     setMarkerHover(false);
-    if (detail?.kind === "spacecraft") closeDetail();
-  };
+    if (detailKind === "spacecraft") closeDetail();
+  }, [detailKind, closeDetail]);
+
+  // Called from the click itself: browsers only allow audio to start from a user gesture.
+  const toggleSound = useCallback(() => {
+    if (soundOn) sound.disable();
+    else sound.enable();
+    setSoundOn(!soundOn);
+  }, [sound, soundOn]);
+
+  const toOverview = useCallback(() => navigate(null), [navigate]);
 
   const inOverview = phase === "overview";
+  const hoverPlanet = useCallback(
+    (id: string | null) => {
+      if (phase === "overview") setHoveredId(id);
+    },
+    [phase],
+  );
   const overviewShown = phase === "overview" || phase === "leaving";
   const facing = focus && (phase === "entering" || phase === "planet") ? (focus.body.pois[poiIndex] ?? null) : null;
 
@@ -153,11 +231,13 @@ export function Overview() {
       data-hovering={hoveredId !== null}
       data-phase={phase}
       data-overview={overviewShown ? "shown" : "hidden"}
+      data-entrance={entrance}
     >
       {layout && (
         <>
           <div className="plate-canvas">
-            <PlateScene
+            <Suspense fallback={null}>
+              <PlateScene
               layout={layout}
               belts={beltShapes}
               hoveredId={hoveredId}
@@ -168,7 +248,9 @@ export function Overview() {
               facing={facing}
               turnMs={phase === "entering" ? zoomMs : turnMs}
               markerEls={markerEls}
+              onReady={startEntrance}
             />
+            </Suspense>
           </div>
           <SpaceBackdrop layout={layout} />
           <PlateHud layout={layout} hoveredId={hoveredId} />
@@ -176,9 +258,11 @@ export function Overview() {
       )}
       <TopBar
         inOverview={inOverview}
-        onOverview={() => navigate(null)}
+        onOverview={toOverview}
         showSpacecraft={showSpacecraft}
         onToggleSpacecraft={toggleSpacecraft}
+        soundOn={soundOn}
+        onToggleSound={toggleSound}
       />
       <main className="plate-main">
         <div className="overview-layer" inert={!inOverview}>
@@ -193,19 +277,19 @@ export function Overview() {
           </div>
           {layout && (
             <>
-              <BeltLabels shapes={beltShapes} onSelect={(item) => openDetail({ kind: "belt", item })} onHover={setMarkerHover} />
+              <BeltLabels shapes={beltShapes} onSelect={openBelt} onHover={setMarkerHover} />
               <SpacecraftLayer
                 spots={craftSpots}
                 width={layout.width}
                 shown={showSpacecraft}
-                onSelect={(item) => openDetail({ kind: "spacecraft", item })}
+                onSelect={openCraft}
                 onHover={setMarkerHover}
               />
               <DestinationLabels
                 layout={layout}
                 hoveredId={hoveredId}
                 focusId={focusId}
-                onHover={(id) => inOverview && setHoveredId(id)}
+                onHover={hoverPlanet}
                 onSelect={navigate}
               />
             </>
@@ -236,11 +320,12 @@ export function Overview() {
             markerEls={markerEls}
             onPoiIndex={setPoiIndex}
             onMarkerHover={setMarkerHover}
-            onBack={() => navigate(null)}
+            onBack={toOverview}
           />
         )}
       </main>
       <p className="plate-credit">Textures: Solar System Scope, CC BY 4.0. Pluto: NASA/JHUAPL/SwRI.</p>
+      <div className="view-veil" data-on={veil} aria-hidden="true" />
       <PlateCursor active={hoveredId !== null || markerHover} />
     </div>
   );

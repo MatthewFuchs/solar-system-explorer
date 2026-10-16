@@ -18,7 +18,7 @@ import {
 import { isSurfacePOI, type POI } from "../data/solarSystem";
 import type { BodyAppearance } from "./bodyAppearance";
 import { atmosphereShader, planetShader, ringShader } from "./shaders";
-import { configureTextures } from "./textures";
+import { configureTextures } from "./textureSetup";
 import { setUniform } from "./uniforms";
 import {
   easeInOutCubic,

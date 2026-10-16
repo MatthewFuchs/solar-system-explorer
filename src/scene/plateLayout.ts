@@ -14,6 +14,9 @@ const ARC_SPANS = [0.5, 0.46, 0.42, 0.39, 0.35, 0.32, 0.29, 0.26, 0.22];
 /** Angle offsets (radians) tried in order when a body would overlap another. */
 const BODY_NUDGES = [0, 0.06, -0.06, 0.12, -0.12, 0.2, -0.2, 0.3, -0.3, 0.42, -0.42, 0.56, -0.56];
 
+/** Below this height (landscape phones) the layout goes compact. Matches index.css. */
+const SHORT_HEIGHT = 520;
+
 /** Below this aspect ratio the title gets its own band at the bottom of the screen. */
 const PORTRAIT_ASPECT = 0.85;
 /** Height of the top bar, which planets keep clear of. Matches --bar-h in CSS. */
@@ -121,7 +124,8 @@ export function computePlateLayout(planets: CelestialBody[], width: number, heig
     base.push({ body, order: i + 1, x, y, r, reach });
   });
 
-  const labelSize = width < 640 ? LABEL_NARROW : LABEL_WIDE;
+  // Phones (and short landscape screens) show names only at rest; see index.css.
+  const labelSize = width < 640 || height < SHORT_HEIGHT ? LABEL_NARROW : LABEL_WIDE;
 
   const placedBoxes: Box[] = [];
 
@@ -187,7 +191,9 @@ export function computePlateLayout(planets: CelestialBody[], width: number, heig
       // Title block, bottom-left (approximate; matches .plate-title).
       portrait
         ? { left: 0, top: height * 0.74, right: width, bottom: height }
-        : { left: 0, top: height * 0.6, right: Math.min(width * 0.46, 640), bottom: height },
+        : height < SHORT_HEIGHT
+          ? { left: 0, top: height - 70, right: Math.min(width * 0.42, 360), bottom: height }
+          : { left: 0, top: height * 0.6, right: Math.min(width * 0.46, 640), bottom: height },
       // Credit line, bottom-right.
       { left: width - 440, top: height - 44, right: width, bottom: height },
     ],

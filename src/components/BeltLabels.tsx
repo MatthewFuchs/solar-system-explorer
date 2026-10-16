@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { Belt } from "../data/solarSystem";
 import type { BeltShape } from "../scene/plateLayout";
 
@@ -8,7 +9,7 @@ interface BeltLabelsProps {
 }
 
 /** Engraved-style names set along the stippled belts; each opens the belt's details. */
-export function BeltLabels({ shapes, onSelect, onHover }: BeltLabelsProps) {
+export const BeltLabels = memo(function BeltLabels({ shapes, onSelect, onHover }: BeltLabelsProps) {
   return (
     <>
       {shapes.map((s) => (
@@ -27,4 +28,4 @@ export function BeltLabels({ shapes, onSelect, onHover }: BeltLabelsProps) {
       ))}
     </>
   );
-}
+});

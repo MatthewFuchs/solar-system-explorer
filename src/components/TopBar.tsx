@@ -1,92 +1,67 @@
-import { useEffect, useState } from "react";
+import { memo, useCallback, useState } from "react";
+import { CreditsPanel } from "./CreditsPanel";
+import type { PanelState } from "./SidePanel";
 
-/**
- * Quiet masthead in the top-right corner, clear of the Sun: site name,
- * navigation, and texture credits.
- */
 interface TopBarProps {
   inOverview: boolean;
   onOverview: () => void;
   showSpacecraft: boolean;
   onToggleSpacecraft: () => void;
+  soundOn: boolean;
+  onToggleSound: () => void;
 }
 
-export function TopBar({ inOverview, onOverview, showSpacecraft, onToggleSpacecraft }: TopBarProps) {
-  const [creditsOpen, setCreditsOpen] = useState(false);
+/**
+ * Quiet masthead in the top-right corner, clear of the Sun: site name, toggles for
+ * spacecraft and sound, navigation, and credits.
+ */
+export const TopBar = memo(function TopBar({
+  inOverview,
+  onOverview,
+  showSpacecraft,
+  onToggleSpacecraft,
+  soundOn,
+  onToggleSound,
+}: TopBarProps) {
+  const [credits, setCredits] = useState<PanelState | "closed">("closed");
+  const closeCredits = useCallback(() => setCredits((c) => (c === "open" ? "closing" : c)), []);
+  const closedCredits = useCallback(() => setCredits("closed"), []);
 
-  useEffect(() => {
-    if (!creditsOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      // Closing the panel takes this Escape; it shouldn't also leave the planet view.
-      e.preventDefault();
-      setCreditsOpen(false);
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [creditsOpen]);
+  const toOverview = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onOverview();
+  };
 
   return (
     <>
       <header className="masthead">
-        <a
-          className="masthead__brand"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            onOverview();
-          }}
-        >
+        <a className="masthead__brand" href="#" onClick={toOverview}>
           Solar System Explorer
         </a>
         <nav className="masthead__nav" aria-label="Main">
           {inOverview && (
-            <button
-              type="button"
-              className="masthead__toggle"
-              aria-pressed={showSpacecraft}
-              onClick={onToggleSpacecraft}
-            >
+            <button type="button" className="masthead__toggle" aria-pressed={showSpacecraft} onClick={onToggleSpacecraft}>
               <span className="masthead__toggle-mark" aria-hidden="true" />
               Spacecraft
             </button>
           )}
-          <a
-            href="#"
-            aria-current={inOverview ? "page" : undefined}
-            onClick={(e) => {
-              e.preventDefault();
-              onOverview();
-            }}
-          >
+          <button type="button" className="masthead__toggle" aria-pressed={soundOn} onClick={onToggleSound}>
+            <span className="masthead__toggle-mark" aria-hidden="true" />
+            Sound
+          </button>
+          <a className="masthead__overview" href="#" aria-current={inOverview ? "page" : undefined} onClick={toOverview}>
             Overview
           </a>
           <button
             type="button"
-            aria-expanded={creditsOpen}
-            aria-controls="credits-panel"
-            onClick={() => setCreditsOpen((open) => !open)}
+            aria-expanded={credits !== "closed"}
+            onClick={() => setCredits((c) => (c === "open" ? "closing" : "open"))}
           >
             Credits
           </button>
         </nav>
       </header>
-      {creditsOpen && (
-        <aside id="credits-panel" className="credits-panel" aria-label="Credits">
-          <p>
-            Planet, Sun, and ring textures by{" "}
-            <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noreferrer">
-              Solar System Scope
-            </a>
-            , licensed{" "}
-            <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">
-              CC BY 4.0
-            </a>
-            . Planet maps resized for the web.
-          </p>
-          <p>Typefaces: Marcellus and Cormorant Garamond, via Google Fonts.</p>
-        </aside>
-      )}
+      {credits !== "closed" && <CreditsPanel state={credits} onClose={closeCredits} onClosed={closedCredits} />}
     </>
   );
-}
+});
