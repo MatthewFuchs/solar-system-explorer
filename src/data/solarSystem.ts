@@ -97,6 +97,9 @@ export interface CelestialBody {
   tagline: string;
   /** Mean distance from the Sun in astronomical units (real value, shown in labels). Omitted for the Sun. */
   distanceAU?: number;
+  /** How stretched the orbit is (real value, 0 = a circle). Sets the planet's song: how far its
+      pitch rises from the far end of its orbit to the near end, as Kepler heard it. */
+  eccentricity?: number;
   /** One or two headline measurements (real values), shown with the planet's label. */
   stats?: POIStat[];
   /** Surface points first: the planet view opens facing the first POI. */
@@ -179,6 +182,7 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.9,
     tagline: "The smallest and innermost planet.",
     distanceAU: 0.39,
+    eccentricity: 0.2056,
     stats: [
       { label: "Diameter", value: "4,879", unit: "km" },
       { label: "Day", value: "176", unit: "Earth days" },
@@ -247,6 +251,7 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.7,
     tagline: "A scorched world hidden under thick clouds.",
     distanceAU: 0.72,
+    eccentricity: 0.0068,
     stats: [
       { label: "Diameter", value: "12,104", unit: "km" },
       { label: "Day", value: "243", unit: "Earth days" },
@@ -315,6 +320,7 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.6,
     tagline: "Home.",
     distanceAU: 1.0,
+    eccentricity: 0.0167,
     stats: [
       { label: "Diameter", value: "12,742", unit: "km" },
       { label: "Day", value: "24", unit: "hours" },
@@ -405,6 +411,7 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.48,
     tagline: "The red planet, long a target for exploration.",
     distanceAU: 1.52,
+    eccentricity: 0.0934,
     stats: [
       { label: "Diameter", value: "6,779", unit: "km" },
       { label: "Day", value: "24.6", unit: "hours" },
@@ -495,6 +502,7 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.26,
     tagline: "The largest planet, a swirling giant of gas.",
     distanceAU: 5.2,
+    eccentricity: 0.0489,
     stats: [
       { label: "Diameter", value: "139,820", unit: "km" },
       { label: "Day", value: "9.9", unit: "hours" },
@@ -580,6 +588,7 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.19,
     tagline: "Famous for its sweeping ring system.",
     distanceAU: 9.58,
+    eccentricity: 0.0565,
     stats: [
       { label: "Diameter", value: "116,460", unit: "km" },
       { label: "Day", value: "10.7", unit: "hours" },
@@ -661,6 +670,7 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.13,
     tagline: "An ice giant tilted almost on its side.",
     distanceAU: 19.2,
+    eccentricity: 0.0457,
     stats: [
       { label: "Diameter", value: "50,724", unit: "km" },
       { label: "Day", value: "17.2", unit: "hours" },
@@ -727,6 +737,7 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.1,
     tagline: "The farthest planet, battered by the solar system's fastest winds.",
     distanceAU: 30.07,
+    eccentricity: 0.0113,
     stats: [
       { label: "Diameter", value: "49,244", unit: "km" },
       { label: "Day", value: "16.1", unit: "hours" },
@@ -799,6 +810,7 @@ export const DWARF_PLANETS: CelestialBody[] = [
     orbitSpeed: 0.08,
     tagline: "A small, frozen world with a heart of nitrogen ice.",
     distanceAU: 39.5,
+    eccentricity: 0.2488,
     stats: [
       { label: "Diameter", value: "2,377", unit: "km" },
       { label: "Day", value: "6.4", unit: "Earth days" },

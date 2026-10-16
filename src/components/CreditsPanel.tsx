@@ -63,7 +63,7 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
     entries: [
       {
         title: "Software",
-        detail: "React, three.js, React Three Fiber, drei, and postprocessing, all MIT licensed. Ambient sound is generated live in your browser.",
+        detail: "React, three.js, React Three Fiber, drei, and postprocessing, all MIT licensed. Ambient sound is generated live in your browser. Each world's song follows Johannes Kepler's Harmonices Mundi (1619): its pitch rises and falls with its real orbital speed.",
       },
     ],
   },

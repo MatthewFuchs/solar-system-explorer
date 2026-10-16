@@ -41,6 +41,11 @@ solar system, with planets lit by the Sun out of a violet-black abyss.
   notes surfacing every 5–12s like distant signals, with one quiet echo. Mostly
   silence. Off by default; it may only start from the toggle's click.
   Keep it calm and spacious: no low rumble, no heavy reverb.
+- **Planet songs:** with sound on, choosing a world plays its song (`sing()` in
+  `ambientSound.ts`), after Kepler's *Harmonices Mundi*: the pitch glides up and back by
+  `((1+e)/(1-e))^2` from the body's real `eccentricity` (data file), starting from a note
+  set by `distanceAU` and tuned to the ambient pentatonic. The Sun plays a low chord.
+  Silent when sound is off.
 - **Easing:** unhurried ease-out (`--ease`, `--dur: 380ms` in CSS; exponential
   damping in R3F). No bouncy or linear easing.
 - **Avoid game/HUD tropes:** no glass bars, corner brackets, reticles, crosshair
