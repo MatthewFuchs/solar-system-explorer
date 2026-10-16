@@ -71,6 +71,20 @@ site's signature moment; keep it intact.
   on their own.
 - **Leaving:** "Back to the system", Escape, the Overview link, or the browser back
   button all run the reverse transition. The URL hash is the source of truth.
+- **POI coordinates must match the textures.** Markers are placed by lat/lon on an
+  equirectangular map (left edge = -180°). Before adding or moving a POI, check its
+  spot on the texture itself; features that drift (e.g. Jupiter's Great Red Spot) use
+  the texture's position, with a comment saying so.
+
+## Point-of-interest panel
+- Clicking a marker (or "Open details") opens `PoiPanel`: an editorial sidebar on the
+  right, a bottom sheet on phones. Non-modal: closes with its X, Escape, or a click
+  on empty space; markers and Previous / Next switch its content instead.
+- Content comes from the POI in the data file: name, category, summary, `facts`,
+  optional `stats` (real values with units, shown as data labels), optional `image`
+  (licensed and credited only), and `source` for "Learn more".
+- Lines reveal with a short stagger. The panel is solid, not translucent, and uses no
+  blur. Focus moves to its heading on open and returns on close.
 
 ## Performance rules
 - **No SVG or CSS blur filters on large or full-screen layers** (`feGaussianBlur`,
