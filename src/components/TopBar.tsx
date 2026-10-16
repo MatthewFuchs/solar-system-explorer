@@ -7,9 +7,11 @@ import { useEffect, useState } from "react";
 interface TopBarProps {
   inOverview: boolean;
   onOverview: () => void;
+  showSpacecraft: boolean;
+  onToggleSpacecraft: () => void;
 }
 
-export function TopBar({ inOverview, onOverview }: TopBarProps) {
+export function TopBar({ inOverview, onOverview, showSpacecraft, onToggleSpacecraft }: TopBarProps) {
   const [creditsOpen, setCreditsOpen] = useState(false);
 
   useEffect(() => {
@@ -38,6 +40,17 @@ export function TopBar({ inOverview, onOverview }: TopBarProps) {
           Solar System Explorer
         </a>
         <nav className="masthead__nav" aria-label="Main">
+          {inOverview && (
+            <button
+              type="button"
+              className="masthead__toggle"
+              aria-pressed={showSpacecraft}
+              onClick={onToggleSpacecraft}
+            >
+              <span className="masthead__toggle-mark" aria-hidden="true" />
+              Spacecraft
+            </button>
+          )}
           <a
             href="#"
             aria-current={inOverview ? "page" : undefined}

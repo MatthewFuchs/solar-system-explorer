@@ -80,7 +80,7 @@ function OrbitArc({ p, sun, state }: { p: PlanetPlacement; sun: { x: number; y: 
   }
 
   return (
-    <g className="hud-arc" data-state={state}>
+    <g className="hud-arc" data-state={state} data-kind={p.body.kind ?? "planet"}>
       <path className="hud-arc__glow" d={arcPath(sun, R, a0, a1)} />
       <path className="hud-arc__line" d={arcPath(sun, R, a0, a1)} />
       <path className="hud-arc__ticks" d={ticks} />

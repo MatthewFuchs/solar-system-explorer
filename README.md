@@ -49,4 +49,6 @@ for the web; see `public/textures/CREDITS.md`.
 Typefaces: [Marcellus](https://fonts.google.com/specimen/Marcellus) and
 [Cormorant Garamond](https://fonts.google.com/specimen/Cormorant+Garamond), via Google Fonts.
 
+The Pluto map is NASA/JHUAPL/SwRI's New Horizons global mosaic (public domain).
+
 This is an independent project and uses no Bungie or Destiny assets.

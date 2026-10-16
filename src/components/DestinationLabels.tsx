@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { formatAU, toRoman } from "../lib/format";
+import { bodyMark, formatAU } from "../lib/format";
 import type { PlateLayout } from "../scene/plateLayout";
 import { StatList } from "./StatList";
 
@@ -20,7 +20,7 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
     <>
       {layout.planets.map((p) => {
         const hitR = Math.max(p.r + 10, 22);
-        const numeral = toRoman(p.order);
+        const numeral = bodyMark(p.body.kind, p.order);
         const au = p.body.distanceAU;
         // Room between the label node and the screen edge, so the expanded tagline never clips.
         const room = p.labelSide === 1 ? layout.width - p.connector.x2 : p.connector.x2;
@@ -47,8 +47,13 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
               <div className="dest-label__text">
                 <span className="dest-label__name">{p.body.name}</span>
                 <span className="dest-label__meta">
-                  <span className="dest-label__numeral">{numeral}</span>
-                  <span className="dest-label__rule" />
+                  {/* Dwarf planets show only their distance here; the dashed orbit sets them apart. */}
+                  {p.body.kind !== "dwarf" && (
+                    <>
+                      <span className="dest-label__numeral">{numeral}</span>
+                      <span className="dest-label__rule" />
+                    </>
+                  )}
                   {au !== undefined && <span>{formatAU(au)}</span>}
                 </span>
                 <div className="dest-label__more">
@@ -64,7 +69,7 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
               type="button"
               className="plate-hit"
               style={{ left: p.x - hitR, top: p.y - hitR, width: hitR * 2, height: hitR * 2 }}
-              aria-label={`${p.body.name}, planet ${numeral}${au !== undefined ? `, ${formatAU(au)} from the Sun` : ""}. Open planet view.`}
+              aria-label={`${p.body.name}, ${p.body.kind === "dwarf" ? "dwarf planet" : `planet ${numeral}`}${au !== undefined ? `, ${formatAU(au)} from the Sun` : ""}. Open planet view.`}
               onClick={() => onSelect(p.body.id)}
               onPointerEnter={() => onHover(p.body.id)}
               onPointerLeave={() => onHover(null)}
