@@ -10,7 +10,7 @@ import { PlateHud } from "./PlateHud";
 import { SpaceBackdrop } from "./SpaceBackdrop";
 import { TopBar } from "./TopBar";
 
-/** The solar system overview: a fixed destination map floating over deep space. */
+/** The solar system overview: a fixed astrolabe-like map, lit by the Sun out of the dark. */
 export function Overview() {
   const [ref, size] = useElementSize<HTMLDivElement>();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -39,18 +39,12 @@ export function Overview() {
             <span>The Solar</span> <span>System</span>
           </h1>
           <p>
-            Eight planets, arranged for clarity rather than to scale. Distances are in AU, the mean
-            distance from Earth to the Sun. Hover or focus a planet to inspect it.
+            Eight planets, arranged for clarity rather than to scale. Distances are in astronomical
+            units, the mean distance from Earth to the Sun. Hover over a planet to bring it into the light.
           </p>
         </div>
         {layout && <DestinationLabels layout={layout} hoveredId={hoveredId} onHover={setHoveredId} />}
       </main>
-      <div className="hud-corners" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
       <p className="plate-credit">Textures: Solar System Scope, CC BY 4.0</p>
       <PlateCursor active={hoveredId !== null} />
     </div>

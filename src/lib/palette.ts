@@ -1,11 +1,12 @@
-// Deep-space HUD palette. Mirrors the CSS custom properties in src/index.css.
+// Astrolabe palette: candlelit gold on a violet-black abyss.
+// Mirrors the CSS custom properties in src/index.css.
 export const PALETTE = {
-  /** Canvas background: near-black blue. */
-  space: "#03050B",
-  /** HUD line and text color: cool white. */
-  hud: "#D8E8FF",
-  /** Selection and active-state accent. */
-  signal: "#8FD3FF",
-  /** The Sun's warm light, used for its glow across the scene. */
-  sunlight: "#FFB24D",
+  /** Canvas background: violet-black abyss. */
+  abyss: "#06040B",
+  /** Hairlines, ticks, halos, and accents: candle gold. */
+  gold: "#D6B06A",
+  /** Type: moonlit ivory. */
+  ivory: "#ECE4D2",
+  /** The Sun's light, used for its glow across the scene. */
+  ember: "#F0A25A",
 } as const;

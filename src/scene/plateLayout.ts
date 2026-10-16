@@ -17,9 +17,9 @@ const PORTRAIT_ASPECT = 0.85;
 export const TOP_BAR_HEIGHT = 52;
 
 /** Resting label footprint (name + meta line), used to choose a side that stays clear. */
-const LABEL_WIDE = { w: 180, h: 40 };
+const LABEL_WIDE = { w: 170, h: 46 };
 // On narrow screens labels show only the name at rest (see index.css), so they are shorter.
-const LABEL_NARROW = { w: 130, h: 20 };
+const LABEL_NARROW = { w: 120, h: 24 };
 /** Horizontal run of the connector after its diagonal elbow. */
 const CONNECTOR_RUN = 22;
 
@@ -117,7 +117,7 @@ export function computePlateLayout(planets: CelestialBody[], width: number, heig
     const boxFor = ([side, lift]: Placement): Box => {
       const c = connectorFor(side, lift);
       const left = side === 1 ? c.x2 : c.x2 - labelSize.w;
-      return { left, right: left + labelSize.w, top: c.y1 - 12, bottom: c.y1 - 12 + labelSize.h };
+      return { left, right: left + labelSize.w, top: c.y1 - 11, bottom: c.y1 - 11 + labelSize.h };
     };
 
     // Try up-right, up-left, down-right, down-left; take the first that hits nothing

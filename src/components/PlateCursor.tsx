@@ -6,10 +6,10 @@ interface PlateCursorProps {
 }
 
 /** Fraction of the remaining distance covered each frame: a short, eased trail. */
-const FOLLOW = 0.38;
+const FOLLOW = 0.3;
 
 /**
- * HUD cursor for fine pointers (hidden on touch via CSS). Position is written
+ * Point-of-light cursor for fine pointers (hidden on touch via CSS). Position is written
  * straight to the DOM so following the pointer never re-renders React.
  */
 export function PlateCursor({ active }: PlateCursorProps) {

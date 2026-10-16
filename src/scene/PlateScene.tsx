@@ -26,12 +26,13 @@ export function PlateScene({ layout, hoveredId, reducedMotion }: PlateSceneProps
     <Canvas
       orthographic
       frameloop="demand"
-      dpr={[1, 2]}
+      // 1.5x keeps edges crisp on retina screens at roughly half the fill cost of 2x.
+      dpr={[1, 1.5]}
       camera={{ position: [0, 0, 1000], zoom: 1, near: 1, far: 3000 }}
       gl={{ antialias: false, powerPreference: "high-performance" }}
       style={{ pointerEvents: "none" }}
     >
-      <color attach="background" args={[PALETTE.space]} />
+      <color attach="background" args={[PALETTE.abyss]} />
       <Starfield width={width} height={height} />
       <Suspense fallback={null}>
         <SunBody x={sun.x} y={sun.y} r={sun.r} />
