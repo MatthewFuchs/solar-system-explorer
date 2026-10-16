@@ -90,6 +90,13 @@ site's signature moment; keep it intact.
   `OrbitPOI` (moons, rings, spacecraft: a screen angle and distance beside the
   planet, which holds still when one is selected). Never put a moon or spacecraft on
   the surface.
+- **Moons and spacecraft are objects.** Orbit POIs listed in `ORBITERS`
+  (`bodyAppearance.ts`) are drawn, not marked: moons as lit spheres (`Orbiters.tsx`, maps in
+  `public/textures/moons/`, radius in planet radii, `face`/`faceLat` choose the side shown),
+  spacecraft (ISS, MESSENGER) as hairline drawings. Their button covers the object; a gold
+  ring shows on hover or selection. `fitOrbitAngle` turns an object along its orbit until it
+  fits on screen (clear of the text column on short landscape, `featureKeepOut`). Rings and
+  the corona keep plain markers.
 - **POI coordinates must match the textures.** Markers are placed by lat/lon on an
   equirectangular map (left edge = -180°). Before adding or moving a POI, check its
   spot on the texture itself; features that drift (e.g. Jupiter's Great Red Spot) use

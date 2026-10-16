@@ -271,6 +271,17 @@ export function computeFeaturePlacement(width: number, height: number, reach: nu
   return { x: width * 0.665, y: height * 0.52, r: Math.min(height * 0.34, width * 0.24) / ringScale };
 }
 
+/**
+ * In the planet view, the x that moons and spacecraft keep right of: the text column's right
+ * edge where it is a scrolling panel beside the planet (short landscape screens; mirrors
+ * .feature__column in index.css). Elsewhere its text is narrow enough not to need one.
+ */
+export function featureKeepOut(width: number, height: number) {
+  if (width / height < PORTRAIT_ASPECT || height >= SHORT_HEIGHT) return 0;
+  const inset = Math.min(24, Math.max(12, width * 0.018));
+  return inset + Math.min(72, Math.max(18, width * 0.04)) + Math.min(width * 0.42, 420) + 12;
+}
+
 const DEG = Math.PI / 180;
 
 export interface SpacecraftSpot {
