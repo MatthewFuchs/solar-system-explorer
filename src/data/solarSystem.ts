@@ -83,8 +83,8 @@ export function isSurfacePOI(poi: POI): poi is SurfacePOI {
 export interface CelestialBody {
   id: string;
   name: string;
-  /** Dwarf planets get a destination but no Roman numeral. Defaults to planet. */
-  kind?: "planet" | "dwarf";
+  /** The Sun is a star; dwarf planets get a destination but no Roman numeral. Defaults to planet. */
+  kind?: "star" | "planet" | "dwarf";
   /** Hex color used for the stylized sphere/material. */
   color: string;
   /** Stylized display radius in scene units (not to scale). */
@@ -108,6 +108,7 @@ const NASA = (url: string): POISource => ({ label: "NASA", url });
 export const SUN: CelestialBody = {
   id: "sun",
   name: "Sun",
+  kind: "star",
   color: "#ffd84a",
   displayRadius: 4,
   orbitDistance: 0,
@@ -871,8 +872,11 @@ export const DWARF_PLANETS: CelestialBody[] = [
   },
 ];
 
-/** Every body with a planet view: the eight planets, then dwarf planets. */
+/** Bodies placed along the overview's diagonal: the eight planets, then dwarf planets. */
 export const DESTINATIONS: CelestialBody[] = [...PLANETS, ...DWARF_PLANETS];
+
+/** Every body with its own view, including the Sun. */
+export const VIEWABLE: CelestialBody[] = [SUN, ...DESTINATIONS];
 
 /**
  * Where a spacecraft sits in the overview, relative to a body (or the Sun).

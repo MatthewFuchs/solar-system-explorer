@@ -111,6 +111,8 @@ export const sunShader = {
     uniform sampler2D uMap;
     uniform float uIntensity;
     uniform float uFade;
+    uniform float uLight;
+    uniform float uDim;
     varying vec2 vUv;
     varying vec3 vViewNormal;
     void main() {
@@ -118,6 +120,7 @@ export const sunShader = {
       vec3 tex = texture2D(uMap, vUv).rgb;
       float limb = mix(0.5, 1.0, pow(mu, 0.45));
       vec3 col = tex * limb * uIntensity + vec3(1.0, 0.82, 0.55) * pow(mu, 2.0) * 0.9;
+      col *= (1.0 + uLight * 0.2) * (1.0 - uDim * 0.35);
       gl_FragColor = vec4(col * (1.0 - uFade), 1.0);
       #include <colorspace_fragment>
     }

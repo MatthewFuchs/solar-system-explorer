@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BELTS, DESTINATIONS, SPACECRAFT, type Belt, type Spacecraft } from "../data/solarSystem";
+import { BELTS, DESTINATIONS, SPACECRAFT, SUN, VIEWABLE, type Belt, type Spacecraft } from "../data/solarSystem";
 import { useElementSize } from "../hooks/useElementSize";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { reachFactor } from "../scene/bodyAppearance";
@@ -45,7 +45,7 @@ function entrancePlayed() {
 /** The destination named in the URL hash (e.g. #mars), if it exists. */
 function planetFromHash(): string | null {
   const id = decodeURIComponent(window.location.hash.slice(1));
-  return DESTINATIONS.some((p) => p.id === id) ? id : null;
+  return VIEWABLE.some((p) => p.id === id) ? id : null;
 }
 
 /** Something in the overview itself (not on a planet) whose details are open. */
@@ -80,7 +80,7 @@ export function Overview() {
   const turnMs = reducedMotion ? 0 : TURN_MS;
 
   const layout = useMemo(
-    () => (size.width > 0 ? computePlateLayout(DESTINATIONS, size.width, size.height) : null),
+    () => (size.width > 0 ? computePlateLayout(SUN, DESTINATIONS, size.width, size.height) : null),
     [size.width, size.height],
   );
   const beltShapes = useMemo(() => (layout ? placeBelts(layout, BELTS) : []), [layout]);
@@ -90,7 +90,7 @@ export function Overview() {
     [layout, beltShapes],
   );
 
-  const focus = layout?.planets.find((p) => p.body.id === focusId) ?? null;
+  const focus = !layout || !focusId ? null : focusId === layout.star.body.id ? layout.star : (layout.planets.find((p) => p.body.id === focusId) ?? null);
   const zoomFrame = useMemo<ZoomFrame | null>(() => {
     if (!layout || !focus) return null;
     return {
@@ -232,6 +232,7 @@ export function Overview() {
       data-phase={phase}
       data-overview={overviewShown ? "shown" : "hidden"}
       data-entrance={entrance}
+      data-focus={focusId ?? undefined}
     >
       {layout && (
         <>

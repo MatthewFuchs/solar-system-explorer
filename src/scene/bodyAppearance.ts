@@ -26,9 +26,10 @@ export interface BodyAppearance {
   ring?: RingAppearance;
 }
 
-export const SUN_TEXTURE = textureUrl("sun.webp");
 
 const APPEARANCE: Record<string, BodyAppearance> = {
+  // The Sun is emissive (no atmosphere or rim) and holds still; one texture serves both sizes.
+  sun: { texture: textureUrl("sun.webp"), textureHd: textureUrl("sun.webp"), atmosphere: "#FFB24D", rim: 0, spin: 0.8, spinSpeed: 0, tilt: 0 },
   mercury: { texture: textureUrl("mercury.webp"), textureHd: textureUrl("2k/mercury.webp"), atmosphere: "#B8C2CC", rim: 0.18, spin: 0.6, spinSpeed: 0.015, tilt: 0.02 },
   venus: { texture: textureUrl("venus.webp"), textureHd: textureUrl("2k/venus.webp"), atmosphere: "#FFE2A8", rim: 0.75, spin: 0.2, spinSpeed: -0.012, tilt: 0.05 },
   earth: { texture: textureUrl("earth.webp"), textureHd: textureUrl("2k/earth.webp"), atmosphere: "#6FB2FF", rim: 0.95, spin: 0.9, spinSpeed: 0.05, tilt: 0.41 },

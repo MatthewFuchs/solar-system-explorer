@@ -1934,8 +1934,7 @@ body,
 
 /* ---------- Hovered planet label: readable over anything ---------- */
 
-/* The active label rises above its neighbors and sits in a soft pool of darkness:
-   a feathered backing (background plus a same-color shadow), not a hard card. */
+/* The active label rises above its neighbors. */
 .dest-label[data-state='active'] {
   z-index: 3;
 }
@@ -1945,10 +1944,7 @@ body,
   transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
-.dest-label[data-state='active'] .dest-label__text {
-  background-color: rgba(6, 4, 11, 0.82);
-  box-shadow: 0 0 44px 16px rgba(6, 4, 11, 0.82);
-}
+/* (Readability on hover comes from the letter-hugging halo below, not a backing box.) */
 
 /* Give the tagline and stats a comfortable measure wherever the label sits. */
 .dest-label__tagline {
@@ -1963,5 +1959,58 @@ body,
   .plate,
   .plate * {
     cursor: none !important;
+  }
+}
+
+/* ---------- Label halos ---------- */
+
+/* Readability over planets, other labels, and the Sun's glow comes from a halo that hugs
+   the letters, like ink bleeding into paper, rather than a box behind them. It is a warm
+   near-black, so near the Sun it deepens the glow instead of punching a hole in it. */
+:root {
+  --halo: rgba(12, 7, 6, 0.92);
+  --halo-soft: rgba(12, 7, 6, 0.6);
+}
+
+.dest-label[data-state='active'] :is(.dest-label__name, .dest-label__meta, .dest-label__tagline, .stats) {
+  text-shadow:
+    0 0 2px var(--halo),
+    0 0 7px var(--halo),
+    0 0 16px var(--halo),
+    0 0 28px var(--halo-soft);
+}
+
+/* The Sun's label always sits on its glow, so it carries a lighter halo even at rest. */
+.dest-label[data-planet='sun'] :is(.dest-label__name, .dest-label__meta) {
+  text-shadow:
+    0 0 2px var(--halo),
+    0 0 9px var(--halo),
+    0 0 20px var(--halo-soft);
+}
+
+/* ---------- The Sun's own view ---------- */
+
+/* The corner glow belongs to the overview's Sun; in the Sun's view it would sit in the wrong place. */
+.plate[data-focus='sun'][data-overview='hidden'] .space-sunglow {
+  opacity: 0;
+}
+
+/* A soft dark gradient behind the text column, so it reads against the Sun's light. */
+.plate[data-focus='sun'] .feature::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(6, 4, 11, 0.86) 0%, rgba(6, 4, 11, 0.62) 32%, transparent 58%);
+  pointer-events: none;
+  animation: feature-in 900ms var(--ease) 500ms both;
+}
+
+.plate[data-focus='sun'] .feature[data-phase='leaving']::before {
+  animation: feature-out 280ms var(--ease) both;
+}
+
+@media (max-aspect-ratio: 17/20) {
+  .plate[data-focus='sun'] .feature::before {
+    background: linear-gradient(0deg, rgba(6, 4, 11, 0.9) 0%, rgba(6, 4, 11, 0.7) 40%, transparent 62%);
   }
 }

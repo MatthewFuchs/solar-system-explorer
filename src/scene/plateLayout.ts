@@ -84,10 +84,17 @@ export interface PlateLayout {
   /** Inset of the HUD corner marks from the viewport edge (matches --hud-inset in CSS). */
   inset: number;
   sun: SunPlacement;
+  /** The Sun as a selectable body: its label, leader, and hit area (it has no orbit arc). */
+  star: PlanetPlacement;
   planets: PlanetPlacement[];
 }
 
-export function computePlateLayout(planets: CelestialBody[], width: number, height: number): PlateLayout {
+export function computePlateLayout(
+  star: CelestialBody,
+  planets: CelestialBody[],
+  width: number,
+  height: number,
+): PlateLayout {
   const unit = Math.min(width, height);
   const sunR = unit * 0.26;
   const sx = -sunR * 0.12;
@@ -128,6 +135,39 @@ export function computePlateLayout(planets: CelestialBody[], width: number, heig
   const labelSize = width < 640 || height < SHORT_HEIGHT ? LABEL_NARROW : LABEL_WIDE;
 
   const placedBoxes: Box[] = [];
+
+  // The Sun's label sits just past its visible edge, toward the planets, with a short
+  // leader dropping from the rim. Placed first, so planet labels keep clear of it.
+  const rim = { x: sx + sunR * Math.SQRT1_2, y: sy + sunR * Math.SQRT1_2 };
+  const starRise = Math.max(18, unit * 0.035);
+  const starConnector: Connector = {
+    x0: rim.x,
+    y0: rim.y,
+    x1: rim.x + starRise,
+    y1: rim.y + starRise,
+    x2: rim.x + starRise + CONNECTOR_RUN,
+  };
+  const starLabelBox: Box = {
+    left: starConnector.x2,
+    right: starConnector.x2 + labelSize.w,
+    top: starConnector.y1 - 11,
+    bottom: starConnector.y1 - 11 + labelSize.h,
+  };
+  placedBoxes.push(starLabelBox);
+  const starPlacement: PlanetPlacement = {
+    body: star,
+    order: 0,
+    x: sx,
+    y: sy,
+    r: sunR,
+    reach: sunR,
+    labelBox: starLabelBox,
+    orbitR: 0,
+    angle: diagonal,
+    arcSpan: 0,
+    labelSide: 1,
+    connector: starConnector,
+  };
 
   const placed = base.map((p, i): PlanetPlacement => {
     const connectorFor = (side: 1 | -1, lift: 1 | -1): Connector => {
@@ -199,6 +239,7 @@ export function computePlateLayout(planets: CelestialBody[], width: number, heig
     ],
     inset: clamp(width * 0.018, 12, 24),
     sun: { x: sx, y: sy, r: sunR },
+    star: starPlacement,
     planets: placed,
   };
 }
@@ -259,6 +300,7 @@ function crowding(box: Box, layout: PlateLayout, others: Box[]) {
     if (boxesOverlap(box, p.labelBox)) hits += 1;
   }
   if (circleHitsBox(layout.sun.x, layout.sun.y, layout.sun.r + 4, box)) hits += 1;
+  if (boxesOverlap(box, layout.star.labelBox)) hits += 1;
   for (const o of [...layout.reserved, ...others]) if (boxesOverlap(box, o)) hits += 1;
   return hits;
 }

@@ -164,7 +164,7 @@ export function PlanetFeature({
       {panel !== "closed" && poi && (
         <PoiPanel
           poi={poi}
-          eyebrow={{ mark: planet.kind === "dwarf" ? undefined : numeral, label: planet.name }}
+          eyebrow={{ mark: planet.kind === "dwarf" || planet.kind === "star" ? undefined : numeral, label: planet.name }}
           state={panel}
           onClose={closePanel}
           onClosed={closedPanel}
