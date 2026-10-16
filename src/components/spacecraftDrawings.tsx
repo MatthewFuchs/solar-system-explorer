@@ -71,6 +71,31 @@ const DRAWINGS: Record<SpacecraftDrawing, ReactElement> = {
       <path d="M8.2 4.6 7.6 6.3M11.2 5.8 10.6 7.5" className="sc-faint" />
     </>
   ),
+  // The long truss with its four pairs of solar wings, and the pressurized modules
+  // crossing it at the center.
+  iss: (
+    <>
+      <path d="M-17.5 0H17.5" />
+      <path d="M-17 -11.5h3v10h-3ZM-17 1.5h3v10h-3ZM-12.5 -11.5h3v10h-3ZM-12.5 1.5h3v10h-3ZM9.5 -11.5h3v10h-3ZM9.5 1.5h3v10h-3ZM14 -11.5h3v10h-3ZM14 1.5h3v10h-3Z" />
+      <path d="M-17 -6.5h3M-17 6.5h3M-12.5 -6.5h3M-12.5 6.5h3M9.5 -6.5h3M9.5 6.5h3M14 -6.5h3M14 6.5h3" className="sc-faint" />
+      <rect x="-1.6" y="-8.5" width="3.2" height="17" />
+      <path d="M-4.6 -5.5h3M1.6 -5.5h3M-4.6 4.5h3M1.6 4.5h3" />
+      <path d="M-4.5 1.5-6.8 5.5M4.5 1.5 6.8 5.5" className="sc-faint" />
+    </>
+  ),
+  // The curved sunshade in front of the body, two small solar panels on arms, and the
+  // magnetometer boom trailing behind.
+  messenger: (
+    <>
+      <path d="M-9 -9.5Q0 -12.5 9 -9.5V-7Q0 -10 -9 -7Z" />
+      <rect x="-5" y="-6" width="10" height="9" />
+      <path d="M-5 -1.5H-8M5 -1.5H8" />
+      <path d="M-15 -4h7v5h-7ZM8 -4h7v5h-7Z" />
+      <path d="M-12.7 -4V1M-10.3 -4V1M10.3 -4V1M12.7 -4V1" className="sc-faint" />
+      <path d="M0 3V14" className="sc-faint" />
+      <circle cx="0" cy="15" r="1" />
+    </>
+  ),
 };
 
 export function SpacecraftDrawingSvg({ drawing, size = 40 }: { drawing: SpacecraftDrawing; size?: number }) {

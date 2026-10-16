@@ -35,7 +35,7 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
     heading: "Textures",
     entries: [
       {
-        title: "Sun, planets, and Saturn's rings",
+        title: "Sun, planets, Saturn's rings, and the Moon",
         detail: "Solar System Scope, licensed CC BY 4.0. Resized and re-encoded for the web.",
         link: { label: "Solar System Scope", url: "https://www.solarsystemscope.com/textures/" },
       },
@@ -44,6 +44,12 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
         detail:
           "New Horizons global color mosaic by NASA, Johns Hopkins APL, and Southwest Research Institute. Public domain. Shifted to this site's longitude convention; the unimaged south is shaded, not invented.",
         link: { label: "Wikimedia Commons", url: "https://commons.wikimedia.org/wiki/File:Pluto_color_mapmosaic.jpg" },
+      },
+      {
+        title: "Moons",
+        detail:
+          "Io, Europa, and Ganymede from Voyager and Galileo (NASA/JPL/USGS); Enceladus from Cassini (NASA/JPL-Caltech/SSI/LPI); Miranda and Triton from Voyager (NASA/JPL/USGS); Charon from New Horizons (NASA/JHUAPL/SwRI). All public domain, via Wikimedia Commons. Resized and re-encoded; unimaged regions are shaded, not invented. Titan is drawn as its orange haze.",
+        link: { label: "Wikimedia Commons", url: "https://commons.wikimedia.org/" },
       },
     ],
   },

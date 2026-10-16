@@ -1,5 +1,6 @@
 // How each body is rendered. This is presentation, not content: names, facts, and
 // taglines stay in src/data/solarSystem.ts.
+import type { SpacecraftDrawing } from "../data/solarSystem";
 import { textureUrl } from "./textures";
 
 export interface RingAppearance {
@@ -52,6 +53,57 @@ const APPEARANCE: Record<string, BodyAppearance> = {
 };
 
 const FALLBACK: BodyAppearance = APPEARANCE.mercury;
+
+/**
+ * Orbit POIs that are drawn as objects in the planet view, keyed by POI id. Moons are lit
+ * spheres; spacecraft are hairline drawings. Rings and the corona aren't listed: they are
+ * part of the body's own visuals, so they keep a plain marker.
+ */
+export type OrbiterAppearance =
+  | {
+      kind: "moon";
+      /** Equirectangular map; omit for a moon whose haze hides its surface (Titan). */
+      texture?: string;
+      /** Flat color used when there is no map. */
+      color?: string;
+      /** Stylized radius, in the planet's radii (not to scale). */
+      radius: number;
+      /** Longitude (on the map, left edge = -180°) turned toward the viewer. */
+      face: number;
+      /** Latitude tilted toward the viewer; Voyager saw only the south of Miranda and Triton. */
+      faceLat?: number;
+      atmosphere?: string;
+      rim?: number;
+    }
+  | {
+      kind: "craft";
+      drawing: SpacecraftDrawing;
+      /** Drawing size in CSS pixels. */
+      size: number;
+    };
+
+const moonMap = (file: string) => textureUrl(`moons/${file}`);
+
+const ORBITERS: Record<string, OrbiterAppearance> = {
+  "mercury-messenger": { kind: "craft", drawing: "messenger", size: 46 },
+  "earth-iss": { kind: "craft", drawing: "iss", size: 52 },
+  // Tranquility Base is on the Moon, so the Moon itself is what you click.
+  "earth-apollo-11": { kind: "moon", texture: moonMap("moon.webp"), radius: 0.17, face: 10 },
+  "jupiter-io": { kind: "moon", texture: moonMap("io.webp"), radius: 0.075, face: -77 },
+  "jupiter-europa": { kind: "moon", texture: moonMap("europa.webp"), radius: 0.065, face: 30 },
+  "jupiter-ganymede": { kind: "moon", texture: moonMap("ganymede.webp"), radius: 0.09, face: -30 },
+  // Titan's thick orange haze hides its surface from the outside, so it's drawn as haze.
+  "saturn-titan": { kind: "moon", color: "#D9A44E", radius: 0.1, face: 0, atmosphere: "#F2B65E", rim: 0.9 },
+  "saturn-enceladus": { kind: "moon", texture: moonMap("enceladus.webp"), radius: 0.06, face: 0, faceLat: -20 },
+  "uranus-miranda": { kind: "moon", texture: moonMap("miranda.webp"), radius: 0.07, face: 0, faceLat: -45 },
+  "neptune-triton": { kind: "moon", texture: moonMap("triton.webp"), radius: 0.11, face: 0, faceLat: -55 },
+  // Charon is half Pluto's width, the largest moon relative to its world (drawn a little smaller to fit).
+  "pluto-charon": { kind: "moon", texture: moonMap("charon.webp"), radius: 0.32, face: -30, faceLat: 20 },
+};
+
+export function orbiterFor(poiId: string): OrbiterAppearance | undefined {
+  return ORBITERS[poiId];
+}
 
 export function appearanceFor(id: string): BodyAppearance {
   return APPEARANCE[id] ?? FALLBACK;

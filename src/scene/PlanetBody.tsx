@@ -16,13 +16,15 @@ import {
   type Texture,
 } from "three";
 import { isSurfacePOI, type POI } from "../data/solarSystem";
-import type { BodyAppearance } from "./bodyAppearance";
+import { orbiterFor, type BodyAppearance } from "./bodyAppearance";
+import { featureKeepOut } from "./plateLayout";
 import { atmosphereShader, planetShader, ringShader, sunShader } from "./shaders";
 import { configureTextures } from "./textureSetup";
 import { setUniform } from "./uniforms";
 import {
   easeInOutCubic,
   faceRotation,
+  fitOrbitAngle,
   lerp,
   nearestAngle,
   smoothstep,
@@ -42,6 +44,8 @@ const SHELL_SCALE_CLOSE = 1.028;
 const RING_VIEW_TILT = 0.38;
 /** Markers fade out as they approach the limb and are hidden on the far side. */
 const MARKER_LIMB = [0.12, 0.38] as const;
+/** Room an orbit object's name needs beside it before it moves to the other side. */
+const LABEL_ROOM = 210;
 
 /** The Sun's brightness: values above 1 feed the bloom. Eased down up close so its surface reads. */
 const SUN_GLOW = 3.0;
@@ -299,10 +303,20 @@ export function PlanetBody({
           y = halfH - scratch.y;
           alpha = arrived * smoothstep(MARKER_LIMB[0], MARKER_LIMB[1], scratch.z / me.r);
         } else {
-          const a = (poi.orbit.angle * Math.PI) / 180;
+          // Turned along its orbit if needed to stay on screen (Orbiters places moons the same way).
+          const look = orbiterFor(poi.id);
+          const endR = zoomFrame?.to.r ?? me.r;
+          const objR = look?.kind === "moon" ? look.radius * endR : look?.kind === "craft" ? look.size / 2 : 18;
+          const angle = zoomFrame ? fitOrbitAngle(poi.orbit.angle, poi.orbit.distance, objR, zoomFrame.to, size.width, size.height, featureKeepOut(size.width, size.height)) : poi.orbit.angle;
+          const a = (angle * Math.PI) / 180;
           x = me.x + Math.cos(a) * poi.orbit.distance * me.r;
           y = me.y - Math.sin(a) * poi.orbit.distance * me.r;
           alpha = arrived;
+          // A moon's button covers the moon, which grows with the planet.
+          if (look?.kind === "moon") el.style.setProperty("--obj-r", `${(look.radius * me.r).toFixed(1)}px`);
+          // Its name sits to the right, or to the left when the right edge is too close.
+          const side = x + objR + LABEL_ROOM > size.width ? "left" : "right";
+          if (look && el.dataset.side !== side) el.dataset.side = side;
         }
         const transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
         if (el.style.transform !== transform) el.style.transform = transform;

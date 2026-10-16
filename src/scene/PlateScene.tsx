@@ -6,6 +6,7 @@ import { BeltField } from "./BeltField";
 import { PALETTE } from "../lib/palette";
 import { appearanceFor } from "./bodyAppearance";
 import type { BeltShape, PlateLayout } from "./plateLayout";
+import { Orbiters } from "./Orbiters";
 import { PlanetBody } from "./PlanetBody";
 import { Starfield } from "./Starfield";
 import type { Timeline, ZoomFrame } from "./viewTransition";
@@ -46,6 +47,7 @@ export function PlateScene({
 }: PlateSceneProps) {
   const { width, height, sun, star, planets } = layout;
   const sunFocus = focusId === star.body.id;
+  const focusPlanet = planets.find((p) => p.body.id === focusId);
 
   return (
     <Canvas
@@ -102,6 +104,18 @@ export function PlateScene({
         })}
         <SceneReady onReady={onReady} />
       </Suspense>
+      {/* The open planet's moons; they load on their own, so they never hold up the scene. */}
+      {focusPlanet && (
+        <Orbiters
+          key={focusPlanet.body.id}
+          base={{ x: focusPlanet.x, y: focusPlanet.y, r: focusPlanet.r }}
+          sun={sun}
+          pois={focusPlanet.body.pois}
+          zoom={zoom}
+          zoomFrame={zoomFrame}
+          selectedId={facing?.id ?? null}
+        />
+      )}
       {/* Threshold 1 means only the over-bright Sun blooms. */}
       <EffectComposer multisampling={4}>
         <Bloom mipmapBlur luminanceThreshold={1} luminanceSmoothing={0.4} intensity={2.4} radius={0.88} />

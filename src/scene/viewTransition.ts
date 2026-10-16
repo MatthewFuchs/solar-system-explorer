@@ -96,6 +96,39 @@ export function zoomPlacement(base: Placement, frame: ZoomFrame | null, e: numbe
   return { x: cx + (base.x - frame.from.x) * scale, y: cy + (base.y - frame.from.y) * scale, r: base.r * scale };
 }
 
+/** Keep orbit objects this far inside the screen; the top clears the masthead, the bottom the credit line. */
+const FIT_MARGIN = { side: 10, top: 56, bottom: 30 };
+
+/**
+ * The screen angle (degrees) for an orbit object of radius `objR` px around the body as it
+ * finally sits (`to`): its own angle if the object fits on screen there (and right of
+ * `minX`, the text column's edge where it needs one), otherwise the nearest angle along the
+ * same orbit that does, or failing that the one that spills least. Computed from the zoom's
+ * end placement, so it holds still through the zoom.
+ */
+export function fitOrbitAngle(angle: number, distance: number, objR: number, to: Placement, width: number, height: number, minX = 0) {
+  const left = Math.max(FIT_MARGIN.side, minX);
+  let best = angle;
+  let bestSpill = Infinity;
+  for (let step = 0; step <= 72; step++) {
+    const delta = step === 0 ? 0 : Math.ceil(step / 2) * 5 * (step % 2 ? 1 : -1);
+    const a = (angle + delta) * DEG;
+    const x = to.x + Math.cos(a) * distance * to.r;
+    const y = to.y - Math.sin(a) * distance * to.r;
+    const spill =
+      Math.max(0, left - (x - objR)) +
+      Math.max(0, x + objR - (width - FIT_MARGIN.side)) +
+      Math.max(0, FIT_MARGIN.top - (y - objR)) +
+      Math.max(0, y + objR - (height - FIT_MARGIN.bottom));
+    if (spill === 0) return angle + delta;
+    if (spill < bestSpill) {
+      bestSpill = spill;
+      best = angle + delta;
+    }
+  }
+  return best;
+}
+
 /**
  * Unit vector on a sphere for a latitude/longitude, in three.js SphereGeometry
  * space with an equirectangular map whose left edge is longitude -180.

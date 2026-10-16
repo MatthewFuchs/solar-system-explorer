@@ -869,7 +869,7 @@ export const DWARF_PLANETS: CelestialBody[] = [
       {
         id: "pluto-charon",
         name: "Charon",
-        orbit: { angle: 120, distance: 1.6 },
+        orbit: { angle: 215, distance: 1.55 },
         category: "moon",
         summary: "Pluto's companion, so large that the two circle a point in space between them.",
         facts: [
@@ -903,7 +903,7 @@ export interface OverviewPlacement {
 }
 
 /** Line illustrations live in src/components/spacecraftDrawings.tsx, keyed by these names. */
-export type SpacecraftDrawing = "voyager" | "jwst" | "juno" | "parker" | "new-horizons";
+export type SpacecraftDrawing = "voyager" | "jwst" | "juno" | "parker" | "new-horizons" | "iss" | "messenger";
 
 export interface Spacecraft extends POIContent {
   launchYear: number;
