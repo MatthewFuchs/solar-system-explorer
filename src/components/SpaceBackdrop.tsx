@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import type { PlateLayout } from "../scene/plateLayout";
 
 interface SpaceBackdropProps {
@@ -9,7 +9,7 @@ interface SpaceBackdropProps {
  * Light layers composited over the 3D canvas with screen blending: faint nebula
  * haze, the Sun's glow across the scene, and a vignette that keeps the edges in shadow. Static.
  */
-export function SpaceBackdrop({ layout }: SpaceBackdropProps) {
+export const SpaceBackdrop = memo(function SpaceBackdrop({ layout }: SpaceBackdropProps) {
   const { sun } = layout;
   const at = `${sun.x}px ${sun.y}px`;
   const glow: CSSProperties = {
@@ -26,4 +26,4 @@ export function SpaceBackdrop({ layout }: SpaceBackdropProps) {
       <div className="space-vignette" aria-hidden="true" />
     </>
   );
-}
+});

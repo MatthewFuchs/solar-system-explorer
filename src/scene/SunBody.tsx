@@ -4,7 +4,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import type { Mesh, ShaderMaterial, Texture } from "three";
 import { SUN_TEXTURE } from "./bodyAppearance";
 import { sunShader } from "./shaders";
-import { configureTextures } from "./textures";
+import { configureTextures } from "./textureSetup";
 import { setUniform } from "./uniforms";
 import { smoothstep, zoomPlacement, type Placement, type Timeline, type ZoomFrame } from "./viewTransition";
 

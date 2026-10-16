@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { PlateLayout, PlanetPlacement } from "../scene/plateLayout";
 
 interface PlateHudProps {
@@ -45,7 +46,7 @@ export function PlateHud({ layout, hoveredId }: PlateHudProps) {
       {planets.map((p) => {
         const c = p.connector;
         return (
-          <g key={p.body.id} className="hud-leader" data-state={stateOf(p.body.id)}>
+          <g key={p.body.id} className="hud-leader" data-state={stateOf(p.body.id)} style={{ "--i": p.order } as CSSProperties}>
             <polyline points={`${c.x0},${c.y0} ${c.x1},${c.y1} ${c.x2},${c.y1}`} />
             <circle cx={c.x0} cy={c.y0} r={1.4} />
           </g>
@@ -80,9 +81,15 @@ function OrbitArc({ p, sun, state }: { p: PlanetPlacement; sun: { x: number; y: 
   }
 
   return (
-    <g className="hud-arc" data-state={state} data-kind={p.body.kind ?? "planet"}>
+    <g
+      className="hud-arc"
+      data-state={state}
+      data-kind={p.body.kind ?? "planet"}
+      style={{ "--i": p.order } as CSSProperties}
+    >
       <path className="hud-arc__glow" d={arcPath(sun, R, a0, a1)} />
-      <path className="hud-arc__line" d={arcPath(sun, R, a0, a1)} />
+      {/* pathLength lets the entrance draw the line in; dashed (dwarf) orbits fade instead. */}
+      <path className="hud-arc__line" d={arcPath(sun, R, a0, a1)} pathLength={p.body.kind === "dwarf" ? undefined : 1} />
       <path className="hud-arc__ticks" d={ticks} />
       <circle className="hud-arc__end" cx={sun.x + R * Math.cos(a0)} cy={sun.y + R * Math.sin(a0)} r={2} />
       <circle className="hud-arc__end" cx={sun.x + R * Math.cos(a1)} cy={sun.y + R * Math.sin(a1)} r={2} />

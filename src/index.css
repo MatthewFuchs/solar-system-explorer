@@ -1566,3 +1566,368 @@ body,
     font-size: 13px;
   }
 }
+
+/* ---------- Entrance (first load, once per session) ---------- */
+
+/* Until the scene is ready, show only the abyss. */
+.plate[data-entrance='waiting'] > :not(.plate-cursor) {
+  visibility: hidden;
+}
+
+@keyframes ent-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ent-rise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes ent-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 1. Light: the scene and the Sun's glow come up out of the dark. */
+.plate[data-entrance='playing'] .plate-canvas {
+  animation: ent-fade 1300ms var(--ease) both;
+}
+
+.plate[data-entrance='playing'] :is(.space-haze, .space-sunglow, .space-vignette) {
+  animation: ent-fade 1600ms var(--ease) both;
+}
+
+/* 2. The engraving: orbits draw outward from the Sun, then their scales appear. */
+.plate[data-entrance='playing'] .hud-arc__line {
+  stroke-dasharray: 1;
+  animation: ent-draw 1100ms var(--ease) both;
+  animation-delay: calc(250ms + var(--i) * 75ms);
+}
+
+.plate[data-entrance='playing'] .hud-arc[data-kind='dwarf'] .hud-arc__line {
+  stroke-dasharray: 2 5;
+  animation-name: ent-fade;
+}
+
+.plate[data-entrance='playing'] :is(.hud-arc__ticks, .hud-arc__end, .hud-arc__glow) {
+  animation: ent-fade 700ms var(--ease) both;
+  animation-delay: calc(800ms + var(--i) * 75ms);
+}
+
+/* 3. Names, in order from the Sun, then the belts and spacecraft. */
+.plate[data-entrance='playing'] .hud-leader {
+  animation: ent-fade 600ms var(--ease) both;
+  animation-delay: calc(1000ms + var(--i) * 70ms);
+}
+
+.plate[data-entrance='playing'] .dest-label {
+  animation: ent-rise 700ms var(--ease) both;
+  animation-delay: calc(1050ms + var(--i) * 70ms);
+}
+
+.plate[data-entrance='playing'] .belt-label {
+  animation: ent-fade 800ms var(--ease) both;
+  animation-delay: 1400ms;
+}
+
+.plate[data-entrance='playing'] .craft {
+  animation: ent-fade 800ms var(--ease) both;
+  animation-delay: calc(1500ms + var(--i) * 70ms);
+}
+
+/* 4. The title, and finally the masthead. */
+.plate[data-entrance='playing'] .plate-title h1 span {
+  animation: ent-rise 900ms var(--ease) both;
+  animation-delay: 1250ms;
+}
+
+.plate[data-entrance='playing'] .plate-title h1 span:last-child {
+  animation-delay: 1400ms;
+}
+
+.plate[data-entrance='playing'] .plate-title p {
+  animation: ent-fade 900ms var(--ease) both;
+  animation-delay: 1650ms;
+}
+
+.plate[data-entrance='playing'] :is(.masthead, .plate-credit) {
+  animation: ent-fade 800ms var(--ease) both;
+  animation-delay: 1750ms;
+}
+
+/* Reduced motion: no sequence, a single plain fade. (Outranks the global rule below.) */
+.plate[data-entrance='fade'] > :not(.plate-cursor) {
+  animation: ent-fade 500ms linear both !important;
+  animation-delay: 0ms !important;
+}
+
+/* ---------- Reduced motion: dissolves instead of zooms and slides ---------- */
+
+/* Covers the instant change of view when reduced motion replaces the zoom. */
+.view-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  background: var(--abyss);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms linear;
+}
+
+.view-veil[data-on='true'] {
+  opacity: 1;
+}
+
+@keyframes rm-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rm-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-veil {
+    transition-duration: 220ms !important;
+  }
+
+  .poi-panel,
+  .feature__rest {
+    animation-name: rm-fade-in !important;
+    animation-duration: 240ms !important;
+    animation-delay: 0ms !important;
+  }
+
+  .poi-panel__line {
+    animation: none !important;
+  }
+
+  .poi-panel[data-state='closing'],
+  .feature[data-phase='leaving'] .feature__rest,
+  .feature[data-phase='leaving'] .poi-panel {
+    animation-name: rm-fade-out !important;
+  }
+}
+
+/* ---------- Credits ---------- */
+
+.credits__section {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--gold-faint);
+}
+
+.credits__heading {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.credits__entry + .credits__entry {
+  margin-top: 18px;
+}
+
+.credits__title {
+  margin: 0;
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--ivory);
+}
+
+.credits__detail {
+  margin: 4px 0 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ivory-soft);
+}
+
+.credits__link {
+  display: inline-block;
+  margin-top: 6px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--gold-faint);
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--gold);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.credits__link:hover {
+  color: var(--ivory);
+  border-color: var(--gold);
+}
+
+.credits__link:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 4px;
+}
+
+/* Phones: the Overview link is redundant with Back and the title; it makes room for the toggles. */
+@media (max-width: 639px) {
+  .masthead__overview {
+    display: none;
+  }
+}
+
+/* ---------- Small screens: final fit ---------- */
+
+/* The narrowest phones: Back, Sound, and Credits share one line in the planet view. */
+@media (max-width: 400px) {
+  .masthead {
+    gap: 10px;
+    padding-inline: calc(var(--hud-inset) + 8px);
+  }
+
+  .masthead__nav {
+    gap: 10px;
+    padding-left: 0;
+  }
+
+  .masthead a,
+  .masthead button,
+  .feature__back {
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+  }
+
+  .masthead__toggle {
+    gap: 6px;
+  }
+
+  .feature__back {
+    left: calc(var(--hud-inset) + 8px);
+    gap: 8px;
+  }
+
+  .feature__back-rule {
+    width: 14px;
+  }
+}
+
+/* Phones: while a panel is open the credit line steps aside (it is in Credits, and returns on close). */
+@media (max-width: 639px) {
+  .plate:has(.poi-panel) .plate-credit {
+    display: none;
+  }
+}
+
+/* Short landscape screens (phones on their side). Matches SHORT_HEIGHT in plateLayout.ts. */
+@media (max-height: 519px) and (min-aspect-ratio: 17/20) {
+  .plate-title {
+    bottom: calc(var(--hud-inset) + 8px);
+  }
+
+  .plate-title h1 {
+    font-size: 22px;
+    letter-spacing: 0.08em;
+  }
+
+  .plate-title h1 span {
+    display: inline;
+  }
+
+  .plate-title p {
+    display: none;
+  }
+
+  /* Name only at rest, as on phones; details unfold on hover or tap. */
+  .dest-label:not([data-state='active']) .dest-label__meta {
+    display: none;
+  }
+
+  .dest-label__name {
+    font-size: 17px;
+  }
+
+  .feature__column {
+    top: var(--bar-h);
+    bottom: 8px;
+    width: min(42vw, 420px);
+    justify-content: flex-start;
+    overflow-y: auto;
+    pointer-events: auto;
+  }
+
+  .feature__numeral {
+    font-size: 16px;
+  }
+
+  .feature__name {
+    font-size: 44px;
+  }
+
+  .feature__tagline {
+    margin-top: 0.3em;
+    font-size: 16px;
+  }
+
+  .feature__meta {
+    margin-top: 0.5em;
+  }
+
+  .stats--feature {
+    margin-top: 10px;
+  }
+
+  .stats--feature dd {
+    font-size: 18px;
+  }
+
+  .feature__poi {
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+
+  .feature__poi-name {
+    font-size: 20px;
+  }
+
+  .feature__poi-summary {
+    margin-top: 4px;
+    font-size: 15px;
+  }
+
+  .feature__nav {
+    margin-top: 10px;
+  }
+}
+
+/* Scrolling columns and panels get a hairline gold scrollbar, not the browser's grey. */
+.feature__column,
+.poi-panel {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-faint) transparent;
+}

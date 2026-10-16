@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import type { POI } from "../data/solarSystem";
 import { BeltField } from "./BeltField";
 import { PALETTE } from "../lib/palette";
@@ -22,6 +22,8 @@ interface PlateSceneProps {
   facing: POI | null;
   turnMs: number;
   markerEls: Map<string, HTMLElement>;
+  /** Called once every texture has loaded and the first full frame has been drawn. */
+  onReady?: () => void;
 }
 
 /**
@@ -41,6 +43,7 @@ export function PlateScene({
   facing,
   turnMs,
   markerEls,
+  onReady,
 }: PlateSceneProps) {
   const { width, height, sun, planets } = layout;
 
@@ -81,6 +84,7 @@ export function PlateScene({
             />
           );
         })}
+        <SceneReady onReady={onReady} />
       </Suspense>
       {/* Threshold 1 means only the over-bright Sun blooms. */}
       <EffectComposer multisampling={4}>
@@ -88,4 +92,23 @@ export function PlateScene({
       </EffectComposer>
     </Canvas>
   );
+}
+
+/**
+ * Rendered inside the Suspense boundary, so its effect runs only once the Sun and
+ * planet textures have resolved; two frames later the scene is on screen.
+ */
+function SceneReady({ onReady }: { onReady?: () => void }) {
+  useEffect(() => {
+    if (!onReady) return;
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(onReady);
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, [onReady]);
+  return null;
 }

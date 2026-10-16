@@ -28,6 +28,7 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
           left: p.connector.x2,
           top: p.connector.y1,
           "--label-room": `${Math.max(120, room - layout.inset - 24)}px`,
+          "--i": p.order,
         } as CSSProperties;
         return (
           <div key={p.body.id}>
