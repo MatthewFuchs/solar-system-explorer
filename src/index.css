@@ -1944,7 +1944,34 @@ body,
   transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
-/* (Readability on hover comes from the letter-hugging halo below, not a backing box.) */
+/* Behind a hovered label, a soft oval pool of warm near-black: a radial gradient that
+   fades to nothing before its edges, so it never reads as a box (over the Sun's glow a
+   box looked like a smudge). It is a gradient, not a blur, so it costs nothing to fade. */
+.dest-label__text {
+  position: relative;
+  isolation: isolate;
+}
+
+.dest-label__text::before {
+  content: '';
+  position: absolute;
+  inset: -34px -48px;
+  z-index: -1;
+  background: radial-gradient(
+    closest-side,
+    rgba(12, 7, 6, 0.94) 0%,
+    rgba(12, 7, 6, 0.9) 60%,
+    rgba(12, 7, 6, 0.5) 82%,
+    rgba(12, 7, 6, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+  pointer-events: none;
+}
+
+.dest-label[data-state='active'] .dest-label__text::before {
+  opacity: 1;
+}
 
 /* Give the tagline and stats a comfortable measure wherever the label sits. */
 .dest-label__tagline {

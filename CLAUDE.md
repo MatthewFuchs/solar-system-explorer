@@ -113,7 +113,9 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   (`layout.star`); it has no orbit arc. Up close its brightness eases from `SUN_GLOW` to
   `SUN_GLOW_CLOSE` so the surface reads; surface markers use dark ink there.
 - Hovered labels stay readable through a warm near-black halo that hugs the letters
-  (`--halo`), never a backing box: boxes look like smudges over the Sun's glow.
+  (`--halo`) plus a soft oval pool behind them (a radial gradient on
+  `.dest-label__text::before` that fades to nothing at its edges). Never a hard-edged
+  backing box: boxes look like smudges over the Sun's glow.
 
 ## Small screens
 - Phones (< 640px wide): name-only labels at rest, planet above text in the planet view,
