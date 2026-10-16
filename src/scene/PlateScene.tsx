@@ -1,9 +1,12 @@
 import { Canvas } from "@react-three/fiber";
-import { useMemo } from "react";
-import { hexToRgb, muteTone } from "../lib/color";
+import { Bloom, EffectComposer } from "@react-three/postprocessing";
+import { Suspense } from "react";
 import { PALETTE } from "../lib/palette";
+import { appearanceFor } from "./bodyAppearance";
 import type { PlateLayout } from "./plateLayout";
-import { PlateSphere } from "./PlateSphere";
+import { PlanetBody } from "./PlanetBody";
+import { Starfield } from "./Starfield";
+import { SunBody } from "./SunBody";
 
 interface PlateSceneProps {
   layout: PlateLayout;
@@ -12,14 +15,12 @@ interface PlateSceneProps {
 }
 
 /**
- * The 3D layer of the plate: only the shaded spheres. A fixed orthographic camera
- * maps one world unit to one CSS pixel, so spheres line up with the SVG and HTML layers.
+ * The 3D layer: stars, the Sun, and lit planets. A fixed orthographic camera maps
+ * one world unit to one CSS pixel, so bodies line up with the SVG and HTML HUD.
+ * Nothing animates on its own; the canvas only renders when something changes.
  */
 export function PlateScene({ layout, hoveredId, reducedMotion }: PlateSceneProps) {
-  const ink = useMemo(() => hexToRgb(PALETTE.inkDeep), []);
-  const sunColor = useMemo(() => hexToRgb(PALETTE.giltLight), []);
-  const sunInk = useMemo(() => hexToRgb(PALETTE.giltShadow), []);
-  const { sun, planets } = layout;
+  const { width, height, sun, planets } = layout;
 
   return (
     <Canvas
@@ -27,41 +28,31 @@ export function PlateScene({ layout, hoveredId, reducedMotion }: PlateSceneProps
       frameloop="demand"
       dpr={[1, 2]}
       camera={{ position: [0, 0, 1000], zoom: 1, near: 1, far: 3000 }}
-      gl={{ alpha: true, antialias: true }}
+      gl={{ antialias: false, powerPreference: "high-performance" }}
       style={{ pointerEvents: "none" }}
     >
-      {/* Lit from the front so the limb darkens into halftone. */}
-      <PlateSphere
-        x={sun.x}
-        y={sun.y}
-        radius={sun.r}
-        color={sunColor}
-        ink={sunInk}
-        lightDir={[0, 0, 1]}
-        cell={6}
-        reducedMotion={reducedMotion}
-      />
-      {planets.map((p) => {
-        // Each planet is lit from the direction of the Sun.
-        const dx = sun.x - p.x;
-        const dy = p.y - sun.y;
-        const len = Math.hypot(dx, dy) || 1;
-        return (
-          <PlateSphere
+      <color attach="background" args={[PALETTE.space]} />
+      <Starfield width={width} height={height} />
+      <Suspense fallback={null}>
+        <SunBody x={sun.x} y={sun.y} r={sun.r} />
+        {planets.map((p) => (
+          <PlanetBody
             key={p.body.id}
             x={p.x}
             y={p.y}
-            radius={p.r}
-            color={muteTone(p.body.color, PALETTE.bone)}
-            ink={ink}
-            lightDir={[(dx / len) * 0.8, (dy / len) * 0.8, 0.6]}
-            cell={3.4}
+            r={p.r}
+            sun={sun}
+            appearance={appearanceFor(p.body.id)}
             active={hoveredId === p.body.id}
             dimmed={hoveredId !== null && hoveredId !== p.body.id}
             reducedMotion={reducedMotion}
           />
-        );
-      })}
+        ))}
+      </Suspense>
+      {/* Threshold 1 means only the over-bright Sun blooms. */}
+      <EffectComposer multisampling={4}>
+        <Bloom mipmapBlur luminanceThreshold={1} luminanceSmoothing={0.4} intensity={2.4} radius={0.88} />
+      </EffectComposer>
     </Canvas>
   );
 }

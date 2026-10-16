@@ -6,10 +6,10 @@ interface PlateCursorProps {
 }
 
 /** Fraction of the remaining distance covered each frame: a short, eased trail. */
-const FOLLOW = 0.32;
+const FOLLOW = 0.38;
 
 /**
- * Custom cursor for fine pointers (hidden on touch via CSS). Position is written
+ * HUD cursor for fine pointers (hidden on touch via CSS). Position is written
  * straight to the DOM so following the pointer never re-renders React.
  */
 export function PlateCursor({ active }: PlateCursorProps) {
@@ -42,16 +42,23 @@ export function PlateCursor({ active }: PlateCursorProps) {
       target.y = e.clientY;
       if (!frame) frame = requestAnimationFrame(render);
     };
-    const onLeave = () => {
+    const hide = () => {
       el.dataset.visible = "false";
+    };
+    // pointerleave on the root misses exits into browser chrome; mouseout with no
+    // relatedTarget fires whenever the pointer leaves the document.
+    const onOut = (e: MouseEvent) => {
+      if (!e.relatedTarget) hide();
     };
 
     window.addEventListener("pointermove", onMove);
-    document.documentElement.addEventListener("pointerleave", onLeave);
+    document.addEventListener("mouseout", onOut);
+    window.addEventListener("blur", hide);
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onMove);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
+      document.removeEventListener("mouseout", onOut);
+      window.removeEventListener("blur", hide);
     };
   }, [reducedMotion]);
 
