@@ -349,6 +349,14 @@ body,
   pointer-events: none;
 }
 
+/* On desktop the detail panel covers the bottom-right; the credit steps aside to the left. */
+@media (min-width: 640px) {
+  .plate:has(.poi-panel) .plate-credit {
+    right: auto;
+    left: calc(var(--hud-inset) + 14px);
+  }
+}
+
 /* ---------- Planet labels ---------- */
 
 .dest-label {
@@ -447,9 +455,13 @@ body,
   opacity: 1;
 }
 
-.dest-label__tagline {
+.dest-label__more-inner {
   min-height: 0;
   overflow: hidden;
+}
+
+.dest-label__tagline {
+  display: block;
   max-width: min(240px, var(--label-room, 240px));
   padding-top: 6px;
   white-space: normal;
@@ -1184,17 +1196,15 @@ body,
   color: rgba(236, 228, 210, 0.5);
 }
 
-/* Measurements as data labels: small caps label above, number with its unit. */
-.poi-panel__stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px 24px;
+/* Measurements as data labels (StatList): small-caps label above, number with its unit. */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
   margin: 0;
-  padding: 26px 0;
-  border-bottom: 1px solid var(--gold-faint);
 }
 
-.poi-panel__stat dt {
+.stats dt {
   font-family: var(--font-display);
   font-size: 10.5px;
   letter-spacing: 0.16em;
@@ -1202,29 +1212,60 @@ body,
   color: var(--gold-soft);
 }
 
-.poi-panel__stat dd {
-  margin: 6px 0 0;
+.stats dd {
+  margin: 5px 0 0;
   font-family: var(--font-body);
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 500;
   line-height: 1.05;
   font-variant-numeric: lining-nums tabular-nums;
   color: var(--ivory);
 }
 
-.poi-panel__unit {
+.stats__unit {
   margin-left: 0.3em;
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 0.48em;
   letter-spacing: 0.08em;
   color: var(--gold-soft);
 }
 
-.poi-panel__unit[data-tight='true'] {
+.stats__unit[data-tight='true'] {
   margin-left: 0.05em;
   font-family: var(--font-body);
-  font-size: 22px;
+  font-size: 0.8em;
   letter-spacing: 0;
+}
+
+.stats--panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 24px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--gold-faint);
+}
+
+.stats--panel dd {
+  font-size: 28px;
+}
+
+.stats--feature {
+  margin-top: 18px;
+}
+
+.stats--label {
+  gap: 8px 20px;
+  padding-top: 10px;
+  text-shadow: 0 0 10px var(--abyss), 0 0 3px var(--abyss);
+}
+
+.stats--label dt {
+  font-size: 9.5px;
+}
+
+.stats--label dd {
+  margin-top: 3px;
+  font-size: 17px;
 }
 
 .poi-panel__facts {
@@ -1299,7 +1340,7 @@ body,
     font-size: 19px;
   }
 
-  .poi-panel__stat dd {
+  .stats--panel dd {
     font-size: 24px;
   }
 

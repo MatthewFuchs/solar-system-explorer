@@ -15,7 +15,7 @@ import {
   type ShaderMaterial,
   type Texture,
 } from "three";
-import type { POI } from "../data/solarSystem";
+import { isSurfacePOI, type POI } from "../data/solarSystem";
 import type { BodyAppearance } from "./bodyAppearance";
 import { atmosphereShader, planetShader, ringShader } from "./shaders";
 import { configureTextures } from "./textures";
@@ -198,11 +198,13 @@ export function PlanetBody({
     };
   }, [isFocus, appearance.textureHd, invalidate]);
 
-  // Turn to face the requested POI, or level out again when released.
+  // Turn to face the requested surface POI, or level out again when released.
+  // Orbit POIs (moons, rings, spacecraft) sit beside the planet, so it holds still for them.
   useEffect(() => {
     const rot = rotRef.current;
     const now = performance.now();
     if (isFocus && facing) {
+      if (!isSurfacePOI(facing)) return;
       const [tx, ty] = faceRotation(facing.lat, facing.lon);
       turnRef.current = { fromX: rot.x, fromY: rot.y, toX: tx, toY: nearestAngle(ty, rot.y), start: now, ms: turnMs };
     } else if (rot.x !== 0) {
@@ -268,18 +270,30 @@ export function PlanetBody({
       setUniform(m, "uFade", fade);
     }
 
-    // POI markers: project each surface point to the screen; hide the far side.
+    // POI markers: project each surface point to the screen and hide the far side;
+    // orbit POIs float at a fixed angle and distance beside the planet.
     if (isFocus && pois && markerEls) {
       sphere.updateWorldMatrix(true, false);
       const arrived = smoothstep(0.8, 1, e);
       for (const poi of pois) {
         const el = markerEls.get(poi.id);
         if (!el) continue;
-        surfacePoint(poi.lat, poi.lon, scratch).multiplyScalar(base.r);
-        sphere.localToWorld(scratch);
-        const facingViewer = scratch.z / me.r;
-        const alpha = arrived * smoothstep(MARKER_LIMB[0], MARKER_LIMB[1], facingViewer);
-        const transform = `translate3d(${(scratch.x + halfW).toFixed(1)}px, ${(halfH - scratch.y).toFixed(1)}px, 0)`;
+        let x: number;
+        let y: number;
+        let alpha: number;
+        if (isSurfacePOI(poi)) {
+          surfacePoint(poi.lat, poi.lon, scratch).multiplyScalar(base.r);
+          sphere.localToWorld(scratch);
+          x = scratch.x + halfW;
+          y = halfH - scratch.y;
+          alpha = arrived * smoothstep(MARKER_LIMB[0], MARKER_LIMB[1], scratch.z / me.r);
+        } else {
+          const a = (poi.orbit.angle * Math.PI) / 180;
+          x = me.x + Math.cos(a) * poi.orbit.distance * me.r;
+          y = me.y - Math.sin(a) * poi.orbit.distance * me.r;
+          alpha = arrived;
+        }
+        const transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
         if (el.style.transform !== transform) el.style.transform = transform;
         el.style.opacity = alpha.toFixed(3);
         el.style.visibility = alpha < 0.03 ? "hidden" : "visible";

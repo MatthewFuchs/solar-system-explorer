@@ -4,6 +4,7 @@ import { formatAU, toRoman } from "../lib/format";
 import { ZOOM_EASING_CSS } from "../scene/viewTransition";
 import { PoiMarkers } from "./PoiMarkers";
 import { PoiPanel, type PanelState } from "./PoiPanel";
+import { StatList } from "./StatList";
 
 export type ViewPhase = "overview" | "entering" | "planet" | "leaving";
 
@@ -123,6 +124,7 @@ export function PlanetFeature({
         <div className="feature__rest">
           <p className="feature__tagline">{planet.tagline}</p>
           {au !== undefined && <p className="feature__meta">{formatAU(au)} from the Sun</p>}
+          {planet.stats && planet.stats.length > 0 && <StatList stats={planet.stats} variant="feature" />}
 
           {poi && (
             <div className="feature__poi" aria-live="polite">

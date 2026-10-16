@@ -1,5 +1,6 @@
-// Stylized content for the solar system explorer.
-// Sizes, distances, and speeds are tuned for UX/readability, NOT astronomically accurate.
+// Content for the solar system explorer.
+// Display sizes, orbit distances, and speeds are tuned for UX/readability, NOT to scale.
+// Everything else here (facts, stats, distances in AU, coordinates) aims to be accurate.
 // All planet and POI content lives here — components should never hardcode facts.
 
 export type POICategory =
@@ -12,26 +13,7 @@ export type POICategory =
   | "storm"
   | "surface";
 
-export interface POI {
-  id: string;
-  name: string;
-  /** Latitude on the body's surface, -90 (south pole) to 90 (north pole). */
-  lat: number;
-  /** Longitude on the body's surface, -180 to 180. */
-  lon: number;
-  category: POICategory;
-  /** One-line summary shown in the POI list/marker tooltip. */
-  summary: string;
-  /** 3-5 short facts shown when the POI is opened. */
-  facts: string[];
-  /** Key measurements with real units, shown as data labels in the detail panel. */
-  stats?: POIStat[];
-  /** Optional illustration for the detail panel. Use only licensed images and credit them. */
-  image?: POIImage;
-  /** "Learn more" link shown in the detail panel. */
-  source?: POISource;
-}
-
+/** A measurement with real units, shown as a small data label. */
 export interface POIStat {
   label: string;
   /** Display value, e.g. "1,550" or "~22". */
@@ -51,6 +33,52 @@ export interface POISource {
   url: string;
 }
 
+interface POIBase {
+  id: string;
+  name: string;
+  category: POICategory;
+  /** One-line summary shown in the planet view column and the detail panel. */
+  summary: string;
+  /** 3-5 short facts shown in the detail panel. */
+  facts: string[];
+  /** Key measurements with real units, shown as data labels in the detail panel. */
+  stats?: POIStat[];
+  /** Optional illustration for the detail panel. Use only licensed images and credit them. */
+  image?: POIImage;
+  /** "Learn more" link: a NASA or other authoritative page. */
+  source: POISource;
+}
+
+/**
+ * A place on the body's surface. Coordinates must match where the feature appears in
+ * the body's texture (equirectangular, left edge = -180°, east positive).
+ */
+export interface SurfacePOI extends POIBase {
+  /** Latitude, -90 (south pole) to 90 (north pole). */
+  lat: number;
+  /** Longitude, -180 to 180, east positive. */
+  lon: number;
+}
+
+/**
+ * Something near the body rather than on it (a moon, a ring, a spacecraft). Its marker
+ * floats beside the planet in the planet view.
+ */
+export interface OrbitPOI extends POIBase {
+  orbit: {
+    /** Screen angle in degrees, counterclockwise from the right (90 = above the planet). */
+    angle: number;
+    /** Distance from the planet's center, in planet radii. */
+    distance: number;
+  };
+}
+
+export type POI = SurfacePOI | OrbitPOI;
+
+export function isSurfacePOI(poi: POI): poi is SurfacePOI {
+  return "lat" in poi;
+}
+
 export interface CelestialBody {
   id: string;
   name: string;
@@ -66,8 +94,13 @@ export interface CelestialBody {
   tagline: string;
   /** Mean distance from the Sun in astronomical units (real value, shown in labels). Omitted for the Sun. */
   distanceAU?: number;
+  /** One or two headline measurements (real values), shown with the planet's label. */
+  stats?: POIStat[];
+  /** Surface points first: the planet view opens facing the first POI. */
   pois: POI[];
 }
+
+const NASA = (url: string): POISource => ({ label: "NASA", url });
 
 export const SUN: CelestialBody = {
   id: "sun",
@@ -77,20 +110,75 @@ export const SUN: CelestialBody = {
   orbitDistance: 0,
   orbitSpeed: 0,
   tagline: "The star at the center of it all.",
+  stats: [
+    { label: "Diameter", value: "1,392,700", unit: "km" },
+    { label: "Surface", value: "~5,500", unit: "°C" },
+  ],
   pois: [
+    {
+      id: "sun-sunspots",
+      name: "Sunspots",
+      lat: 15,
+      lon: 20,
+      category: "surface",
+      summary: "Dark patches where tangled magnetic fields hold back the Sun's heat.",
+      facts: [
+        "Sunspots only look dark by comparison: at roughly 3,500 °C they are cooler than the surface around them, yet still hotter than molten lava.",
+        "Their numbers swell and fade over a cycle of about 11 years, a rhythm astronomers have followed since the early 1600s.",
+        "A large sunspot can be wider than Earth.",
+        "They are where solar flares are born, when twisted magnetic fields snap and release their stored energy.",
+      ],
+      stats: [
+        { label: "Temperature", value: "~3,500", unit: "°C" },
+        { label: "Cycle", value: "~11", unit: "years" },
+      ],
+      source: NASA("https://science.nasa.gov/sun/sunspots/"),
+    },
     {
       id: "sun-flares",
       name: "Solar Flares",
       lat: 10,
       lon: 40,
-      category: "atmosphere",
-      summary: "Sudden bursts of radiation from the Sun's surface.",
+      category: "storm",
+      summary: "Sudden flashes of light and radiation, the most powerful explosions in the solar system.",
       facts: [
-        "Flares are classified by strength: A, B, C, M, and X, with X being the most intense.",
-        "A major flare can release energy equivalent to millions of hydrogen bombs.",
-        "Flares are often linked to sunspot activity and can disrupt radio communication on Earth.",
+        "A large flare releases, in minutes, energy equivalent to millions of hydrogen bombs.",
+        "Flares are ranked in classes A, B, C, M, and X, each ten times stronger than the one before.",
+        "Their light reaches Earth in about eight minutes, fast enough to disrupt radio and GPS before any warning could arrive.",
       ],
-      source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Solar_flare" },
+      source: NASA("https://science.nasa.gov/sun/solar-storms-and-flares/"),
+    },
+    {
+      id: "sun-corona",
+      name: "The Corona",
+      orbit: { angle: 45, distance: 1.3 },
+      category: "atmosphere",
+      summary: "The Sun's outer atmosphere, a pale crown seen by eye only during a total eclipse.",
+      facts: [
+        "The corona burns at more than a million degrees Celsius, hundreds of times hotter than the surface beneath it, and why is still one of solar physics' great puzzles.",
+        "It streams endlessly outward as the solar wind, filling the solar system with charged particles.",
+        "In 2021 NASA's Parker Solar Probe became the first spacecraft to fly through it.",
+      ],
+      stats: [{ label: "Temperature", value: "> 1 million", unit: "°C" }],
+      source: NASA("https://science.nasa.gov/sun/facts/"),
+    },
+    {
+      id: "sun-parker",
+      name: "Parker Solar Probe",
+      orbit: { angle: 150, distance: 1.45 },
+      category: "mission",
+      summary: "The spacecraft that touches the Sun, closer than anything humans have ever sent.",
+      facts: [
+        "Launched in 2018, it holds the record as the closest human-made object to a star.",
+        "On its nearest passes it skims about 6.1 million kilometers above the solar surface.",
+        "It is also the fastest object ever built, reaching around 690,000 km/h.",
+        "A thick carbon-composite shield keeps its instruments near room temperature while its sunward face glows at over 1,000 °C.",
+      ],
+      stats: [
+        { label: "Closest pass", value: "~6.1 million", unit: "km" },
+        { label: "Top speed", value: "~690,000", unit: "km/h" },
+      ],
+      source: NASA("https://science.nasa.gov/mission/parker-solar-probe/"),
     },
   ],
 };
@@ -105,24 +193,62 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.9,
     tagline: "The smallest and innermost planet.",
     distanceAU: 0.39,
+    stats: [
+      { label: "Diameter", value: "4,879", unit: "km" },
+      { label: "Day", value: "176", unit: "Earth days" },
+    ],
     pois: [
       {
         id: "mercury-caloris",
         name: "Caloris Basin",
-        lat: 30,
-        lon: 160,
+        lat: 30.5,
+        lon: 162.7,
         category: "geology",
-        summary: "One of the largest impact craters in the solar system.",
+        summary: "One of the largest impact basins in the solar system, ringed by mountains.",
         facts: [
-          "The basin is about 1,550 km across.",
-          "It formed from an asteroid impact roughly 3.8 billion years ago.",
-          "The impact was so powerful it caused unusual terrain on the opposite side of the planet.",
+          "An asteroid struck here about 3.8 billion years ago, leaving a basin some 1,550 km across.",
+          "The shock waves converged on the far side of the planet and heaved up a jumble of hills known as the 'weird terrain'.",
+          "Lava later flooded its floor, leaving it smoother and paler than the battered plains around it.",
+          "Its name is Latin for heat: it lies near one of Mercury's 'hot poles', where the Sun blazes overhead at the planet's closest approach.",
         ],
         stats: [
-          { label: "Diameter", value: "1,550", unit: "km" },
+          { label: "Diameter", value: "~1,550", unit: "km" },
           { label: "Age", value: "~3.8", unit: "billion years" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Caloris_Planitia" },
+        source: NASA("https://science.nasa.gov/mercury/facts/"),
+      },
+      {
+        id: "mercury-polar-ice",
+        name: "Ice in the Shadows",
+        lat: 85.8,
+        lon: -62.9,
+        category: "geology",
+        summary: "Water ice hiding in craters the Sun never reaches, on the planet closest to it.",
+        facts: [
+          "Mercury's axis is barely tilted, so the floors of some polar craters have stayed in darkness for billions of years.",
+          "Radar from Earth first hinted at ice here in 1991; NASA's MESSENGER spacecraft confirmed it two decades later.",
+          "Estimates put the total between 100 billion and 1 trillion tonnes.",
+          "Prokofiev, the largest of these ice-holding craters, sits close to the north pole.",
+        ],
+        stats: [{ label: "Estimated ice", value: "0.1–1", unit: "trillion tonnes" }],
+        source: NASA("https://science.nasa.gov/mercury/facts/"),
+      },
+      {
+        id: "mercury-messenger",
+        name: "MESSENGER",
+        orbit: { angle: 120, distance: 1.25 },
+        category: "mission",
+        summary: "The first spacecraft to orbit Mercury, and the one that mapped it whole.",
+        facts: [
+          "It circled the planet more than 4,000 times between 2011 and 2015.",
+          "It mapped the entire surface, confirmed the polar ice, and found Mercury unexpectedly rich in volatile elements such as sulfur and potassium.",
+          "Out of fuel, it ended its mission by striking the surface in April 2015, leaving one more crater behind.",
+        ],
+        stats: [
+          { label: "In orbit", value: "2011–2015" },
+          { label: "Orbits", value: "4,000+" },
+        ],
+        source: NASA("https://science.nasa.gov/mission/messenger/"),
       },
     ],
   },
@@ -135,24 +261,62 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.7,
     tagline: "A scorched world hidden under thick clouds.",
     distanceAU: 0.72,
+    stats: [
+      { label: "Diameter", value: "12,104", unit: "km" },
+      { label: "Day", value: "243", unit: "Earth days" },
+    ],
     pois: [
       {
         id: "venus-maxwell",
         name: "Maxwell Montes",
-        lat: 65,
-        lon: 5,
+        lat: 65.2,
+        lon: 3.3,
         category: "geology",
-        summary: "The highest mountain range on Venus.",
+        summary: "The highest mountains on Venus, hidden beneath a permanent ceiling of cloud.",
         facts: [
-          "Peaks rise about 11 km above Venus's average surface level.",
-          "Named after physicist James Clerk Maxwell.",
-          "Surface pressure there is still crushing by Earth standards.",
+          "Its summit rises about 11 km above the planet's average surface, higher than Everest stands above the sea.",
+          "It is the only feature on Venus named for a man, the physicist James Clerk Maxwell; nearly all others honor women and goddesses.",
+          "Its peaks shine brightly in radar, perhaps coated in a metallic frost condensed from the scorching air.",
         ],
         stats: [
-          { label: "Height", value: "11", unit: "km" },
+          { label: "Height", value: "~11", unit: "km" },
           { label: "Length", value: "~850", unit: "km" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Maxwell_Montes" },
+        source: NASA("https://science.nasa.gov/venus/venus-facts/"),
+      },
+      {
+        id: "venus-maat-mons",
+        name: "Maat Mons",
+        lat: 0.5,
+        lon: -165.4,
+        category: "geology",
+        summary: "Venus's tallest volcano, and one that may still be stirring.",
+        facts: [
+          "It rises about 8 km above the planet's average surface.",
+          "In 2023, scientists comparing radar images taken months apart by NASA's Magellan in 1991 found a vent on its flank that had changed shape: the first direct sign of recent volcanic activity on Venus.",
+          "Magellan mapped nearly the whole planet by radar, seeing through clouds no telescope can pierce.",
+        ],
+        stats: [{ label: "Height", value: "~8", unit: "km" }],
+        source: NASA("https://science.nasa.gov/mission/magellan/"),
+      },
+      {
+        id: "venus-clouds",
+        name: "The Racing Clouds",
+        lat: 10,
+        lon: -90,
+        category: "atmosphere",
+        summary: "A shroud of acid cloud that circles the planet far faster than the planet turns.",
+        facts: [
+          "Venus turns so slowly that its day outlasts its year, yet its cloud tops sweep around the planet in about four Earth days.",
+          "The clouds are made largely of sulfuric acid droplets.",
+          "Beneath them the carbon dioxide air presses down at about 92 times Earth's sea-level pressure.",
+          "That blanket traps so much heat that the surface holds near 465 °C, hot enough to melt lead.",
+        ],
+        stats: [
+          { label: "Surface", value: "~465", unit: "°C" },
+          { label: "Pressure", value: "~92", unit: "bar" },
+        ],
+        source: NASA("https://science.nasa.gov/venus/venus-facts/"),
       },
     ],
   },
@@ -164,45 +328,85 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 15,
     orbitSpeed: 0.6,
     tagline: "Home.",
-    distanceAU: 1.00,
+    distanceAU: 1.0,
+    stats: [
+      { label: "Diameter", value: "12,742", unit: "km" },
+      { label: "Day", value: "24", unit: "hours" },
+    ],
     pois: [
       {
-        id: "earth-iss",
-        name: "ISS Overflight Zone",
-        lat: 51.6,
-        lon: 0,
-        category: "mission",
-        summary: "The orbital inclination path of the International Space Station.",
+        id: "earth-mariana",
+        name: "Mariana Trench",
+        lat: 11.35,
+        lon: 142.2,
+        category: "geology",
+        summary: "The deepest place in the ocean, a crescent-shaped scar in the western Pacific.",
         facts: [
-          "The ISS orbits Earth roughly every 90 minutes.",
-          "It travels at about 28,000 km/h.",
-          "It has been continuously occupied since November 2000.",
+          "At Challenger Deep it plunges nearly 11,000 meters, deeper than Everest is tall.",
+          "Here the Pacific plate dives beneath the Mariana plate, dragging the seafloor down into the mantle.",
+          "The first people to reach the bottom were Jacques Piccard and Don Walsh, aboard the bathyscaphe Trieste in 1960.",
+          "The water above presses down with more than 1,000 times the pressure at the surface.",
         ],
         stats: [
-          { label: "Speed", value: "~28,000", unit: "km/h" },
-          { label: "Orbit", value: "~90", unit: "min" },
-          { label: "Altitude", value: "~400", unit: "km" },
-          { label: "Inclination", value: "51.6", unit: "°" },
+          { label: "Deepest point", value: "~10,900", unit: "m" },
+          { label: "Length", value: "~2,550", unit: "km" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/International_Space_Station" },
+        source: { label: "NOAA", url: "https://oceanservice.noaa.gov/facts/oceandepth.html" },
       },
       {
         id: "earth-amazon",
         name: "Amazon Rainforest",
         lat: -3,
         lon: -60,
-        category: "geology",
-        summary: "The largest tropical rainforest on Earth.",
+        category: "surface",
+        summary: "The largest tropical rainforest on Earth, a forest that makes its own weather.",
         facts: [
-          "It spans roughly 5.5 million square kilometers.",
-          "It produces a significant share of the planet's oxygen.",
-          "It's home to an estimated 10% of all known species.",
+          "It spans about 5.5 million square kilometers across nine countries.",
+          "It shelters roughly one in ten of the species known on Earth.",
+          "Its trees breathe out so much moisture that they help seed their own rain, sending 'flying rivers' of vapor across the continent.",
         ],
         stats: [
           { label: "Area", value: "~5.5 million", unit: "km²" },
           { label: "Known species", value: "~10", unit: "%" },
         ],
         source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Amazon_rainforest" },
+      },
+      {
+        id: "earth-iss",
+        name: "International Space Station",
+        orbit: { angle: 70, distance: 1.12 },
+        category: "mission",
+        summary: "A laboratory the size of a football field, circling about 400 km overhead.",
+        facts: [
+          "It circles Earth about every 90 minutes, so its crew sees around 16 sunrises a day.",
+          "It travels at about 28,000 km/h.",
+          "People have lived aboard without a break since November 2000.",
+          "From end to end it spans about 109 meters.",
+        ],
+        stats: [
+          { label: "Altitude", value: "~400", unit: "km" },
+          { label: "Speed", value: "~28,000", unit: "km/h" },
+          { label: "Orbit", value: "~90", unit: "min" },
+        ],
+        source: NASA("https://www.nasa.gov/international-space-station/"),
+      },
+      {
+        id: "earth-apollo-11",
+        name: "Tranquility Base",
+        orbit: { angle: 235, distance: 1.3 },
+        category: "mission",
+        summary: "On the Moon's Sea of Tranquility, where humans first stood on another world.",
+        facts: [
+          "Neil Armstrong and Buzz Aldrin landed the lunar module Eagle here on July 20, 1969, while Michael Collins circled overhead.",
+          "They walked the surface for about two and a half hours and brought home 21.5 kilograms of rock and dust.",
+          "With no wind or rain to disturb it, their footprints are likely still there.",
+          "The Moon itself lies about 384,400 km away, and drifts about 3.8 cm farther every year.",
+        ],
+        stats: [
+          { label: "Landing", value: "July 20, 1969" },
+          { label: "Moon's distance", value: "384,400", unit: "km" },
+        ],
+        source: NASA("https://www.nasa.gov/mission/apollo-11/"),
       },
     ],
   },
@@ -215,42 +419,84 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.48,
     tagline: "The red planet, long a target for exploration.",
     distanceAU: 1.52,
+    stats: [
+      { label: "Diameter", value: "6,779", unit: "km" },
+      { label: "Day", value: "24.6", unit: "hours" },
+    ],
     pois: [
       {
         id: "mars-olympus-mons",
         name: "Olympus Mons",
-        lat: 18,
-        lon: -133,
+        lat: 18.65,
+        lon: -133.8,
         category: "geology",
         summary: "The largest volcano in the solar system.",
         facts: [
-          "It stands about 22 km tall — nearly 2.5 times the height of Mount Everest.",
-          "It's a shield volcano, similar in shape to Hawaiian volcanoes but vastly larger.",
-          "Its base is roughly the size of the state of Arizona.",
+          "It stands nearly 22 km tall, about two and a half times the height of Everest.",
+          "Its base is roughly 600 km across, about the size of the state of Arizona.",
+          "It is a shield volcano, built from lava that flowed gently for ages, like Hawaii's but vastly larger.",
+          "Its slopes are so gradual that, standing on its flanks, the summit would lie beyond the horizon.",
         ],
         stats: [
           { label: "Height", value: "~22", unit: "km" },
           { label: "Base diameter", value: "~600", unit: "km" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Olympus_Mons" },
+        source: NASA("https://science.nasa.gov/mars/facts/"),
+      },
+      {
+        id: "mars-valles-marineris",
+        name: "Valles Marineris",
+        lat: -14,
+        lon: -59,
+        category: "geology",
+        summary: "A canyon system long enough to span the United States.",
+        facts: [
+          "It stretches more than 4,000 km and plunges as deep as 7 km.",
+          "It was not carved by a river: the crust itself split apart, and landslides and erosion widened the wound.",
+          "It is named for Mariner 9, the orbiter that revealed it in 1971 and 1972.",
+        ],
+        stats: [
+          { label: "Length", value: "4,000+", unit: "km" },
+          { label: "Depth", value: "up to 7", unit: "km" },
+        ],
+        source: NASA("https://science.nasa.gov/mission/mariner-9/"),
       },
       {
         id: "mars-perseverance",
-        name: "Perseverance Landing Site",
-        lat: 18.4,
-        lon: 77.5,
+        name: "Jezero Crater",
+        lat: 18.38,
+        lon: 77.58,
         category: "mission",
-        summary: "Jezero Crater, where NASA's Perseverance rover landed in 2021.",
+        summary: "An ancient lakebed where NASA's Perseverance rover is searching for signs of past life.",
         facts: [
-          "Jezero Crater is believed to have once held a lake and river delta.",
-          "Perseverance is searching for signs of ancient microbial life.",
-          "The rover also carries samples intended for eventual return to Earth.",
+          "Jezero once held a lake, fed by a river that left a fan-shaped delta still visible from orbit.",
+          "Perseverance touched down here on February 18, 2021.",
+          "The rover is sealing rock samples in tubes for a future mission to bring back to Earth.",
+          "It carried the Ingenuity helicopter, which made the first powered, controlled flight on another planet.",
         ],
         stats: [
           { label: "Landed", value: "Feb 18, 2021" },
-          { label: "Crater diameter", value: "45", unit: "km" },
+          { label: "Crater diameter", value: "~45", unit: "km" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Perseverance_(rover)" },
+        source: NASA("https://science.nasa.gov/mission/mars-2020-perseverance/"),
+      },
+      {
+        id: "mars-hellas",
+        name: "Hellas Basin",
+        lat: -42.4,
+        lon: 70.5,
+        category: "geology",
+        summary: "A vast impact basin, the lowest ground on Mars.",
+        facts: [
+          "It is about 2,300 km across, one of the largest impact craters in the solar system.",
+          "Its floor lies some 7 km below the planet's average surface level.",
+          "Down there the air is densest on Mars, enough that liquid water might briefly survive before boiling away.",
+        ],
+        stats: [
+          { label: "Diameter", value: "~2,300", unit: "km" },
+          { label: "Depth", value: "~7", unit: "km" },
+        ],
+        source: NASA("https://science.nasa.gov/mars/facts/"),
       },
     ],
   },
@@ -262,7 +508,11 @@ export const PLANETS: CelestialBody[] = [
     orbitDistance: 28,
     orbitSpeed: 0.26,
     tagline: "The largest planet, a swirling giant of gas.",
-    distanceAU: 5.20,
+    distanceAU: 5.2,
+    stats: [
+      { label: "Diameter", value: "139,820", unit: "km" },
+      { label: "Day", value: "9.9", unit: "hours" },
+    ],
     pois: [
       {
         id: "jupiter-great-red-spot",
@@ -271,36 +521,67 @@ export const PLANETS: CelestialBody[] = [
         // the Jupiter texture (public/textures), not a dated measurement.
         lat: -20,
         lon: -49,
-        category: "atmosphere",
-        summary: "A massive, centuries-old storm larger than Earth.",
+        category: "storm",
+        summary: "A storm wider than Earth that has raged for centuries.",
         facts: [
-          "Wind speeds inside the storm can exceed 400 km/h.",
-          "It has been observed continuously for at least 150 years.",
-          "The storm has been slowly shrinking over the past century.",
+          "It has been watched continuously since the 1830s, and may be the same spot astronomers saw in the 1660s.",
+          "Winds around its edge reach about 430 km/h.",
+          "It is shrinking: in the late 1800s it could have held about three Earths side by side; today it holds barely one.",
+          "NASA's Juno found that its roots reach some 500 km down into Jupiter's atmosphere.",
         ],
         stats: [
           { label: "Width (2017)", value: "16,350", unit: "km" },
           { label: "Peak winds", value: "~430", unit: "km/h" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Great_Red_Spot" },
+        source: NASA("https://science.nasa.gov/jupiter/"),
+      },
+      {
+        id: "jupiter-io",
+        name: "Io",
+        orbit: { angle: 115, distance: 1.2 },
+        category: "moon",
+        summary: "The most volcanic world in the solar system.",
+        facts: [
+          "Io has hundreds of active volcanoes, some throwing plumes hundreds of kilometers into space.",
+          "Its fire is tidal: Jupiter's gravity, tugged against by Europa and Ganymede, flexes Io's interior until it melts.",
+          "Sulfur compounds paint its surface in yellows, oranges, and reds.",
+        ],
+        stats: [
+          { label: "Diameter", value: "3,643", unit: "km" },
+          { label: "Active volcanoes", value: "~400" },
+        ],
+        source: NASA("https://science.nasa.gov/jupiter/jupiter-moons/io/"),
       },
       {
         id: "jupiter-europa",
         name: "Europa",
-        lat: 0,
-        lon: 90,
+        orbit: { angle: 245, distance: 1.2 },
         category: "moon",
-        summary: "An icy moon thought to hide a liquid ocean beneath its surface.",
+        summary: "An icy moon hiding a salt-water ocean beneath its shell.",
         facts: [
-          "Its ice shell may be 15-25 km thick, covering an ocean deeper than any on Earth.",
-          "It's considered one of the most promising places to search for extraterrestrial life.",
-          "NASA's Europa Clipper mission is studying its habitability.",
+          "Beneath its cracked ice lies an ocean that may hold about twice as much water as all of Earth's oceans.",
+          "Kept liquid by tidal heating, that ocean makes Europa one of the most promising places to look for life beyond Earth.",
+          "NASA's Europa Clipper launched in October 2024 and is due to arrive in 2030.",
         ],
         stats: [
           { label: "Diameter", value: "3,122", unit: "km" },
           { label: "Ice shell", value: "15–25", unit: "km" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Europa_(moon)" },
+        source: NASA("https://science.nasa.gov/jupiter/jupiter-moons/europa/"),
+      },
+      {
+        id: "jupiter-ganymede",
+        name: "Ganymede",
+        orbit: { angle: 285, distance: 1.25 },
+        category: "moon",
+        summary: "The largest moon in the solar system, bigger than the planet Mercury.",
+        facts: [
+          "It is the only moon known to generate its own magnetic field.",
+          "A buried ocean of salt water likely lies sandwiched between layers of ice.",
+          "Its surface mixes dark, ancient cratered ground with younger, brighter grooved terrain.",
+        ],
+        stats: [{ label: "Diameter", value: "5,268", unit: "km" }],
+        source: NASA("https://science.nasa.gov/jupiter/jupiter-moons/ganymede/"),
       },
     ],
   },
@@ -313,24 +594,75 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.19,
     tagline: "Famous for its sweeping ring system.",
     distanceAU: 9.58,
+    stats: [
+      { label: "Diameter", value: "116,460", unit: "km" },
+      { label: "Day", value: "10.7", unit: "hours" },
+    ],
     pois: [
       {
-        id: "saturn-rings",
-        name: "The Ring System",
-        lat: 0,
+        id: "saturn-hexagon",
+        name: "The Hexagon",
+        lat: 78,
         lon: 0,
-        category: "geology",
-        summary: "A vast disk of ice and rock particles encircling the planet.",
+        category: "storm",
+        summary: "A six-sided jet stream circling Saturn's north pole.",
         facts: [
-          "The rings span up to 282,000 km across but are often less than 1 km thick.",
-          "They're made mostly of water ice, with traces of rocky debris.",
-          "Scientists believe the rings may be a relatively recent cosmic feature.",
+          "Each side of the hexagon is longer than Earth is wide.",
+          "First glimpsed by Voyager in the early 1980s, it has held its shape for decades.",
+          "NASA's Cassini watched its color shift from blue toward gold as northern summer approached.",
+        ],
+        stats: [{ label: "Side length", value: "~14,500", unit: "km" }],
+        source: NASA("https://science.nasa.gov/mission/cassini/"),
+      },
+      {
+        id: "saturn-rings",
+        name: "The Rings",
+        // On the ring itself: along the major axis, which leans down to the right.
+        orbit: { angle: -18, distance: 1.75 },
+        category: "ring",
+        summary: "A vast disk of ice, hundreds of thousands of kilometers wide and astonishingly thin.",
+        facts: [
+          "The main rings span about 282,000 km, yet in most places they are only about 10 meters thick.",
+          "They are made of countless pieces of water ice, from specks of dust to chunks the size of houses.",
+          "Cassini's measurements suggest the rings may be young, perhaps a few hundred million years old, though the question is still debated.",
         ],
         stats: [
-          { label: "Span", value: "282,000", unit: "km" },
-          { label: "Main-ring thickness", value: "~10", unit: "m" },
+          { label: "Span", value: "~282,000", unit: "km" },
+          { label: "Typical thickness", value: "~10", unit: "m" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Rings_of_Saturn" },
+        source: NASA("https://science.nasa.gov/saturn/facts/"),
+      },
+      {
+        id: "saturn-titan",
+        name: "Titan",
+        orbit: { angle: 100, distance: 1.5 },
+        category: "moon",
+        summary: "A moon wrapped in orange haze, with rain, rivers, and seas of liquid methane.",
+        facts: [
+          "Titan is the only moon with a thick atmosphere, and the only world besides Earth known to have stable liquid on its surface.",
+          "Its lakes and seas are filled not with water but with liquid methane and ethane.",
+          "In 2005 the Huygens probe parachuted through its haze and landed, the most distant landing ever made.",
+          "NASA's Dragonfly rotorcraft is planned to launch in 2028 and fly across its dunes.",
+        ],
+        stats: [
+          { label: "Diameter", value: "5,150", unit: "km" },
+          { label: "Surface", value: "~−179", unit: "°C" },
+        ],
+        source: NASA("https://science.nasa.gov/saturn/moons/titan/"),
+      },
+      {
+        id: "saturn-enceladus",
+        name: "Enceladus",
+        orbit: { angle: 262, distance: 1.45 },
+        category: "moon",
+        summary: "A small, brilliant moon that sprays its hidden ocean into space.",
+        facts: [
+          "Jets of water vapor and ice erupt from cracks near its south pole, nicknamed the 'tiger stripes'.",
+          "Cassini flew through the plumes and tasted salts, silica, and organic molecules from an ocean beneath the ice.",
+          "Its fresh, icy surface reflects nearly all the sunlight that reaches it, making it one of the brightest objects in the solar system.",
+        ],
+        stats: [{ label: "Diameter", value: "~504", unit: "km" }],
+        source: NASA("https://science.nasa.gov/saturn/moons/enceladus/"),
       },
     ],
   },
@@ -343,24 +675,60 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.13,
     tagline: "An ice giant tilted almost on its side.",
     distanceAU: 19.2,
+    stats: [
+      { label: "Diameter", value: "50,724", unit: "km" },
+      { label: "Day", value: "17.2", unit: "hours" },
+    ],
     pois: [
       {
         id: "uranus-axial-tilt",
-        name: "Extreme Axial Tilt",
-        lat: 0,
+        name: "The Sideways Pole",
+        // Marked at the pole of the rendered sphere: the tilt is about the whole planet.
+        lat: 85,
         lon: 0,
         category: "atmosphere",
-        summary: "Uranus rotates almost on its side relative to its orbit.",
+        summary: "Uranus spins tipped over on its side, rolling around the Sun like a ball.",
         facts: [
-          "Its axial tilt is about 98 degrees, essentially rolling around the Sun.",
-          "This causes extreme seasons, with each pole experiencing decades of continuous sunlight or darkness.",
-          "The tilt is thought to be the result of an ancient, massive collision.",
+          "Its axis is tilted about 98 degrees, more than any other planet's.",
+          "Each pole gets around 42 years of unbroken sunlight, followed by 42 years of night.",
+          "The tilt may be the scar of a collision with an Earth-sized body early in the solar system's history.",
         ],
         stats: [
           { label: "Axial tilt", value: "97.8", unit: "°" },
-          { label: "Orbit", value: "84", unit: "years" },
+          { label: "Year", value: "84", unit: "Earth years" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Uranus" },
+        source: NASA("https://science.nasa.gov/uranus/facts/"),
+      },
+      {
+        id: "uranus-rings",
+        name: "The Dark Rings",
+        orbit: { angle: 60, distance: 1.3 },
+        category: "ring",
+        summary: "Thin, dark rings, found when they made a distant star blink.",
+        facts: [
+          "Uranus has 13 known rings, narrow bands of dark material, very different from Saturn's bright ice.",
+          "They were discovered in 1977, when astronomers watched a star flicker as the rings passed in front of it.",
+          "Because the planet lies on its side, its rings are tipped nearly upright relative to its orbit.",
+        ],
+        stats: [{ label: "Known rings", value: "13" }],
+        source: NASA("https://science.nasa.gov/uranus/facts/"),
+      },
+      {
+        id: "uranus-miranda",
+        name: "Miranda",
+        orbit: { angle: 230, distance: 1.3 },
+        category: "moon",
+        summary: "A small moon that looks as if it were shattered and pieced back together.",
+        facts: [
+          "Its surface is a patchwork of grooved terrain, ridges, and canyons unlike any other moon's.",
+          "Its cliff Verona Rupes may be the tallest in the solar system, dropping about 20 km.",
+          "Voyager 2 photographed it in January 1986, during the only spacecraft visit to Uranus.",
+        ],
+        stats: [
+          { label: "Diameter", value: "~470", unit: "km" },
+          { label: "Tallest cliff", value: "~20", unit: "km" },
+        ],
+        source: NASA("https://science.nasa.gov/uranus/moons/miranda/"),
       },
     ],
   },
@@ -373,24 +741,61 @@ export const PLANETS: CelestialBody[] = [
     orbitSpeed: 0.1,
     tagline: "The farthest planet, battered by the solar system's fastest winds.",
     distanceAU: 30.07,
+    stats: [
+      { label: "Diameter", value: "49,244", unit: "km" },
+      { label: "Day", value: "16.1", unit: "hours" },
+    ],
     pois: [
       {
-        id: "neptune-winds",
-        name: "Supersonic Winds",
-        lat: -40,
-        lon: 0,
-        category: "atmosphere",
-        summary: "Neptune hosts the fastest winds recorded on any planet.",
+        id: "neptune-great-dark-spot",
+        name: "Great Dark Spot",
+        // Matched to the dark oval in the Neptune texture, which is based on Voyager 2 images.
+        lat: -17,
+        lon: 21,
+        category: "storm",
+        summary: "A storm the width of Earth, seen once by Voyager 2 and then gone.",
         facts: [
-          "Wind speeds can reach over 2,100 km/h.",
-          "Despite being farthest from the Sun, Neptune generates more internal heat than it receives.",
-          "Its deep blue color comes from methane in its atmosphere.",
+          "Voyager 2 found this dark oval in 1989, roughly as wide as Earth.",
+          "When the Hubble Space Telescope looked again in 1994, it had vanished; new dark spots have formed and faded since.",
+          "Winds near it blew at about 2,100 km/h, the fastest measured on any planet.",
         ],
         stats: [
-          { label: "Peak winds", value: "2,100", unit: "km/h" },
-          { label: "Orbit", value: "165", unit: "years" },
+          { label: "Width (1989)", value: "~13,000", unit: "km" },
+          { label: "Peak winds", value: "~2,100", unit: "km/h" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Neptune" },
+        source: NASA("https://science.nasa.gov/neptune/neptune-facts/"),
+      },
+      {
+        id: "neptune-triton",
+        name: "Triton",
+        orbit: { angle: 125, distance: 1.25 },
+        category: "moon",
+        summary: "A captured moon orbiting backward, with geysers on a frozen surface.",
+        facts: [
+          "Triton circles Neptune against the planet's spin, a sign that it was probably captured from the Kuiper Belt.",
+          "Voyager 2 saw geysers on it blowing dark plumes about 8 km high into its thin air.",
+          "At about −235 °C, its surface is among the coldest ever measured in the solar system.",
+          "Neptune's tides are slowly drawing it inward; one day it may be torn apart and become a ring.",
+        ],
+        stats: [
+          { label: "Diameter", value: "2,707", unit: "km" },
+          { label: "Surface", value: "~−235", unit: "°C" },
+        ],
+        source: NASA("https://science.nasa.gov/neptune/moons/triton/"),
+      },
+      {
+        id: "neptune-ring-arcs",
+        name: "The Ring Arcs",
+        orbit: { angle: 250, distance: 1.3 },
+        category: "ring",
+        summary: "Bright clumps in Neptune's outer ring that by ordinary physics should not exist.",
+        facts: [
+          "Neptune's outermost ring, Adams, holds bright arcs named Liberté, Égalité, Fraternité, and Courage.",
+          "Left alone, such clumps should smear out evenly around the ring; the gravity of a small nearby moon may be herding them.",
+          "Neptune has five main rings, each named for an astronomer who helped discover or study the planet.",
+        ],
+        stats: [{ label: "Main rings", value: "5" }],
+        source: NASA("https://science.nasa.gov/mission/voyager/"),
       },
     ],
   },
