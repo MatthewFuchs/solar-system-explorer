@@ -24,6 +24,31 @@ export interface POI {
   summary: string;
   /** 3-5 short facts shown when the POI is opened. */
   facts: string[];
+  /** Key measurements with real units, shown as data labels in the detail panel. */
+  stats?: POIStat[];
+  /** Optional illustration for the detail panel. Use only licensed images and credit them. */
+  image?: POIImage;
+  /** "Learn more" link shown in the detail panel. */
+  source?: POISource;
+}
+
+export interface POIStat {
+  label: string;
+  /** Display value, e.g. "1,550" or "~22". */
+  value: string;
+  /** Unit shown after the value, e.g. "km" or "km/h". */
+  unit?: string;
+}
+
+export interface POIImage {
+  src: string;
+  alt: string;
+  credit?: string;
+}
+
+export interface POISource {
+  label: string;
+  url: string;
 }
 
 export interface CelestialBody {
@@ -65,6 +90,7 @@ export const SUN: CelestialBody = {
         "A major flare can release energy equivalent to millions of hydrogen bombs.",
         "Flares are often linked to sunspot activity and can disrupt radio communication on Earth.",
       ],
+      source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Solar_flare" },
     },
   ],
 };
@@ -92,6 +118,11 @@ export const PLANETS: CelestialBody[] = [
           "It formed from an asteroid impact roughly 3.8 billion years ago.",
           "The impact was so powerful it caused unusual terrain on the opposite side of the planet.",
         ],
+        stats: [
+          { label: "Diameter", value: "1,550", unit: "km" },
+          { label: "Age", value: "~3.8", unit: "billion years" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Caloris_Planitia" },
       },
     ],
   },
@@ -117,6 +148,11 @@ export const PLANETS: CelestialBody[] = [
           "Named after physicist James Clerk Maxwell.",
           "Surface pressure there is still crushing by Earth standards.",
         ],
+        stats: [
+          { label: "Height", value: "11", unit: "km" },
+          { label: "Length", value: "~850", unit: "km" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Maxwell_Montes" },
       },
     ],
   },
@@ -142,6 +178,13 @@ export const PLANETS: CelestialBody[] = [
           "It travels at about 28,000 km/h.",
           "It has been continuously occupied since November 2000.",
         ],
+        stats: [
+          { label: "Speed", value: "~28,000", unit: "km/h" },
+          { label: "Orbit", value: "~90", unit: "min" },
+          { label: "Altitude", value: "~400", unit: "km" },
+          { label: "Inclination", value: "51.6", unit: "°" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/International_Space_Station" },
       },
       {
         id: "earth-amazon",
@@ -155,6 +198,11 @@ export const PLANETS: CelestialBody[] = [
           "It produces a significant share of the planet's oxygen.",
           "It's home to an estimated 10% of all known species.",
         ],
+        stats: [
+          { label: "Area", value: "~5.5 million", unit: "km²" },
+          { label: "Known species", value: "~10", unit: "%" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Amazon_rainforest" },
       },
     ],
   },
@@ -180,6 +228,11 @@ export const PLANETS: CelestialBody[] = [
           "It's a shield volcano, similar in shape to Hawaiian volcanoes but vastly larger.",
           "Its base is roughly the size of the state of Arizona.",
         ],
+        stats: [
+          { label: "Height", value: "~22", unit: "km" },
+          { label: "Base diameter", value: "~600", unit: "km" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Olympus_Mons" },
       },
       {
         id: "mars-perseverance",
@@ -193,6 +246,11 @@ export const PLANETS: CelestialBody[] = [
           "Perseverance is searching for signs of ancient microbial life.",
           "The rover also carries samples intended for eventual return to Earth.",
         ],
+        stats: [
+          { label: "Landed", value: "Feb 18, 2021" },
+          { label: "Crater diameter", value: "45", unit: "km" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Perseverance_(rover)" },
       },
     ],
   },
@@ -209,8 +267,10 @@ export const PLANETS: CelestialBody[] = [
       {
         id: "jupiter-great-red-spot",
         name: "Great Red Spot",
-        lat: -22,
-        lon: 0,
+        // The spot drifts in longitude over the years; this matches where it sits in
+        // the Jupiter texture (public/textures), not a dated measurement.
+        lat: -20,
+        lon: -49,
         category: "atmosphere",
         summary: "A massive, centuries-old storm larger than Earth.",
         facts: [
@@ -218,6 +278,11 @@ export const PLANETS: CelestialBody[] = [
           "It has been observed continuously for at least 150 years.",
           "The storm has been slowly shrinking over the past century.",
         ],
+        stats: [
+          { label: "Width (2017)", value: "16,350", unit: "km" },
+          { label: "Peak winds", value: "~430", unit: "km/h" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Great_Red_Spot" },
       },
       {
         id: "jupiter-europa",
@@ -231,6 +296,11 @@ export const PLANETS: CelestialBody[] = [
           "It's considered one of the most promising places to search for extraterrestrial life.",
           "NASA's Europa Clipper mission is studying its habitability.",
         ],
+        stats: [
+          { label: "Diameter", value: "3,122", unit: "km" },
+          { label: "Ice shell", value: "15–25", unit: "km" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Europa_(moon)" },
       },
     ],
   },
@@ -256,6 +326,11 @@ export const PLANETS: CelestialBody[] = [
           "They're made mostly of water ice, with traces of rocky debris.",
           "Scientists believe the rings may be a relatively recent cosmic feature.",
         ],
+        stats: [
+          { label: "Span", value: "282,000", unit: "km" },
+          { label: "Main-ring thickness", value: "~10", unit: "m" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Rings_of_Saturn" },
       },
     ],
   },
@@ -281,6 +356,11 @@ export const PLANETS: CelestialBody[] = [
           "This causes extreme seasons, with each pole experiencing decades of continuous sunlight or darkness.",
           "The tilt is thought to be the result of an ancient, massive collision.",
         ],
+        stats: [
+          { label: "Axial tilt", value: "97.8", unit: "°" },
+          { label: "Orbit", value: "84", unit: "years" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Uranus" },
       },
     ],
   },
@@ -306,6 +386,11 @@ export const PLANETS: CelestialBody[] = [
           "Despite being farthest from the Sun, Neptune generates more internal heat than it receives.",
           "Its deep blue color comes from methane in its atmosphere.",
         ],
+        stats: [
+          { label: "Peak winds", value: "2,100", unit: "km/h" },
+          { label: "Orbit", value: "165", unit: "years" },
+        ],
+        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Neptune" },
       },
     ],
   },

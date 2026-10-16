@@ -490,7 +490,8 @@ body,
   .plate-hit,
   .masthead a,
   .masthead button,
-  .feature button {
+  .feature button,
+  .feature a {
     cursor: none;
   }
 
@@ -843,13 +844,15 @@ body,
   pointer-events: none;
 }
 
-/* Positioned every frame by the 3D layer via transform; the mark centers on that point. */
+/* Positioned every frame by the 3D layer via transform; the 36px box (the hit area)
+   centers on that point. */
 .poi-marker {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
+  top: -18px;
+  left: -18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   padding: 0;
   border: 0;
   background: none;
@@ -860,20 +863,9 @@ body,
 
 .poi-marker__mark {
   position: absolute;
-  left: -12px;
-  top: -12px;
+  left: 6px;
+  top: 6px;
   overflow: visible;
-}
-
-/* A larger, invisible hit area around the mark. */
-.poi-marker::before {
-  content: '';
-  position: absolute;
-  left: -18px;
-  top: -18px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
 }
 
 .poi-marker__ring,
@@ -896,8 +888,8 @@ body,
 
 .poi-marker__name {
   position: absolute;
-  left: 18px;
-  top: -11px;
+  left: 36px;
+  top: 7px;
   white-space: nowrap;
   font-size: 17px;
   font-style: italic;
@@ -937,6 +929,26 @@ body,
   outline: 1px dotted var(--gold);
   outline-offset: 3px;
   border-radius: 50%;
+}
+
+.feature__details {
+  margin-top: 14px;
+  padding: 4px 0;
+  border: 0;
+  border-bottom: 1px solid var(--gold-faint);
+  background: none;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.feature__details:hover {
+  color: var(--ivory);
+  border-color: var(--gold);
 }
 
 /* Portrait: planet above, text below. Matches PORTRAIT_ASPECT in plateLayout.ts. */
@@ -985,5 +997,336 @@ body,
 
   .feature__nav {
     margin-top: 14px;
+  }
+}
+
+/* ---------- Point-of-interest panel ---------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* An editorial sidebar: solid ink, one gold hairline edge, generous measure. */
+.poi-panel {
+  position: absolute;
+  z-index: 9;
+  top: var(--bar-h);
+  right: 0;
+  bottom: 0;
+  width: min(440px, 38vw);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(36px, 5vh, 56px) clamp(28px, 3vw, 44px) 48px;
+  box-sizing: border-box;
+  border-left: 1px solid var(--gold-faint);
+  /* Solid, so text and markers behind never ghost through. */
+  background: #08050e;
+  pointer-events: auto;
+  animation: panel-in 420ms var(--ease) both;
+}
+
+.poi-panel[data-state='closing'] {
+  animation: panel-out 220ms var(--ease) both;
+}
+
+.feature[data-phase='leaving'] .poi-panel {
+  animation: feature-out 280ms var(--ease) both;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes panel-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* Lines reveal in sequence, a beat apart. */
+.poi-panel__line {
+  animation: panel-line-in 480ms var(--ease) both;
+  animation-delay: calc(110ms + var(--i, 0) * 55ms);
+}
+
+@keyframes panel-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.poi-panel__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ivory-soft);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.poi-panel__close svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.1;
+}
+
+.poi-panel__close:hover {
+  color: var(--ivory);
+  border-color: var(--gold-faint);
+}
+
+.poi-panel__context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ivory-soft);
+}
+
+.poi-panel__numeral {
+  color: var(--gold);
+}
+
+.poi-panel__rule {
+  width: 14px;
+  height: 1px;
+  background: var(--gold-faint);
+}
+
+.poi-panel__title {
+  margin: 18px 0 0;
+  padding-right: 32px;
+  font-family: var(--font-body);
+  font-size: clamp(38px, 3.6vw, 52px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ivory);
+}
+
+.poi-panel__title:focus {
+  outline: none;
+}
+
+.poi-panel__title:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 6px;
+}
+
+.poi-panel__category {
+  margin: 12px 0 0;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.poi-panel__summary {
+  margin: 22px 0 0;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--gold-faint);
+  font-size: 22px;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--ivory);
+}
+
+.poi-panel__figure {
+  margin: 26px 0 0;
+}
+
+.poi-panel__figure img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.poi-panel__figure figcaption {
+  margin-top: 8px;
+  font-size: 13px;
+  font-style: italic;
+  color: rgba(236, 228, 210, 0.5);
+}
+
+/* Measurements as data labels: small caps label above, number with its unit. */
+.poi-panel__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 24px;
+  margin: 0;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--gold-faint);
+}
+
+.poi-panel__stat dt {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.poi-panel__stat dd {
+  margin: 6px 0 0;
+  font-family: var(--font-body);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.05;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ivory);
+}
+
+.poi-panel__unit {
+  margin-left: 0.3em;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--gold-soft);
+}
+
+.poi-panel__unit[data-tight='true'] {
+  margin-left: 0.05em;
+  font-family: var(--font-body);
+  font-size: 22px;
+  letter-spacing: 0;
+}
+
+.poi-panel__facts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.poi-panel__facts li {
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(214, 176, 106, 0.16);
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ivory-soft);
+}
+
+.poi-panel__source {
+  display: inline-block;
+  margin-top: 26px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--gold-faint);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--gold);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.poi-panel__source:hover {
+  color: var(--ivory);
+  border-color: var(--gold);
+}
+
+.poi-panel__close:focus-visible,
+.poi-panel__source:focus-visible,
+.feature__details:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 4px;
+}
+
+/* Phones: a bottom sheet over the lower part of the screen, planet still visible above. */
+@media (max-width: 639px) {
+  .poi-panel {
+    top: auto;
+    left: 0;
+    width: auto;
+    max-height: 72vh;
+    /* Bottom padding clears the texture credit line. */
+    padding: 30px 22px 56px;
+    border-left: 0;
+    border-top: 1px solid var(--gold-faint);
+    animation-name: sheet-in;
+  }
+
+  .poi-panel[data-state='closing'] {
+    animation-name: sheet-out;
+  }
+
+  .poi-panel__close {
+    top: 12px;
+    right: 12px;
+  }
+
+  .poi-panel__title {
+    margin-top: 14px;
+    font-size: 34px;
+  }
+
+  .poi-panel__summary {
+    font-size: 19px;
+  }
+
+  .poi-panel__stat dd {
+    font-size: 24px;
+  }
+
+  .poi-panel__facts li {
+    padding: 14px 0;
+    font-size: 16px;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheet-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(32px);
   }
 }

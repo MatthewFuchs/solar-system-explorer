@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CelestialBody } from "../data/solarSystem";
 import { formatAU, toRoman } from "../lib/format";
 import { ZOOM_EASING_CSS } from "../scene/viewTransition";
 import { PoiMarkers } from "./PoiMarkers";
+import { PoiPanel, type PanelState } from "./PoiPanel";
 
 export type ViewPhase = "overview" | "entering" | "planet" | "leaving";
 
@@ -67,6 +68,14 @@ export function PlanetFeature({
   const pois = planet.pois;
   const poi = pois[poiIndex];
   const au = planet.distanceAU;
+  const [panel, setPanel] = useState<PanelState | "closed">("closed");
+  const closePanel = useCallback(() => setPanel((p) => (p === "open" ? "closing" : p)), []);
+  const closedPanel = useCallback(() => setPanel("closed"), []);
+  // Selecting a marker turns the planet to face it and opens its details.
+  const openPanel = (index: number) => {
+    onPoiIndex(index);
+    setPanel("open");
+  };
 
   // The numeral and name grow out of the overview label and settle into the column.
   useLayoutEffect(() => {
@@ -120,6 +129,9 @@ export function PlanetFeature({
               <h3 className="feature__poi-name">{poi.name}</h3>
               <p className="feature__poi-category">{poi.category}</p>
               <p className="feature__poi-summary">{poi.summary}</p>
+              <button type="button" className="feature__details" onClick={() => setPanel("open")}>
+                Open details
+              </button>
             </div>
           )}
 
@@ -143,9 +155,20 @@ export function PlanetFeature({
         pois={pois}
         activeIndex={poiIndex}
         markerEls={markerEls}
-        onSelect={onPoiIndex}
+        onSelect={openPanel}
         onHover={onMarkerHover}
       />
+
+      {panel !== "closed" && poi && (
+        <PoiPanel
+          poi={poi}
+          planetName={planet.name}
+          numeral={numeral}
+          state={panel}
+          onClose={closePanel}
+          onClosed={closedPanel}
+        />
+      )}
     </section>
   );
 }
