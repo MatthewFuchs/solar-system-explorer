@@ -18,7 +18,7 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
 
   return (
     <>
-      {layout.planets.map((p) => {
+      {[layout.star, ...layout.planets].map((p) => {
         const hitR = Math.max(p.r + 10, 22);
         const numeral = bodyMark(p.body.kind, p.order);
         const au = p.body.distanceAU;
@@ -55,7 +55,7 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
                   {p.body.kind !== "dwarf" && (
                     <>
                       <span className="dest-label__numeral">{numeral}</span>
-                      <span className="dest-label__rule" />
+                      {au !== undefined && <span className="dest-label__rule" />}
                     </>
                   )}
                   {au !== undefined && <span>{formatAU(au)}</span>}
@@ -73,7 +73,7 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
               type="button"
               className="plate-hit"
               style={{ left: p.x - hitR, top: p.y - hitR, width: hitR * 2, height: hitR * 2 }}
-              aria-label={`${p.body.name}, ${p.body.kind === "dwarf" ? "dwarf planet" : `planet ${numeral}`}${au !== undefined ? `, ${formatAU(au)} from the Sun` : ""}. Open planet view.`}
+              aria-label={`${p.body.name}, ${p.body.kind === "star" ? "our star" : p.body.kind === "dwarf" ? "dwarf planet" : `planet ${numeral}`}${au !== undefined ? `, ${formatAU(au)} from the Sun` : ""}. Open its view.`}
               onClick={() => onSelect(p.body.id)}
               onPointerEnter={() => onHover(p.body.id)}
               onPointerLeave={() => onHover(null)}

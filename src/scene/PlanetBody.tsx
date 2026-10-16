@@ -17,7 +17,7 @@ import {
 } from "three";
 import { isSurfacePOI, type POI } from "../data/solarSystem";
 import type { BodyAppearance } from "./bodyAppearance";
-import { atmosphereShader, planetShader, ringShader } from "./shaders";
+import { atmosphereShader, planetShader, ringShader, sunShader } from "./shaders";
 import { configureTextures } from "./textureSetup";
 import { setUniform } from "./uniforms";
 import {
@@ -43,7 +43,13 @@ const RING_VIEW_TILT = 0.38;
 /** Markers fade out as they approach the limb and are hidden on the far side. */
 const MARKER_LIMB = [0.12, 0.38] as const;
 
+/** The Sun's brightness: values above 1 feed the bloom. Eased down up close so its surface reads. */
+const SUN_GLOW = 3.0;
+const SUN_GLOW_CLOSE = 1.3;
+
 interface PlanetBodyProps {
+  /** Render as the Sun: an emissive star with no atmosphere shell or sunlight shading. */
+  star?: boolean;
   /** Overview placement in CSS pixels, origin top-left. */
   base: Placement;
   sun: Placement;
@@ -101,6 +107,7 @@ function loadHd(url: string) {
 const scratch = new Vector3();
 
 export function PlanetBody({
+  star = false,
   base,
   sun,
   appearance,
@@ -133,6 +140,7 @@ export function PlanetBody({
     () => ({
       uMap: { value: null as Texture | null },
       uSunPos: { value: new Vector3() },
+      uIntensity: { value: SUN_GLOW },
       uAtmosphere: { value: new Color() },
       uRim: { value: 0 },
       uLight: { value: 0 },
@@ -172,12 +180,14 @@ export function PlanetBody({
   useLayoutEffect(() => {
     const p = planetRef.current?.uniforms;
     const s = shellRef.current?.uniforms;
-    if (!p || !s) return;
+    if (!p) return;
     p.uMap.value = textures[0];
     p.uAtmosphere.value.set(appearance.atmosphere);
     p.uRim.value = appearance.rim;
-    s.uAtmosphere.value.set(appearance.atmosphere);
-    s.uRim.value = appearance.rim;
+    if (s) {
+      s.uAtmosphere.value.set(appearance.atmosphere);
+      s.uRim.value = appearance.rim;
+    }
     const rg = ringRef.current?.uniforms;
     if (rg) rg.uMap.value = textures[1] ?? null;
     invalidate();
@@ -233,6 +243,7 @@ export function PlanetBody({
     group.position.set(me.x - halfW, halfH - me.y, 0);
     group.scale.setScalar(me.r / base.r);
     const fade = zoomFrame && !isFocus ? smoothstep(0, 0.55, e) : 0;
+    if (star) setUniform(planetRef.current, "uIntensity", lerp(SUN_GLOW, SUN_GLOW_CLOSE, isFocus ? e : 0));
     group.visible = fade < 0.995;
 
     // Rotation: a timed turn toward a POI, otherwise the slow spin.
@@ -309,7 +320,7 @@ export function PlanetBody({
       <group rotation={[ring ? RING_VIEW_TILT : 0, 0, 0]}>
         <mesh ref={sphereRef}>
           <sphereGeometry args={[base.r, 64, 48]} />
-          <shaderMaterial ref={planetRef} {...planetShader} uniforms={planetUniforms} />
+          <shaderMaterial ref={planetRef} {...(star ? sunShader : planetShader)} uniforms={planetUniforms} />
         </mesh>
         {ringGeometry && (
           <mesh geometry={ringGeometry} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
@@ -324,18 +335,20 @@ export function PlanetBody({
           </mesh>
         )}
       </group>
-      <mesh ref={shellMeshRef} scale={SHELL_SCALE} renderOrder={1}>
-        <sphereGeometry args={[base.r, 48, 32]} />
-        <shaderMaterial
-          ref={shellRef}
-          {...atmosphereShader}
-          uniforms={shellUniforms}
-          side={BackSide}
-          transparent
-          depthWrite={false}
-          blending={AdditiveBlending}
-        />
-      </mesh>
+      {!star && (
+        <mesh ref={shellMeshRef} scale={SHELL_SCALE} renderOrder={1}>
+          <sphereGeometry args={[base.r, 48, 32]} />
+          <shaderMaterial
+            ref={shellRef}
+            {...atmosphereShader}
+            uniforms={shellUniforms}
+            side={BackSide}
+            transparent
+            depthWrite={false}
+            blending={AdditiveBlending}
+          />
+        </mesh>
+      )}
     </group>
   );
 }

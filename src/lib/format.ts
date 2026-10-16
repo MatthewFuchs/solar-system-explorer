@@ -21,7 +21,8 @@ export function formatAU(au: number): string {
   return `${au < 10 ? au.toFixed(2) : au.toFixed(1)} AU`;
 }
 
-/** The mark a body carries in labels: its Roman numeral, or "Dwarf planet". */
-export function bodyMark(kind: "planet" | "dwarf" | undefined, order: number): string {
+/** The mark a body carries in labels: its Roman numeral, "Dwarf planet", or "Our star". */
+export function bodyMark(kind: "star" | "planet" | "dwarf" | undefined, order: number): string {
+  if (kind === "star") return "Our star";
   return kind === "dwarf" ? "Dwarf planet" : toRoman(order);
 }

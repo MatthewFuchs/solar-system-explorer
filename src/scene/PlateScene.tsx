@@ -8,7 +8,6 @@ import { appearanceFor } from "./bodyAppearance";
 import type { BeltShape, PlateLayout } from "./plateLayout";
 import { PlanetBody } from "./PlanetBody";
 import { Starfield } from "./Starfield";
-import { SunBody } from "./SunBody";
 import type { Timeline, ZoomFrame } from "./viewTransition";
 
 interface PlateSceneProps {
@@ -45,7 +44,8 @@ export function PlateScene({
   markerEls,
   onReady,
 }: PlateSceneProps) {
-  const { width, height, sun, planets } = layout;
+  const { width, height, sun, star, planets } = layout;
+  const sunFocus = focusId === star.body.id;
 
   return (
     <Canvas
@@ -62,7 +62,23 @@ export function PlateScene({
       <Starfield width={width} height={height} />
       <BeltField belts={belts} width={width} height={height} zoom={zoom} zoomFrame={zoomFrame} />
       <Suspense fallback={null}>
-        <SunBody base={sun} zoom={zoom} zoomFrame={zoomFrame} />
+        {/* The Sun: the same body component in star mode, so it can be hovered and opened. */}
+        <PlanetBody
+          star
+          base={sun}
+          sun={sun}
+          appearance={appearanceFor(star.body.id)}
+          active={hoveredId === star.body.id}
+          dimmed={hoveredId !== null && hoveredId !== star.body.id}
+          reducedMotion={reducedMotion}
+          zoom={zoom}
+          zoomFrame={zoomFrame}
+          isFocus={sunFocus}
+          facing={sunFocus ? facing : null}
+          turnMs={turnMs}
+          pois={sunFocus ? star.body.pois : undefined}
+          markerEls={sunFocus ? markerEls : undefined}
+        />
         {planets.map((p) => {
           const isFocus = focusId === p.body.id;
           return (

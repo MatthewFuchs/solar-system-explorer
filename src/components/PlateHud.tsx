@@ -20,6 +20,8 @@ type HudState = "rest" | "active" | "dimmed";
  */
 export function PlateHud({ layout, hoveredId }: PlateHudProps) {
   const { width, height, inset, sun, planets } = layout;
+  // The Sun has a leader and a hover halo like the planets, but no orbit arc.
+  const bodies = [layout.star, ...planets];
   const stateOf = (id: string): HudState => (hoveredId === null ? "rest" : hoveredId === id ? "active" : "dimmed");
 
   return (
@@ -43,7 +45,7 @@ export function PlateHud({ layout, hoveredId }: PlateHudProps) {
         ))}
       </g>
 
-      {planets.map((p) => {
+      {bodies.map((p) => {
         const c = p.connector;
         return (
           <g key={p.body.id} className="hud-leader" data-state={stateOf(p.body.id)} style={{ "--i": p.order } as CSSProperties}>
@@ -53,7 +55,7 @@ export function PlateHud({ layout, hoveredId }: PlateHudProps) {
         );
       })}
 
-      {planets.map((p) => {
+      {bodies.map((p) => {
         const R = p.reach + HALO_GAP;
         return (
           <g key={p.body.id} className="hud-halo" data-state={stateOf(p.body.id)}>
