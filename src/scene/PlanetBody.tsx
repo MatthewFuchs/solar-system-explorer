@@ -9,6 +9,7 @@ import {
   RingGeometry,
   Vector2,
   Vector3,
+  type Mesh,
   type ShaderMaterial,
   type Texture,
 } from "three";
@@ -59,6 +60,7 @@ export function PlanetBody({ x, y, r, sun, appearance, active, dimmed, reducedMo
   const ring = appearance.ring;
   const textures = useTexture(ring ? [appearance.texture, ring.texture] : [appearance.texture], configureTextures);
 
+  const sphereRef = useRef<Mesh>(null);
   const planetRef = useRef<ShaderMaterial>(null);
   const shellRef = useRef<ShaderMaterial>(null);
   const ringRef = useRef<ShaderMaterial>(null);
@@ -118,6 +120,13 @@ export function PlanetBody({ x, y, r, sun, appearance, active, dimmed, reducedMo
   useEffect(() => invalidate(), [active, dimmed, invalidate]);
 
   useFrame((state, rawDelta) => {
+    // Slow axial spin, the only motion that runs on its own. Off with reduced motion.
+    const sphere = sphereRef.current;
+    if (sphere) {
+      const t = reducedMotion ? 0 : state.clock.elapsedTime;
+      sphere.rotation.y = appearance.spin + t * appearance.spinSpeed;
+    }
+
     const current = planetRef.current?.uniforms;
     if (!current) return;
     const delta = Math.min(rawDelta, 1 / 30);
@@ -136,7 +145,7 @@ export function PlanetBody({ x, y, r, sun, appearance, active, dimmed, reducedMo
   return (
     <group position={[wx, wy, 0]} rotation={[0, 0, appearance.tilt]}>
       <group rotation={[ring ? RING_VIEW_TILT : 0, 0, 0]}>
-        <mesh rotation={[0, appearance.spin, 0]}>
+        <mesh ref={sphereRef}>
           <sphereGeometry args={[r, 64, 48]} />
           <shaderMaterial ref={planetRef} {...planetShader} uniforms={planetUniforms} />
         </mesh>

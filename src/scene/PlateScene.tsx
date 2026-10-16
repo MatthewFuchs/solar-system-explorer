@@ -17,7 +17,7 @@ interface PlateSceneProps {
 /**
  * The 3D layer: stars, the Sun, and lit planets. A fixed orthographic camera maps
  * one world unit to one CSS pixel, so bodies line up with the SVG and HTML HUD.
- * Nothing animates on its own; the canvas only renders when something changes.
+ * The only autonomous motion is each planet's slow spin on its own axis.
  */
 export function PlateScene({ layout, hoveredId, reducedMotion }: PlateSceneProps) {
   const { width, height, sun, planets } = layout;
@@ -25,7 +25,8 @@ export function PlateScene({ layout, hoveredId, reducedMotion }: PlateSceneProps
   return (
     <Canvas
       orthographic
-      frameloop="demand"
+      // Planets spin continuously; with reduced motion nothing moves, so render only on change.
+      frameloop={reducedMotion ? "demand" : "always"}
       // 1.5x keeps edges crisp on retina screens at roughly half the fill cost of 2x.
       dpr={[1, 1.5]}
       camera={{ position: [0, 0, 1000], zoom: 1, near: 1, far: 3000 }}

@@ -15,8 +15,10 @@ export interface BodyAppearance {
   atmosphere: string;
   /** Rim glow strength (0 = airless). */
   rim: number;
-  /** Rotation about the planet's axis, choosing which face looks at the viewer. */
+  /** Starting rotation about the planet's axis, choosing which face looks at the viewer. */
   spin: number;
+  /** Slow axial rotation in radians/sec; negative turns retrograde. Not real periods. */
+  spinSpeed: number;
   /** Axial slant on screen, in radians. */
   tilt: number;
   ring?: RingAppearance;
@@ -25,21 +27,22 @@ export interface BodyAppearance {
 export const SUN_TEXTURE = textureUrl("sun.jpg");
 
 const APPEARANCE: Record<string, BodyAppearance> = {
-  mercury: { texture: textureUrl("mercury.jpg"), atmosphere: "#B8C2CC", rim: 0.18, spin: 0.6, tilt: 0.02 },
-  venus: { texture: textureUrl("venus.jpg"), atmosphere: "#FFE2A8", rim: 0.75, spin: 0.2, tilt: 0.05 },
-  earth: { texture: textureUrl("earth.jpg"), atmosphere: "#6FB2FF", rim: 0.95, spin: 0.9, tilt: 0.41 },
-  mars: { texture: textureUrl("mars.jpg"), atmosphere: "#FF9E6E", rim: 0.4, spin: 1.8, tilt: 0.44 },
-  jupiter: { texture: textureUrl("jupiter.jpg"), atmosphere: "#F2CFA4", rim: 0.55, spin: 0.4, tilt: 0.05 },
+  mercury: { texture: textureUrl("mercury.jpg"), atmosphere: "#B8C2CC", rim: 0.18, spin: 0.6, spinSpeed: 0.015, tilt: 0.02 },
+  venus: { texture: textureUrl("venus.jpg"), atmosphere: "#FFE2A8", rim: 0.75, spin: 0.2, spinSpeed: -0.012, tilt: 0.05 },
+  earth: { texture: textureUrl("earth.jpg"), atmosphere: "#6FB2FF", rim: 0.95, spin: 0.9, spinSpeed: 0.05, tilt: 0.41 },
+  mars: { texture: textureUrl("mars.jpg"), atmosphere: "#FF9E6E", rim: 0.4, spin: 1.8, spinSpeed: 0.048, tilt: 0.44 },
+  jupiter: { texture: textureUrl("jupiter.jpg"), atmosphere: "#F2CFA4", rim: 0.55, spin: 0.4, spinSpeed: 0.095, tilt: 0.05 },
   saturn: {
     texture: textureUrl("saturn.jpg"),
     atmosphere: "#F3E0B4",
     rim: 0.5,
     spin: 0,
+    spinSpeed: 0.085,
     tilt: -0.32,
     ring: { texture: textureUrl("saturn-ring.png"), inner: 1.24, outer: 2.15 },
   },
-  uranus: { texture: textureUrl("uranus.jpg"), atmosphere: "#A6F0F2", rim: 0.75, spin: 0, tilt: 0.3 },
-  neptune: { texture: textureUrl("neptune.jpg"), atmosphere: "#7FA2FF", rim: 0.85, spin: 0.5, tilt: 0.49 },
+  uranus: { texture: textureUrl("uranus.jpg"), atmosphere: "#A6F0F2", rim: 0.75, spin: 0, spinSpeed: -0.06, tilt: 0.3 },
+  neptune: { texture: textureUrl("neptune.jpg"), atmosphere: "#7FA2FF", rim: 0.85, spin: 0.5, spinSpeed: 0.065, tilt: 0.49 },
 };
 
 const FALLBACK: BodyAppearance = APPEARANCE.mercury;
