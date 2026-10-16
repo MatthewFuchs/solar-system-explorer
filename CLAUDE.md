@@ -24,10 +24,13 @@ surface, and click a POI to read facts.
 ## Art direction: "Astrolabe"
 Mystical and mysterious, never game-like or sci-fi: a candlelit astrolabe of the
 solar system, with planets lit by the Sun out of a violet-black abyss.
-- **Fixed composition, nothing moves on its own.** No orbiting, spinning, drifting,
-  or twinkling. The only motion answers the user: the point-of-light cursor, and on
-  hover a gold halo fades in, the label unfolds its tagline, and other planets dim.
-  Respect `prefers-reduced-motion` (instant state changes).
+- **Fixed composition.** The only motion that runs on its own is each planet
+  slowly spinning on its axis (speeds in `bodyAppearance.ts`; Venus and Uranus turn
+  retrograde). No orbiting, drifting, or twinkling. Everything else answers the
+  user: the point-of-light cursor, and on hover a gold halo fades in, the label
+  unfolds its tagline, and other planets dim.
+- **Reduced motion:** with `prefers-reduced-motion`, planets don't spin and state
+  changes are instant.
 - **Easing:** unhurried ease-out (`--ease`, `--dur: 380ms` in CSS; exponential
   damping in R3F). No bouncy or linear easing.
 - **Avoid game/HUD tropes:** no glass bars, corner brackets, reticles, crosshair
@@ -45,7 +48,7 @@ solar system, with planets lit by the Sun out of a violet-black abyss.
 - **Rendering:** textured planets lit from the Sun's direction, with deep night
   sides and atmospheric rims (`src/scene/shaders.ts`); Saturn has rings; the Sun
   blooms. Haze, sunglow, and vignette are static CSS layers over the canvas.
-- **Per-body visuals** (texture, atmosphere color, spin, tilt, rings) live in
+- **Per-body visuals** (texture, atmosphere color, spin and spin speed, tilt, rings) live in
   `src/scene/bodyAppearance.ts`. That is presentation; facts stay in the data file.
 - **Textures** are from Solar System Scope (CC BY 4.0), in `public/textures/`.
   Keep the in-app credit line, the Credits panel, and `public/textures/CREDITS.md`.
@@ -55,7 +58,10 @@ solar system, with planets lit by the Sun out of a violet-black abyss.
   `filter: blur/drop-shadow`, `backdrop-filter`). Repainting them during hover
   transitions dropped the page to ~45fps. Fake glows with extra strokes or
   radial gradients.
-- The canvas renders on demand only (`frameloop="demand"`), capped at 1.5x DPR.
+- The canvas renders every frame for the planet spin (`frameloop="always"`) and only
+  on change with reduced motion (`"demand"`). It is capped at 1.5x DPR. Keep the
+  per-frame work small: spin is a single rotation write per planet in `useFrame`.
+  Measured: 60fps idle on an M2.
 - Animate only `opacity` and `transform` where possible; the cursor moves by
   `transform` on its own layer.
 
