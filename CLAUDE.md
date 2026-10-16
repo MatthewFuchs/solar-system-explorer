@@ -71,6 +71,10 @@ site's signature moment; keep it intact.
   on their own.
 - **Leaving:** "Back to the system", Escape, the Overview link, or the browser back
   button all run the reverse transition. The URL hash is the source of truth.
+- **Two kinds of POI** (`src/data/solarSystem.ts`): `SurfacePOI` (lat/lon on the body) and
+  `OrbitPOI` (moons, rings, spacecraft: a screen angle and distance beside the
+  planet, which holds still when one is selected). Never put a moon or spacecraft on
+  the surface.
 - **POI coordinates must match the textures.** Markers are placed by lat/lon on an
   equirectangular map (left edge = -180°). Before adding or moving a POI, check its
   spot on the texture itself; features that drift (e.g. Jupiter's Great Red Spot) use

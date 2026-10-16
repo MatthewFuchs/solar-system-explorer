@@ -1,5 +1,6 @@
 import { useEffect, useRef, type AnimationEvent, type CSSProperties } from "react";
 import type { POI } from "../data/solarSystem";
+import { StatList } from "./StatList";
 
 export type PanelState = "open" | "closing";
 
@@ -94,22 +95,7 @@ export function PoiPanel({ poi, planetName, numeral, state, onClose, onClosed }:
         )}
 
         {poi.stats && poi.stats.length > 0 && (
-          <dl className="poi-panel__stats poi-panel__line" style={line(i++)}>
-            {poi.stats.map((s) => (
-              <div key={s.label} className="poi-panel__stat">
-                <dt>{s.label}</dt>
-                <dd>
-                  {s.value}
-                  {s.unit && (
-                    // Degree and percent signs sit tight against the number.
-                    <span className="poi-panel__unit" data-tight={/^[°%]/.test(s.unit)}>
-                      {s.unit}
-                    </span>
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <StatList stats={poi.stats} variant="panel" className="poi-panel__line" style={line(i++)} />
         )}
 
         <ul className="poi-panel__facts">

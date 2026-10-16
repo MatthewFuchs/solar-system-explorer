@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { formatAU, toRoman } from "../lib/format";
 import type { PlateLayout } from "../scene/plateLayout";
+import { StatList } from "./StatList";
 
 interface DestinationLabelsProps {
   layout: PlateLayout;
@@ -50,9 +51,13 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
                   <span className="dest-label__rule" />
                   {au !== undefined && <span>{formatAU(au)}</span>}
                 </span>
-                <span className="dest-label__more">
-                  <span className="dest-label__tagline">{p.body.tagline}</span>
-                </span>
+                <div className="dest-label__more">
+                  {/* One child, so the grid-row reveal (0fr to 1fr) unfolds tagline and stats together. */}
+                  <div className="dest-label__more-inner">
+                    <span className="dest-label__tagline">{p.body.tagline}</span>
+                    {p.body.stats && p.body.stats.length > 0 && <StatList stats={p.body.stats} variant="label" />}
+                  </div>
+                </div>
               </div>
             </div>
             <button
