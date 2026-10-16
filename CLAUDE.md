@@ -107,6 +107,14 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   texture is NASA's New Horizons mosaic, shifted to our longitude convention.
 - Everything stays static and fades or flies out with the zoom like the planets.
 
+## The Sun
+- The Sun is a destination too (`kind: "star"`, `#sun`): rendered by `PlanetBody` in star
+  mode (emissive `sunShader`, no atmosphere). Its overview label sits past its rim
+  (`layout.star`); it has no orbit arc. Up close its brightness eases from `SUN_GLOW` to
+  `SUN_GLOW_CLOSE` so the surface reads; surface markers use dark ink there.
+- Hovered labels stay readable through a warm near-black halo that hugs the letters
+  (`--halo`), never a backing box: boxes look like smudges over the Sun's glow.
+
 ## Small screens
 - Phones (< 640px wide): name-only labels at rest, planet above text in the planet view,
   bottom-sheet panels, no Overview link (Back and the title cover it).

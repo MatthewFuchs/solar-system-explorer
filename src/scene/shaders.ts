@@ -119,7 +119,8 @@ export const sunShader = {
       float mu = clamp(normalize(vViewNormal).z, 0.0, 1.0);
       vec3 tex = texture2D(uMap, vUv).rgb;
       float limb = mix(0.5, 1.0, pow(mu, 0.45));
-      vec3 col = tex * limb * uIntensity + vec3(1.0, 0.82, 0.55) * pow(mu, 2.0) * 0.9;
+      // The hot-core boost scales with intensity, so the eased-down close-up does not clip to white.
+      vec3 col = tex * limb * uIntensity + vec3(1.0, 0.82, 0.55) * pow(mu, 2.0) * 0.3 * uIntensity;
       col *= (1.0 + uLight * 0.2) * (1.0 - uDim * 0.35);
       gl_FragColor = vec4(col * (1.0 - uFade), 1.0);
       #include <colorspace_fragment>

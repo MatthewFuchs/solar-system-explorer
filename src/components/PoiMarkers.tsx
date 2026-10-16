@@ -1,4 +1,4 @@
-import type { POI } from "../data/solarSystem";
+import { isSurfacePOI, type POI } from "../data/solarSystem";
 
 interface PoiMarkersProps {
   pois: POI[];
@@ -27,6 +27,7 @@ export function PoiMarkers({ pois, activeIndex, markerEls, onSelect, onHover }: 
           type="button"
           className="poi-marker"
           data-active={i === activeIndex}
+          data-placement={isSurfacePOI(poi) ? "surface" : "orbit"}
           style={{ visibility: "hidden", opacity: 0 }}
           aria-label={`${poi.name}, ${poi.category}`}
           aria-pressed={i === activeIndex}
