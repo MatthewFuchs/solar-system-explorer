@@ -373,7 +373,7 @@ body,
 
 .dest-label[data-side='left'] {
   flex-direction: row-reverse;
-  transform: translate(calc(-100% + 6px), -11px);
+  transform: translate(6px, -11px);
   text-align: right;
 }
 
@@ -1930,4 +1930,38 @@ body,
 .poi-panel {
   scrollbar-width: thin;
   scrollbar-color: var(--gold-faint) transparent;
+}
+
+/* ---------- Hovered planet label: readable over anything ---------- */
+
+/* The active label rises above its neighbors and sits in a soft pool of darkness:
+   a feathered backing (background plus a same-color shadow), not a hard card. */
+.dest-label[data-state='active'] {
+  z-index: 3;
+}
+
+.dest-label__text {
+  border-radius: 6px;
+  transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.dest-label[data-state='active'] .dest-label__text {
+  background-color: rgba(6, 4, 11, 0.82);
+  box-shadow: 0 0 44px 16px rgba(6, 4, 11, 0.82);
+}
+
+/* Give the tagline and stats a comfortable measure wherever the label sits. */
+.dest-label__tagline {
+  min-width: min(200px, var(--label-room, 200px));
+}
+
+/* ---------- The custom cursor owns the pointer ---------- */
+
+/* Last in the file on purpose: component styles above set cursor: pointer on their
+   controls, and on mouse devices the custom cursor replaces all of them. */
+@media (hover: hover) and (pointer: fine) {
+  .plate,
+  .plate * {
+    cursor: none !important;
+  }
 }
