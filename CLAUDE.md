@@ -37,8 +37,9 @@ solar system, with planets lit by the Sun out of a violet-black abyss.
   a single fade; the zoom becomes a short dark dissolve (`.view-veil`); panels fade in
   without sliding. Nothing moves across the screen.
 - **Sound:** optional ambient sound, generated live with Web Audio
-  (`src/lib/ambientSound.ts`): an open, high chord whose tones swell slowly, over faint
-  filtered air, mostly dry. Off by default; it may only start from the toggle's click.
+  (`src/lib/ambientSound.ts`): sparse. Faint filtered air, and single soft pentatonic
+  notes surfacing every 5–12s like distant signals, with one quiet echo. Mostly
+  silence. Off by default; it may only start from the toggle's click.
   Keep it calm and spacious: no low rumble, no heavy reverb.
 - **Easing:** unhurried ease-out (`--ease`, `--dur: 380ms` in CSS; exponential
   damping in R3F). No bouncy or linear easing.

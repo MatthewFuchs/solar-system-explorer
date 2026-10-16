@@ -271,8 +271,8 @@ export function Overview() {
               <span>The Solar</span> <span>System</span>
             </h1>
             <p>
-              Nine worlds turn about a single star. Their order here is true; their sizes and spacing
-              are not. Distances are in AU, the span between Earth and the Sun. Choose a world to draw near.
+              A chart of the Sun's family, from the scorched to the frozen. Distances are in AU, the
+              span from Earth to the Sun. Choose a world, and it will come to you.
             </p>
           </div>
           {layout && (
