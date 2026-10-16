@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 
-/** Slim game-menu style bar: site name, navigation, and texture credits. */
+/**
+ * Quiet masthead in the top-right corner, clear of the Sun: site name,
+ * navigation, and texture credits.
+ */
 export function TopBar() {
   const [creditsOpen, setCreditsOpen] = useState(false);
 
@@ -15,15 +18,11 @@ export function TopBar() {
 
   return (
     <>
-      <header className="topbar">
-        <a className="topbar__brand" href="/">
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-            <circle cx="8" cy="8" r="2.4" />
-            <circle cx="8" cy="8" r="6.4" fill="none" />
-          </svg>
+      <header className="masthead">
+        <a className="masthead__brand" href="/">
           Solar System Explorer
         </a>
-        <nav className="topbar__nav" aria-label="Main">
+        <nav className="masthead__nav" aria-label="Main">
           <a href="/" aria-current="page">
             Overview
           </a>
@@ -50,7 +49,7 @@ export function TopBar() {
             </a>
             . Planet maps resized for the web.
           </p>
-          <p>Typefaces: Saira and Barlow, via Google Fonts.</p>
+          <p>Typefaces: Marcellus and Cormorant Garamond, via Google Fonts.</p>
         </aside>
       )}
     </>

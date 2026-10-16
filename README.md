@@ -1,8 +1,9 @@
 # Solar System Explorer
 
-An interactive, stylized map of the solar system, styled like a sci-fi game's
-destination map. Start with an overview of the Sun and the eight planets, click a planet to fly to it, explore
-its points of interest (POIs), and click a POI to read facts about it.
+An interactive, stylized map of the solar system, drawn like a candlelit
+astrolabe. Start with an overview of the Sun and the eight planets, click a
+planet to fly to it, explore its points of interest (POIs), and click a POI to
+read facts about it.
 
 The layout is stylized for readability. Sizes, distances, and orbit speeds
 are **not** to scale.
@@ -28,7 +29,7 @@ npm run lint     # run oxlint
 ```
 src/
   scene/       3D layer (React Three Fiber), shaders, and layout
-  components/  HUD and UI layers (labels, top bar, navigation)
+  components/  Line work and UI layers (labels, masthead, navigation)
   data/        solarSystem.ts, which holds all planet and POI content
 ```
 
@@ -42,8 +43,7 @@ Planet, Sun, and ring textures are by
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Planet maps were resized
 for the web; see `public/textures/CREDITS.md`.
 
-Typefaces: [Saira](https://fonts.google.com/specimen/Saira) and
-[Barlow](https://fonts.google.com/specimen/Barlow), via Google Fonts.
+Typefaces: [Marcellus](https://fonts.google.com/specimen/Marcellus) and
+[Cormorant Garamond](https://fonts.google.com/specimen/Cormorant+Garamond), via Google Fonts.
 
-This is an independent fan project. The overview takes its feel from game
-destination maps but uses no Bungie or Destiny assets.
+This is an independent project and uses no Bungie or Destiny assets.

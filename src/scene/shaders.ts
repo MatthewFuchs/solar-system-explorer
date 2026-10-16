@@ -40,8 +40,8 @@ export const planetShader = {
       float day = smoothstep(-0.12, 0.3, ndl);
 
       vec3 albedo = texture2D(uMap, vUv).rgb;
-      float diffuse = max(ndl, 0.0) * 0.9 + day * 0.22;
-      vec3 col = albedo * (0.02 + diffuse * (1.0 + uLight * 0.35));
+      float diffuse = max(ndl, 0.0) * 0.92 + day * 0.12;
+      vec3 col = albedo * (0.012 + diffuse * (1.0 + uLight * 0.4));
 
       float fresnel = pow(1.0 - clamp(vViewNormal.z, 0.0, 1.0), 2.6);
       float rimLit = smoothstep(-0.35, 0.55, ndl);

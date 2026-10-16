@@ -5,14 +5,17 @@ interface PlateHudProps {
   hoveredId: string | null;
 }
 
-const TICK = 5;
-const RETICLE_GAP = 9;
+/** Spacing of the engraved scale ticks along each arc, in radians (2.5 degrees). */
+const TICK_STEP = (2.5 * Math.PI) / 180;
+const HALO_GAP = 8;
 
 type HudState = "rest" | "active" | "dimmed";
 
 /**
- * Vector HUD over the 3D layer: orbit arcs (masked around each planet), elbow
- * connectors to the labels, and the selection reticle shown on hover.
+ * Line work over the 3D layer, drawn like the engraved rings of an astrolabe:
+ * gold orbit arcs with scale ticks (masked around each planet), leader lines to
+ * the labels, and the halo shown on hover. No SVG filters: glows are a second,
+ * wider, faint stroke, which keeps hover transitions cheap to repaint.
  */
 export function PlateHud({ layout, hoveredId }: PlateHudProps) {
   const { width, height, inset, sun, planets } = layout;
@@ -21,13 +24,6 @@ export function PlateHud({ layout, hoveredId }: PlateHudProps) {
   return (
     <svg className="hud-layer" width={width} height={height} aria-hidden="true">
       <defs>
-        <filter id="hud-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="2" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
         <clipPath id="hud-bounds">
           <rect x={inset} y={inset} width={width - inset * 2} height={height - inset * 2} />
         </clipPath>
@@ -35,31 +31,36 @@ export function PlateHud({ layout, hoveredId }: PlateHudProps) {
         <mask id="arc-mask" maskUnits="userSpaceOnUse" x="0" y="0" width={width} height={height}>
           <rect width={width} height={height} fill="white" />
           {planets.map((p) => (
-            <circle key={p.body.id} cx={p.x} cy={p.y} r={p.r + 3} fill="black" />
+            <circle key={p.body.id} cx={p.x} cy={p.y} r={p.r + 4} fill="black" />
           ))}
         </mask>
       </defs>
 
-      <g clipPath="url(#hud-bounds)" mask="url(#arc-mask)" filter="url(#hud-glow)">
+      <g clipPath="url(#hud-bounds)" mask="url(#arc-mask)">
         {planets.map((p) => (
           <OrbitArc key={p.body.id} p={p} sun={sun} state={stateOf(p.body.id)} />
         ))}
       </g>
 
-      <g filter="url(#hud-glow)">
-        {planets.map((p) => {
-          const c = p.connector;
-          return (
-            <g key={p.body.id} className="hud-connector" data-state={stateOf(p.body.id)}>
-              <polyline points={`${c.x0},${c.y0} ${c.x1},${c.y1} ${c.x2},${c.y1}`} />
-              <circle cx={c.x0} cy={c.y0} r={1.6} />
-            </g>
-          );
-        })}
-        {planets.map((p) => (
-          <Reticle key={p.body.id} p={p} state={stateOf(p.body.id)} />
-        ))}
-      </g>
+      {planets.map((p) => {
+        const c = p.connector;
+        return (
+          <g key={p.body.id} className="hud-leader" data-state={stateOf(p.body.id)}>
+            <polyline points={`${c.x0},${c.y0} ${c.x1},${c.y1} ${c.x2},${c.y1}`} />
+            <circle cx={c.x0} cy={c.y0} r={1.4} />
+          </g>
+        );
+      })}
+
+      {planets.map((p) => {
+        const R = p.reach + HALO_GAP;
+        return (
+          <g key={p.body.id} className="hud-halo" data-state={stateOf(p.body.id)}>
+            <circle className="hud-halo__glow" cx={p.x} cy={p.y} r={R} />
+            <circle className="hud-halo__line" cx={p.x} cy={p.y} r={R} />
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -68,41 +69,29 @@ function OrbitArc({ p, sun, state }: { p: PlanetPlacement; sun: { x: number; y: 
   const a0 = p.angle - p.arcSpan;
   const a1 = p.angle + p.arcSpan;
   const R = p.orbitR;
+
+  // One path for every tick on this arc; every fourth tick is long, like a degree scale.
+  let ticks = "";
+  const count = Math.floor((a1 - a0) / TICK_STEP);
+  for (let k = 0; k <= count; k++) {
+    const a = a0 + k * TICK_STEP;
+    const len = k % 4 === 0 ? 6 : 3;
+    ticks += `M ${polar(sun, R, a)} L ${polar(sun, R + len, a)} `;
+  }
+
   return (
     <g className="hud-arc" data-state={state}>
-      <path d={`M ${polar(sun, R, a0)} A ${R} ${R} 0 0 1 ${polar(sun, R, a1)}`} />
-      {/* Bracket ends: a tick across the arc with a short return toward the planet. */}
-      <path d={`M ${polar(sun, R - TICK, a0)} L ${polar(sun, R + TICK, a0)}`} />
-      <path d={`M ${polar(sun, R - TICK, a1)} L ${polar(sun, R + TICK, a1)}`} />
-      <path d={`M ${polar(sun, R + TICK, a0)} A ${R + TICK} ${R + TICK} 0 0 1 ${polar(sun, R + TICK, a0 + 0.012)}`} />
-      <path d={`M ${polar(sun, R + TICK, a1)} A ${R + TICK} ${R + TICK} 0 0 0 ${polar(sun, R + TICK, a1 - 0.012)}`} />
+      <path className="hud-arc__glow" d={arcPath(sun, R, a0, a1)} />
+      <path className="hud-arc__line" d={arcPath(sun, R, a0, a1)} />
+      <path className="hud-arc__ticks" d={ticks} />
+      <circle className="hud-arc__end" cx={sun.x + R * Math.cos(a0)} cy={sun.y + R * Math.sin(a0)} r={2} />
+      <circle className="hud-arc__end" cx={sun.x + R * Math.cos(a1)} cy={sun.y + R * Math.sin(a1)} r={2} />
     </g>
   );
 }
 
-/** Selection ring with four cardinal ticks; scales in when its planet is hovered. */
-function Reticle({ p, state }: { p: PlanetPlacement; state: HudState }) {
-  const R = p.reach + RETICLE_GAP;
-  const ticks: [number, number][] = [
-    [0, -1],
-    [1, 0],
-    [0, 1],
-    [-1, 0],
-  ];
-  return (
-    <g className="hud-reticle" data-state={state}>
-      <circle cx={p.x} cy={p.y} r={R} />
-      {ticks.map(([dx, dy]) => (
-        <line
-          key={`${dx},${dy}`}
-          x1={p.x + dx * (R + 3)}
-          y1={p.y + dy * (R + 3)}
-          x2={p.x + dx * (R + 9)}
-          y2={p.y + dy * (R + 9)}
-        />
-      ))}
-    </g>
-  );
+function arcPath(c: { x: number; y: number }, r: number, a0: number, a1: number) {
+  return `M ${polar(c, r, a0)} A ${r} ${r} 0 0 1 ${polar(c, r, a1)}`;
 }
 
 function polar(c: { x: number; y: number }, r: number, a: number) {

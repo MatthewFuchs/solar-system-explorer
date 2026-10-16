@@ -21,35 +21,47 @@ surface, and click a POI to read facts.
   a design inspiration for the feel. No Destiny or Bungie art, icons, fonts,
   sounds, names, or trademarks. All assets must be original or properly licensed.
 
-## Art direction: deep-space destination map
-The overview feels like a sci-fi game's destination map: a HUD floating over deep
-space. Inspired by that genre (e.g. Destiny 2's Director), never copied from it.
+## Art direction: "Astrolabe"
+Mystical and mysterious, never game-like or sci-fi: a candlelit astrolabe of the
+solar system, with planets lit by the Sun out of a violet-black abyss.
 - **Fixed composition, nothing moves on its own.** No orbiting, spinning, drifting,
-  or twinkling. The only motion answers the user: the HUD cursor, and on hover a
-  selection reticle snaps in, the label brightens and expands to show the tagline,
-  and other planets dim. Respect `prefers-reduced-motion` (instant state changes).
-- **Easing:** quick ease-out only (`--ease`, `--dur: 240ms` in CSS; exponential
+  or twinkling. The only motion answers the user: the point-of-light cursor, and on
+  hover a gold halo fades in, the label unfolds its tagline, and other planets dim.
+  Respect `prefers-reduced-motion` (instant state changes).
+- **Easing:** unhurried ease-out (`--ease`, `--dur: 380ms` in CSS; exponential
   damping in R3F). No bouncy or linear easing.
+- **Avoid game/HUD tropes:** no glass bars, corner brackets, reticles, crosshair
+  cursors, wide-tracked tech sans, or neon blue.
 - **Layout is locked:** Sun in the top-left corner, planets on the diagonal, partial
   arcs, title bottom-left. `src/scene/plateLayout.ts` places everything
   (art-directed, not astronomical) and picks label sides that avoid collisions.
-- **Palette** (`src/lib/palette.ts`, mirrored in `src/index.css`): space `#03050B`,
-  HUD white `#D8E8FF`, signal blue `#8FD3FF` for selection and active states,
-  sunlight `#FFB24D` reserved for the Sun's light.
-- **Type:** Saira (display: wide, uppercase, letter-spaced) + Barlow (body).
-  Don't use Inter, Roboto, or Space Grotesk.
-- **Rendering:** textured planets lit from the Sun's direction, with a night side and
-  atmospheric rim (`src/scene/shaders.ts`); Saturn has rings; the Sun blooms. Nebula
-  haze and the Sun's volumetric glow are static CSS layers screen-blended over the
-  canvas. The canvas renders on demand only.
+- **Palette** (`src/lib/palette.ts`, mirrored in `src/index.css`): abyss `#06040B`,
+  candle gold `#D6B06A` for line work and accents, ivory `#ECE4D2` for type, ember
+  `#F0A25A` reserved for the Sun's light. Smoky violet haze.
+- **Type:** Marcellus (title, small capitals, numerals) + Cormorant Garamond
+  (italic planet names, taglines, body). Don't use Inter, Roboto, or Space Grotesk.
+- **Line work:** gold hairline arcs with engraved degree ticks and small ring ends;
+  leaders end in a four-point star. Glows are a second faint wide stroke.
+- **Rendering:** textured planets lit from the Sun's direction, with deep night
+  sides and atmospheric rims (`src/scene/shaders.ts`); Saturn has rings; the Sun
+  blooms. Haze, sunglow, and vignette are static CSS layers over the canvas.
 - **Per-body visuals** (texture, atmosphere color, spin, tilt, rings) live in
   `src/scene/bodyAppearance.ts`. That is presentation; facts stay in the data file.
 - **Textures** are from Solar System Scope (CC BY 4.0), in `public/textures/`.
   Keep the in-app credit line, the Credits panel, and `public/textures/CREDITS.md`.
 
+## Performance rules
+- **No SVG or CSS blur filters on large or full-screen layers** (`feGaussianBlur`,
+  `filter: blur/drop-shadow`, `backdrop-filter`). Repainting them during hover
+  transitions dropped the page to ~45fps. Fake glows with extra strokes or
+  radial gradients.
+- The canvas renders on demand only (`frameloop="demand"`), capped at 1.5x DPR.
+- Animate only `opacity` and `transform` where possible; the cursor moves by
+  `transform` on its own layer.
+
 ## Folder structure
 - `src/scene/`: 3D layer (R3F), shaders, per-body appearance, and plate layout
-- `src/components/`: HUD and UI layers (SVG HUD, labels, top bar, backdrop, cursor)
+- `src/components/`: line work and UI layers (SVG arcs, labels, masthead, backdrop, cursor)
 - `src/lib/`, `src/hooks/`: small shared helpers
 - `src/data/`: typed content data
 
