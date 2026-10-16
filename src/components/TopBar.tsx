@@ -4,26 +4,48 @@ import { useEffect, useState } from "react";
  * Quiet masthead in the top-right corner, clear of the Sun: site name,
  * navigation, and texture credits.
  */
-export function TopBar() {
+interface TopBarProps {
+  inOverview: boolean;
+  onOverview: () => void;
+}
+
+export function TopBar({ inOverview, onOverview }: TopBarProps) {
   const [creditsOpen, setCreditsOpen] = useState(false);
 
   useEffect(() => {
     if (!creditsOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setCreditsOpen(false);
+      if (e.key !== "Escape") return;
+      // Closing the panel takes this Escape; it shouldn't also leave the planet view.
+      e.preventDefault();
+      setCreditsOpen(false);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [creditsOpen]);
 
   return (
     <>
       <header className="masthead">
-        <a className="masthead__brand" href="/">
+        <a
+          className="masthead__brand"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            onOverview();
+          }}
+        >
           Solar System Explorer
         </a>
         <nav className="masthead__nav" aria-label="Main">
-          <a href="/" aria-current="page">
+          <a
+            href="#"
+            aria-current={inOverview ? "page" : undefined}
+            onClick={(e) => {
+              e.preventDefault();
+              onOverview();
+            }}
+          >
             Overview
           </a>
           <button

@@ -177,3 +177,16 @@ function circleHitsBox(cx: number, cy: number, r: number, b: Box) {
   const ny = clamp(cy, b.top, b.bottom);
   return Math.hypot(cx - nx, cy - ny) < r;
 }
+
+/**
+ * The focused planet in planet view: large, framed like a magazine feature image.
+ * Landscape puts it right of the text column; portrait puts it above the text.
+ * Ringed planets shrink so their rings stay in frame.
+ */
+export function computeFeaturePlacement(width: number, height: number, reach: number) {
+  const ringScale = reach > 1 ? reach * 0.72 : 1;
+  if (width / height < PORTRAIT_ASPECT) {
+    return { x: width * 0.5, y: height * 0.28, r: Math.min(width * 0.32, height * 0.18) / ringScale };
+  }
+  return { x: width * 0.665, y: height * 0.52, r: Math.min(height * 0.34, width * 0.24) / ringScale };
+}

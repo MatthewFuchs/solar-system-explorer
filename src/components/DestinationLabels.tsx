@@ -5,11 +5,14 @@ import type { PlateLayout } from "../scene/plateLayout";
 interface DestinationLabelsProps {
   layout: PlateLayout;
   hoveredId: string | null;
+  /** Planet open in planet view; its label is hidden while its name animates elsewhere. */
+  focusId: string | null;
   onHover: (id: string | null) => void;
+  onSelect: (id: string) => void;
 }
 
 /** Game-map destination labels, plus an invisible focusable hit target over each planet. */
-export function DestinationLabels({ layout, hoveredId, onHover }: DestinationLabelsProps) {
+export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelect }: DestinationLabelsProps) {
   const stateOf = (id: string) => (hoveredId === null ? "rest" : hoveredId === id ? "active" : "dimmed");
 
   return (
@@ -29,6 +32,8 @@ export function DestinationLabels({ layout, hoveredId, onHover }: DestinationLab
           <div key={p.body.id}>
             <div
               className="dest-label"
+              data-planet={p.body.id}
+              data-focus={focusId === p.body.id}
               data-side={p.labelSide === 1 ? "right" : "left"}
               data-state={stateOf(p.body.id)}
               style={style}
@@ -41,7 +46,7 @@ export function DestinationLabels({ layout, hoveredId, onHover }: DestinationLab
               <div className="dest-label__text">
                 <span className="dest-label__name">{p.body.name}</span>
                 <span className="dest-label__meta">
-                  <span>{numeral}</span>
+                  <span className="dest-label__numeral">{numeral}</span>
                   <span className="dest-label__rule" />
                   {au !== undefined && <span>{formatAU(au)}</span>}
                 </span>
@@ -54,7 +59,8 @@ export function DestinationLabels({ layout, hoveredId, onHover }: DestinationLab
               type="button"
               className="plate-hit"
               style={{ left: p.x - hitR, top: p.y - hitR, width: hitR * 2, height: hitR * 2 }}
-              aria-label={`${p.body.name}, planet ${numeral}${au !== undefined ? `, ${formatAU(au)} from the Sun` : ""}. ${p.body.tagline}`}
+              aria-label={`${p.body.name}, planet ${numeral}${au !== undefined ? `, ${formatAU(au)} from the Sun` : ""}. Open planet view.`}
+              onClick={() => onSelect(p.body.id)}
               onPointerEnter={() => onHover(p.body.id)}
               onPointerLeave={() => onHover(null)}
               onFocus={() => onHover(p.body.id)}
