@@ -21,12 +21,12 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
     entries: [
       {
         title: "Marcellus",
-        detail: "Designed by Brian J. Bonislawsky (Astigmatic). SIL Open Font License, served by Google Fonts.",
+        detail: "Designed by Brian J. Bonislawsky (Astigmatic). SIL Open Font License, self-hosted via Fontsource.",
         link: { label: "Google Fonts", url: "https://fonts.google.com/specimen/Marcellus" },
       },
       {
         title: "Cormorant Garamond",
-        detail: "Designed by Christian Thalmann (Catharsis Fonts). SIL Open Font License, served by Google Fonts.",
+        detail: "Designed by Christian Thalmann (Catharsis Fonts). SIL Open Font License, self-hosted via Fontsource.",
         link: { label: "Google Fonts", url: "https://fonts.google.com/specimen/Cormorant+Garamond" },
       },
     ],

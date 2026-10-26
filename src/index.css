@@ -1,28 +1,5 @@
-/* Astrolabe: candlelit gold on a violet-black abyss. Palette mirrors src/lib/palette.ts. */
-:root {
-  --abyss: #06040b;
-  --gold: #d6b06a;
-  --gold-soft: rgba(214, 176, 106, 0.62);
-  --gold-faint: rgba(214, 176, 106, 0.3);
-  --ivory: #ece4d2;
-  --ivory-soft: rgba(236, 228, 210, 0.66);
-  --ember: #f0a25a;
-
-  --font-display: 'Marcellus', 'Trajan Pro', 'Optima', Georgia, serif;
-  --font-body: 'Cormorant Garamond', 'Garamond', Georgia, serif;
-
-  /* Slow-in, soft landing; unhurried but responsive. No overshoot. */
-  --ease: cubic-bezier(0.25, 0.8, 0.25, 1);
-  --dur: 380ms;
-  --bar-h: 52px; /* Matches TOP_BAR_HEIGHT in plateLayout.ts. */
-  --hud-inset: clamp(12px, 1.8vw, 24px); /* Matches layout.inset. */
-
-  color-scheme: dark;
-  color: var(--ivory);
-  background: var(--abyss);
-  font-family: var(--font-body);
-  -webkit-font-smoothing: antialiased;
-}
+/* Astrolabe: candlelit gold on a violet-black abyss. Tokens live in tokens.css. */
+@import "./tokens.css";
 
 html,
 body,
@@ -30,6 +7,41 @@ body,
   margin: 0;
   height: 100%;
   overflow: hidden;
+}
+
+/*
+ * The prerendered text of a page (scripts/prerender.ts), for search engines and readers
+ * without JavaScript. The app replaces it on start; it only appears if that hasn't
+ * happened after a moment, so it never flashes before the app.
+ */
+.prerendered {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  padding: 48px clamp(16px, 6vw, 96px);
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--ivory-soft);
+  opacity: 0;
+  animation: prerendered-show 1ms 2.5s forwards;
+}
+
+@keyframes prerendered-show {
+  to {
+    opacity: 1;
+  }
+}
+
+.prerendered h1,
+.prerendered h2,
+.prerendered h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: var(--ivory);
+}
+
+.prerendered a {
+  color: var(--gold);
 }
 
 .plate {

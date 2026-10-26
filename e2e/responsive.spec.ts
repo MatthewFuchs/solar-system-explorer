@@ -62,7 +62,7 @@ for (const viewport of VIEWPORTS) {
     });
 
     test("lays out the planet view", async ({ page }) => {
-      await openApp(page, "#saturn");
+      await openApp(page, "saturn");
       await expectPlanetView(page, "Saturn");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow).toBeLessThanOrEqual(0);
@@ -77,7 +77,7 @@ test.describe("phones", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("drop the Overview link", async ({ page }) => {
-    await openApp(page, "#mars");
+    await openApp(page, "mars");
     await expectPlanetView(page, "Mars");
     await expect(page.getByRole("link", { name: "Overview" })).toBeHidden();
     await expect(page.getByRole("button", { name: "Back to the system" })).toBeVisible();

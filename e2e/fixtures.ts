@@ -26,10 +26,10 @@ export const test = base.extend<{ allowErrors: boolean; errors: string[] }>({
 
 export { expect };
 
-/** Open the app with the entrance already seen, so tests start from the still overview. */
-export async function openApp(page: Page, hash = "") {
+/** Open a page of the app (e.g. "mars") with the entrance already seen, so tests start still. */
+export async function openApp(page: Page, path = "") {
   await page.addInitScript(() => sessionStorage.setItem("sse-entrance-played", "1"));
-  await page.goto(`/${hash}`);
+  await page.goto(`/${path}`);
   await expect(page.locator(".plate")).toHaveAttribute("data-entrance", "done");
 }
 

@@ -93,6 +93,8 @@ export interface CelestialBody {
   orbitDistance: number;
   /** Stylized orbit angular speed in radians/sec. 0 for the Sun itself. */
   orbitSpeed: number;
+  /** Its Wikipedia article, which tells search engines which body a page is about. */
+  wikipedia: string;
   /** Short one-line description shown under the body's name. */
   tagline: string;
   /** Mean distance from the Sun in astronomical units (real value, shown in labels). Omitted for the Sun. */
@@ -106,11 +108,22 @@ export interface CelestialBody {
   pois: POI[];
 }
 
+/** The site's own words: its name and the introduction under the overview title. */
+export const SITE = {
+  name: "Solar System Explorer",
+  title: "The Solar System",
+  intro:
+    "A chart of the Sun's family, from the scorched to the frozen. Distances are in AU, the span from Earth to the Sun. Choose a world, and it will come to you.",
+  /** One line for search results and link previews. */
+  description: "An interactive map of the solar system, drawn like a candlelit astrolabe. Fly to each world and read its stories.",
+};
+
 const NASA = (url: string): POISource => ({ label: "NASA", url });
 
 export const SUN: CelestialBody = {
   id: "sun",
   name: "Sun",
+  wikipedia: "https://en.wikipedia.org/wiki/Sun",
   kind: "star",
   color: "#ffd84a",
   displayRadius: 4,
@@ -176,6 +189,7 @@ export const PLANETS: CelestialBody[] = [
   {
     id: "mercury",
     name: "Mercury",
+    wikipedia: "https://en.wikipedia.org/wiki/Mercury_(planet)",
     color: "#9c9c9c",
     displayRadius: 0.6,
     orbitDistance: 8,
@@ -245,6 +259,7 @@ export const PLANETS: CelestialBody[] = [
   {
     id: "venus",
     name: "Venus",
+    wikipedia: "https://en.wikipedia.org/wiki/Venus",
     color: "#e8c27a",
     displayRadius: 0.95,
     orbitDistance: 11,
@@ -314,6 +329,7 @@ export const PLANETS: CelestialBody[] = [
   {
     id: "earth",
     name: "Earth",
+    wikipedia: "https://en.wikipedia.org/wiki/Earth",
     color: "#3a7bd5",
     displayRadius: 1,
     orbitDistance: 15,
@@ -405,6 +421,7 @@ export const PLANETS: CelestialBody[] = [
   {
     id: "mars",
     name: "Mars",
+    wikipedia: "https://en.wikipedia.org/wiki/Mars",
     color: "#c1440e",
     displayRadius: 0.75,
     orbitDistance: 19,
@@ -496,6 +513,7 @@ export const PLANETS: CelestialBody[] = [
   {
     id: "jupiter",
     name: "Jupiter",
+    wikipedia: "https://en.wikipedia.org/wiki/Jupiter",
     color: "#d9a066",
     displayRadius: 2.6,
     orbitDistance: 28,
@@ -582,6 +600,7 @@ export const PLANETS: CelestialBody[] = [
   {
     id: "saturn",
     name: "Saturn",
+    wikipedia: "https://en.wikipedia.org/wiki/Saturn",
     color: "#e3c88a",
     displayRadius: 2.2,
     orbitDistance: 36,
@@ -664,6 +683,7 @@ export const PLANETS: CelestialBody[] = [
   {
     id: "uranus",
     name: "Uranus",
+    wikipedia: "https://en.wikipedia.org/wiki/Uranus",
     color: "#9ad7d1",
     displayRadius: 1.6,
     orbitDistance: 43,
@@ -731,6 +751,7 @@ export const PLANETS: CelestialBody[] = [
   {
     id: "neptune",
     name: "Neptune",
+    wikipedia: "https://en.wikipedia.org/wiki/Neptune",
     color: "#3b5ba9",
     displayRadius: 1.55,
     orbitDistance: 50,
@@ -803,6 +824,7 @@ export const DWARF_PLANETS: CelestialBody[] = [
   {
     id: "pluto",
     name: "Pluto",
+    wikipedia: "https://en.wikipedia.org/wiki/Pluto",
     kind: "dwarf",
     color: "#c9a88a",
     displayRadius: 0.35,
