@@ -68,10 +68,16 @@ const cache = new Map<string, Promise<Texture>>();
 function loadMap(url: string) {
   let p = cache.get(url);
   if (!p) {
-    p = new TextureLoader().loadAsync(url).then((t) => {
-      configureTextures(t);
-      return t;
-    });
+    p = new TextureLoader().loadAsync(url).then(
+      (t) => {
+        configureTextures(t);
+        return t;
+      },
+      (err: unknown) => {
+        cache.delete(url); // let a later visit try again
+        throw err;
+      },
+    );
     cache.set(url, p);
   }
   return p;
@@ -130,11 +136,13 @@ function Moon({ base, sun, zoom, zoomFrame, angle, distance, radius, face, faceL
       setUniformMap(matRef.current, t);
       invalidate();
     };
-    if (texture) void loadMap(texture).then(apply);
-    else {
+    const applyFlat = () => {
       flat = flatMap(color ?? "#888888");
       apply(flat);
-    }
+    };
+    // If the map fails to load, the moon is still drawn, as a plain lit sphere.
+    if (texture) void loadMap(texture).then(apply, applyFlat);
+    else applyFlat();
     return () => {
       cancelled = true;
       flat?.dispose();
