@@ -211,7 +211,8 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   commit them after visual changes. They are the only JPEGs and are never loaded by the app.
 - **404 page:** `404.html` is a second Vite entry with `src/notFound.css` (tokens shared
   through `src/tokens.css`). Static, no script. Its chart (`scripts/notFoundChart.ts`)
-  and world links are filled in at build time.
+  and world links are drawn in by the `notFound` plugin (`scripts/prerender.ts`), in dev and
+  in the build; the dev server also answers unknown paths with it.
 
 ## Folder structure
 - `src/scene/`: 3D layer (R3F), shaders, per-body appearance, and plate layout
