@@ -24,6 +24,18 @@ npm run preview  # serve the production build locally
 npm run lint     # run oxlint
 ```
 
+## Deploying
+
+The site is static and deploys to [Vercel](https://vercel.com): import the repo
+and Vercel picks up `vercel.json` (Vite preset, `npm run build`, output `dist/`).
+No environment variables are needed.
+
+`vercel.json` also sets the security headers (a strict Content Security Policy,
+no framing, `nosniff`) and long-lived caching for the hashed files in `assets/`.
+`npm run preview` serves the same headers, so run it before deploying whenever you
+add an external resource (a new font host, image CDN, and so on) and check the
+browser console for CSP errors. Views live in the URL hash, so no rewrites are needed.
+
 ## Project structure
 
 ```

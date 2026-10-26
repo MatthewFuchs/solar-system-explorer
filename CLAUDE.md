@@ -168,6 +168,17 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   (`TopBar`, `SpacecraftLayer`, `BeltLabels`, `SpaceBackdrop`) are memoized, so pass
   them stable callbacks (`useCallback`).
 
+## Deployment and security
+- Deployed on Vercel. `vercel.json` holds the build settings and security headers
+  (strict CSP: scripts and images from `'self'` only, fonts from Google Fonts).
+  `vite.config.ts` mirrors those headers into `npm run preview`.
+- Adding any external origin (fonts, images, analytics) means updating the CSP in
+  `vercel.json` and checking `npm run preview` for CSP errors.
+- No inline `<script>`, `eval`, `dangerouslySetInnerHTML`, or injected `<style>`
+  tags: the CSP blocks them. Outbound links use `target="_blank" rel="noreferrer"`.
+- The 3D scene sits inside `SceneBoundary`, so a failed chunk or missing WebGL
+  leaves the typography usable.
+
 ## Folder structure
 - `src/scene/`: 3D layer (R3F), shaders, per-body appearance, and plate layout
 - `src/components/`: line work and UI layers (SVG arcs, labels, masthead, backdrop, cursor)
