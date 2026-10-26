@@ -357,6 +357,28 @@ body,
   }
 }
 
+/* Under the title, in place of the planets, when the 3D scene can't run (SceneBoundary). */
+.scene-notice {
+  max-width: 40ch;
+  margin: 0.9em 0 0;
+  font-size: clamp(16px, 1.3vw, 19px);
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ivory);
+}
+
+.scene-notice__retry {
+  /* The title layer lets clicks through to the plate; the button takes its own. */
+  pointer-events: auto;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: none;
+  font: inherit;
+  color: var(--gold);
+  cursor: pointer;
+}
+
 /* ---------- Planet labels ---------- */
 
 .dest-label {

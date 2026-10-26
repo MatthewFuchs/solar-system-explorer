@@ -99,10 +99,16 @@ const hdCache = new Map<string, Promise<Texture>>();
 function loadHd(url: string) {
   let p = hdCache.get(url);
   if (!p) {
-    p = new TextureLoader().loadAsync(url).then((t) => {
-      configureTextures(t);
-      return t;
-    });
+    p = new TextureLoader().loadAsync(url).then(
+      (t) => {
+        configureTextures(t);
+        return t;
+      },
+      (err: unknown) => {
+        hdCache.delete(url); // let a later visit try again
+        throw err;
+      },
+    );
     hdCache.set(url, p);
   }
   return p;
@@ -206,6 +212,8 @@ export function PlanetBody({
       if (cancelled || !p) return;
       p.uMap.value = hd;
       invalidate();
+    }).catch(() => {
+      // The full-size map didn't load: the planet keeps its overview map, a little softer.
     });
     return () => {
       cancelled = true;

@@ -9,6 +9,9 @@ surface, and click a POI to read facts.
 - React Three Fiber (`@react-three/fiber`) + drei (`@react-three/drei`) on three.js
 - Bloom via `@react-three/postprocessing`
 - Lint: oxlint (`npm run lint`). Type-check and build: `npm run build`
+- Tests: Vitest unit tests in `test/` (`npm test`); Playwright end-to-end tests in
+  `e2e/` (`npm run test:e2e`) against `vite preview`, so they run under the real CSP.
+  Run `npm run test:all` before committing a feature.
 
 ## Project rules
 - **Stylized layout, not to scale.** Display radii, orbit distances, and orbit
@@ -176,8 +179,16 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   `vercel.json` and checking `npm run preview` for CSP errors.
 - No inline `<script>`, `eval`, `dangerouslySetInnerHTML`, or injected `<style>`
   tags: the CSP blocks them. Outbound links use `target="_blank" rel="noreferrer"`.
-- The 3D scene sits inside `SceneBoundary`, so a failed chunk or missing WebGL
-  leaves the typography usable.
+- **Error states:** the 3D scene sits inside `SceneBoundary`. If its chunk or a planet
+  texture fails, or WebGL is unavailable, the typography and labels stay usable and a
+  quiet italic line under the title says so (`SceneNotice`, with Reload when retrying
+  can help). A
+  failed 2K map keeps the overview map; a failed moon map draws a plain lit sphere.
+- **Loading:** no spinners or loaders. The type paints first, and the entrance waits
+  for the scene (max 2.5s); that wait is the loading state.
+- **Known issue:** on some portrait screens (768x1024, 375x667, 360x740) labels of
+  crowded planets overlap. `e2e/responsive.spec.ts` lists these as expected failures
+  (`KNOWN_LABEL_COLLISIONS`); remove an entry once its layout is fixed.
 
 ## Folder structure
 - `src/scene/`: 3D layer (R3F), shaders, per-body appearance, and plate layout

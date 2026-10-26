@@ -11,7 +11,7 @@ import { PlanetFeature, type ViewPhase } from "./PlanetFeature";
 import { PlateCursor } from "./PlateCursor";
 import { PlateHud } from "./PlateHud";
 import { PoiPanel, type PanelState } from "./PoiPanel";
-import { SceneBoundary } from "./SceneBoundary";
+import { SceneBoundary, SceneNotice, type SceneFailure } from "./SceneBoundary";
 import { SpaceBackdrop } from "./SpaceBackdrop";
 import { SpacecraftLayer } from "./SpacecraftLayer";
 import { TopBar } from "./TopBar";
@@ -72,6 +72,7 @@ export function Overview() {
   const [markerHover, setMarkerHover] = useState(false);
   const [showSpacecraft, setShowSpacecraft] = useState(true);
   const [detail, setDetail] = useState<OverviewDetail | null>(null);
+  const [sceneFailure, setSceneFailure] = useState<SceneFailure | null>(null);
   const [detailState, setDetailState] = useState<PanelState>("open");
   const [zoom] = useState(() => new Timeline(initialFocus ? 1 : 0));
   const [markerEls] = useState(() => new Map<string, HTMLElement>());
@@ -198,6 +199,14 @@ export function Overview() {
     }
   }, [entrance, startEntrance]);
 
+  const sceneFailed = useCallback(
+    (failure: SceneFailure) => {
+      setSceneFailure(failure);
+      startEntrance(); // nothing left to wait for
+    },
+    [startEntrance],
+  );
+
   const openDetail = useCallback((d: OverviewDetail) => {
     setDetail(d);
     setDetailState("open");
@@ -245,8 +254,8 @@ export function Overview() {
     >
       {layout && (
         <>
-          <div className="plate-canvas">
-            <SceneBoundary>
+          <SceneBoundary onError={sceneFailed}>
+            <div className="plate-canvas">
               <Suspense fallback={null}>
                 <PlateScene
                   layout={layout}
@@ -262,8 +271,8 @@ export function Overview() {
                   onReady={startEntrance}
                 />
               </Suspense>
-            </SceneBoundary>
-          </div>
+            </div>
+          </SceneBoundary>
           <SpaceBackdrop layout={layout} />
           <PlateHud layout={layout} hoveredId={hoveredId} />
         </>
@@ -286,6 +295,7 @@ export function Overview() {
               A chart of the Sun's family, from the scorched to the frozen. Distances are in AU, the
               span from Earth to the Sun. Choose a world, and it will come to you.
             </p>
+            {sceneFailure && <SceneNotice failure={sceneFailure} />}
           </div>
           {layout && (
             <>

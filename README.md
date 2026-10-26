@@ -22,7 +22,25 @@ npm run dev      # start the dev server at http://localhost:5173
 npm run build    # type-check and build for production into dist/
 npm run preview  # serve the production build locally
 npm run lint     # run oxlint
+npm test         # unit tests (Vitest)
+npm run test:e2e # end-to-end tests (Playwright, against the production build)
+npm run test:all # lint, build, and both test suites
 ```
+
+The first end-to-end run needs a browser: `npx playwright install chromium`.
+
+## Tests
+
+- `test/`: unit tests for the data file (unique ids, coordinates on the globe, https
+  sources, textures present on disk), the plate layout at every supported viewport,
+  view transitions, and formatting.
+- `e2e/`: browser tests for navigation (click, links, Back, Escape, browser history,
+  reduced motion), panels, credits, the masthead toggles, layout at each supported
+  screen size, the security headers and CSP, and the error states (3D code or
+  textures failing to load, no WebGL). Any console error fails a test.
+
+CI (`.github/workflows/ci.yml`) runs lint, build, and both suites on every push and
+pull request.
 
 ## Deploying
 

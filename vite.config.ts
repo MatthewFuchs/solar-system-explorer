@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 // `npm run preview` serves the production security headers from vercel.json, so the
 // Content Security Policy is tested locally before it ships.
@@ -14,6 +14,7 @@ const siteHeaders = Object.fromEntries(
 export default defineConfig({
   plugins: [react()],
   preview: { headers: siteHeaders },
+  test: { include: ['test/**/*.test.ts'] },
   build: {
     // The lazily loaded 3D chunk (three.js, React Three Fiber, postprocessing) is about
     // 1 MB minified, 270 KB gzipped; the main chunk the page paints from is far smaller.
