@@ -11,6 +11,7 @@ import { PlanetFeature, type ViewPhase } from "./PlanetFeature";
 import { PlateCursor } from "./PlateCursor";
 import { PlateHud } from "./PlateHud";
 import { PoiPanel, type PanelState } from "./PoiPanel";
+import { SceneBoundary } from "./SceneBoundary";
 import { SpaceBackdrop } from "./SpaceBackdrop";
 import { SpacecraftLayer } from "./SpacecraftLayer";
 import { TopBar } from "./TopBar";
@@ -44,7 +45,12 @@ function entrancePlayed() {
 
 /** The destination named in the URL hash (e.g. #mars), if it exists. */
 function planetFromHash(): string | null {
-  const id = decodeURIComponent(window.location.hash.slice(1));
+  let id: string;
+  try {
+    id = decodeURIComponent(window.location.hash.slice(1));
+  } catch {
+    return null; // a malformed hash such as "#%" names nothing
+  }
   return VIEWABLE.some((p) => p.id === id) ? id : null;
 }
 
@@ -240,21 +246,23 @@ export function Overview() {
       {layout && (
         <>
           <div className="plate-canvas">
-            <Suspense fallback={null}>
-              <PlateScene
-              layout={layout}
-              belts={beltShapes}
-              hoveredId={hoveredId}
-              reducedMotion={reducedMotion}
-              zoom={zoom}
-              zoomFrame={zoomFrame}
-              focusId={focusId}
-              facing={facing}
-              turnMs={phase === "entering" ? zoomMs : turnMs}
-              markerEls={markerEls}
-              onReady={startEntrance}
-            />
-            </Suspense>
+            <SceneBoundary>
+              <Suspense fallback={null}>
+                <PlateScene
+                  layout={layout}
+                  belts={beltShapes}
+                  hoveredId={hoveredId}
+                  reducedMotion={reducedMotion}
+                  zoom={zoom}
+                  zoomFrame={zoomFrame}
+                  focusId={focusId}
+                  facing={facing}
+                  turnMs={phase === "entering" ? zoomMs : turnMs}
+                  markerEls={markerEls}
+                  onReady={startEntrance}
+                />
+              </Suspense>
+            </SceneBoundary>
           </div>
           <SpaceBackdrop layout={layout} />
           <PlateHud layout={layout} hoveredId={hoveredId} />
