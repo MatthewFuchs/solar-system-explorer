@@ -169,11 +169,40 @@ export function prerender(): Plugin {
       const hasImage = (id: string) => existsSync(join(config.publicDir, "og", `${id}.jpg`));
       writeFileSync(join(out, "index.html"), renderPage(template, site, undefined, hasImage("home")));
       for (const body of VIEWABLE) writeFileSync(join(out, `${body.id}.html`), renderPage(template, site, body, hasImage(body.id)));
-      const notFound = join(out, "404.html");
-      writeFileSync(notFound, notFoundPage(readFileSync(notFound, "utf8")));
       writeFileSync(join(out, "sitemap.xml"), sitemap(site));
       writeFileSync(join(out, "robots.txt"), robots(site));
       config.logger.info(`prerender: ${VIEWABLE.length + 1} pages for ${site}`);
+    },
+  };
+}
+
+/**
+ * Vite plugin: draws the 404 page's astrolabe and world links (in dev and in the build),
+ * and makes the dev server answer unknown paths with it, as Vercel and `vite preview` do.
+ */
+export function notFound(): Plugin {
+  const worlds = new Set(VIEWABLE.map((b) => `/${b.id}`));
+  return {
+    name: "not-found-page",
+    transformIndexHtml: {
+      order: "pre",
+      handler: (html, ctx) => (ctx.filename.endsWith("404.html") ? notFoundPage(html) : html),
+    },
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const path = (req.url ?? "/").split("?")[0].replace(/\/$/, "") || "/";
+        // Only page requests: not Vite's own modules, source files, or assets with an extension.
+        const isPage = req.headers.accept?.includes("text/html") && !/^\/(@|src\/|node_modules\/)/.test(path) && !/\.[a-z0-9]+$/i.test(path);
+        if (!isPage || path === "/" || worlds.has(path)) return next();
+        try {
+          const raw = readFileSync(join(server.config.root, "404.html"), "utf8");
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.end(await server.transformIndexHtml("/404.html", raw));
+        } catch (err) {
+          next(err);
+        }
+      });
     },
   };
 }

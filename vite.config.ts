@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
-import { prerender } from './scripts/prerender.ts'
+import { notFound, prerender } from './scripts/prerender.ts'
 import { previewNotFound } from './scripts/previewNotFound.ts'
 
 // `npm run preview` serves the production security headers from vercel.json, so the
@@ -15,7 +15,7 @@ const siteHeaders = Object.fromEntries(
 // https://vite.dev/config/
 export default defineConfig({
   // prerender writes a page per world, sitemap.xml, and robots.txt after the build.
-  plugins: [react(), prerender(), previewNotFound()],
+  plugins: [react(), prerender(), notFound(), previewNotFound()],
   preview: { headers: siteHeaders },
   test: { include: ['test/**/*.test.ts'] },
   build: {
