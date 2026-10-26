@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BELTS, DESTINATIONS, SPACECRAFT, SUN, VIEWABLE, type Belt, type Spacecraft } from "../data/solarSystem";
+import { BELTS, DESTINATIONS, SITE, SPACECRAFT, SUN, VIEWABLE, type Belt, type Spacecraft } from "../data/solarSystem";
 import { useElementSize } from "../hooks/useElementSize";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { reachFactor } from "../scene/bodyAppearance";
@@ -16,6 +16,7 @@ import { SpaceBackdrop } from "./SpaceBackdrop";
 import { SpacecraftLayer } from "./SpacecraftLayer";
 import { TopBar } from "./TopBar";
 import { AmbientSound } from "../lib/ambientSound";
+import { pagePath, pageTitle } from "../lib/seo";
 
 // The 3D engine (three.js and friends) is most of the JavaScript; load it in its own
 // chunk so the typography and HUD can paint while it downloads.
@@ -43,15 +44,23 @@ function entrancePlayed() {
   }
 }
 
-/** The destination named in the URL hash (e.g. #mars), if it exists. */
-function planetFromHash(): string | null {
-  let id: string;
+/** The destination named by `/mars`, or by an older `#mars` link, if it exists. */
+function planetFromUrl(): string | null {
+  const fromPath = window.location.pathname.slice(import.meta.env.BASE_URL.length).replace(/\/$/, "");
+  let fromHash = "";
   try {
-    id = decodeURIComponent(window.location.hash.slice(1));
+    fromHash = decodeURIComponent(window.location.hash.slice(1));
   } catch {
-    return null; // a malformed hash such as "#%" names nothing
+    // A malformed hash such as "#%" names nothing.
   }
+  const id = fromPath || fromHash;
   return VIEWABLE.some((p) => p.id === id) ? id : null;
+}
+
+/** Turn an older `#mars` link into `/mars`, so the address bar shows the page's real URL. */
+function upgradeHashLink() {
+  const id = planetFromUrl();
+  if (window.location.hash && id) window.history.replaceState(null, "", pagePath(id));
 }
 
 /** Something in the overview itself (not on a planet) whose details are open. */
@@ -64,7 +73,10 @@ type OverviewDetail = { kind: "spacecraft"; item: Spacecraft } | { kind: "belt";
 export function Overview() {
   const [ref, size] = useElementSize<HTMLDivElement>();
   const reducedMotion = usePrefersReducedMotion();
-  const [initialFocus] = useState(planetFromHash);
+  const [initialFocus] = useState(() => {
+    upgradeHashLink();
+    return planetFromUrl();
+  });
   const [focusId, setFocusId] = useState<string | null>(initialFocus);
   const [phase, setPhase] = useState<ViewPhase>(initialFocus ? "planet" : "overview");
   const [poiIndex, setPoiIndex] = useState(0);
@@ -142,9 +154,8 @@ export function Overview() {
       // Choosing a world sings its song (only when sound is on).
       const body = id ? VIEWABLE.find((b) => b.id === id) : undefined;
       if (body) sound.sing(body);
-      const url = id ? `#${id}` : window.location.pathname + window.location.search;
       const change = () => {
-        window.history.pushState(null, "", url);
+        window.history.pushState(null, "", pagePath(id));
         go(id);
       };
       if (!reducedMotion) return change();
@@ -158,8 +169,16 @@ export function Overview() {
     [go, reducedMotion, sound],
   );
 
+  // The tab title follows the open world, as the prerendered pages' titles do.
   useEffect(() => {
-    const sync = () => go(planetFromHash());
+    document.title = pageTitle(VIEWABLE.find((b) => b.id === focusId));
+  }, [focusId]);
+
+  useEffect(() => {
+    const sync = () => {
+      upgradeHashLink();
+      go(planetFromUrl());
+    };
     window.addEventListener("popstate", sync);
     window.addEventListener("hashchange", sync);
     return () => {
@@ -289,12 +308,10 @@ export function Overview() {
         <div className="overview-layer" inert={!inOverview}>
           <div className="plate-title">
             <h1>
-              <span>The Solar</span> <span>System</span>
+              {/* Two spans, so the title can break onto two lines. */}
+              <span>{SITE.title.split(" ").slice(0, -1).join(" ")}</span> <span>{SITE.title.split(" ").at(-1)}</span>
             </h1>
-            <p>
-              A chart of the Sun's family, from the scorched to the frozen. Distances are in AU, the
-              span from Earth to the Sun. Choose a world, and it will come to you.
-            </p>
+            <p>{SITE.intro}</p>
             {sceneFailure && <SceneNotice failure={sceneFailure} />}
           </div>
           {layout && (

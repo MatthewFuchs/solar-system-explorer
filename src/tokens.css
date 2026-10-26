@@ -1,0 +1,26 @@
+/* Astrolabe design tokens, shared by the app (index.css) and the 404 page (notFound.css).
+   Palette mirrors src/lib/palette.ts. */
+:root {
+  --abyss: #06040b;
+  --gold: #d6b06a;
+  --gold-soft: rgba(214, 176, 106, 0.62);
+  --gold-faint: rgba(214, 176, 106, 0.3);
+  --ivory: #ece4d2;
+  --ivory-soft: rgba(236, 228, 210, 0.66);
+  --ember: #f0a25a;
+
+  --font-display: 'Marcellus', 'Trajan Pro', 'Optima', Georgia, serif;
+  --font-body: 'Cormorant Garamond', 'Garamond', Georgia, serif;
+
+  /* Slow-in, soft landing; unhurried but responsive. No overshoot. */
+  --ease: cubic-bezier(0.25, 0.8, 0.25, 1);
+  --dur: 380ms;
+  --bar-h: 52px; /* Matches TOP_BAR_HEIGHT in plateLayout.ts. */
+  --hud-inset: clamp(12px, 1.8vw, 24px); /* Matches layout.inset. */
+
+  color-scheme: dark;
+  color: var(--ivory);
+  background: var(--abyss);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}

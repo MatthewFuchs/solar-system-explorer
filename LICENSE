@@ -1,0 +1,17 @@
+Copyright (c) 2026 Matthew Fuchs. All rights reserved.
+
+This software and its source code, design, and original content (the "Work") are
+proprietary. No license is granted. Without prior written permission from the
+copyright holder, you may not copy, modify, merge, publish, distribute, sublicense,
+sell, or create derivative works from any part of the Work.
+
+Viewing the published website does not grant any rights to the Work.
+
+Third-party materials included in this repository are not covered by this notice
+and remain under their own licenses:
+
+- Planet, Sun, ring, and Moon textures by Solar System Scope, CC BY 4.0
+- The Pluto map and other moon maps from NASA, JPL, JHUAPL, and USGS missions,
+  with their credits and terms in public/textures/CREDITS.md
+- Marcellus and Cormorant Garamond typefaces, SIL Open Font License 1.1
+- Open-source software dependencies, under the licenses in their packages

@@ -2,7 +2,7 @@ import { expectPlanetView, openApp, test, expect } from "./fixtures";
 
 test.describe("point-of-interest panel", () => {
   test("opens from Open details, takes focus, and closes with Escape", async ({ page }) => {
-    await openApp(page, "#mars");
+    await openApp(page, "mars");
     await expectPlanetView(page, "Mars");
     const poiName = (await page.locator(".feature__poi-name").textContent())!;
     await page.getByRole("button", { name: "Open details", exact: true }).click();
@@ -26,7 +26,7 @@ test.describe("point-of-interest panel", () => {
 
   test("follows Next while open and closes with its X", async ({ page, isMobile }) => {
     test.skip(isMobile === true, "On phones the bottom sheet covers Previous / Next");
-    await openApp(page, "#jupiter");
+    await openApp(page, "jupiter");
     await expectPlanetView(page, "Jupiter");
     await page.getByRole("button", { name: "Open details", exact: true }).click();
     const title = page.getByRole("dialog").getByRole("heading", { level: 2 });
@@ -39,7 +39,7 @@ test.describe("point-of-interest panel", () => {
 
   test("opens from a surface marker", async ({ page, isMobile }) => {
     test.skip(isMobile === true, "Markers are small targets; covered on desktop");
-    await openApp(page, "#earth");
+    await openApp(page, "earth");
     await expectPlanetView(page, "Earth");
     const marker = page.locator(".poi-marker").filter({ visible: true }).first();
     await marker.click();

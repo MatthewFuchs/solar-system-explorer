@@ -3,7 +3,7 @@ import { expectOverview, expectPlanetView, openApp, test, expect } from "./fixtu
 test.describe("overview", () => {
   test("shows the title, the Sun, every world, and the 3D scene", async ({ page }) => {
     await openApp(page);
-    await expect(page).toHaveTitle("Solar System Explorer");
+    await expect(page).toHaveTitle(/^Solar System Explorer · /);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     for (const name of ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]) {
       await expect(page.getByRole("button", { name: new RegExp(`^${name},`) })).toBeAttached();
@@ -24,30 +24,32 @@ test.describe("planet view", () => {
   test("opens a planet on click and records it in the URL", async ({ page }) => {
     await openApp(page);
     await page.getByRole("button", { name: /^Mars,/ }).click();
-    await expect(page).toHaveURL(/#mars$/);
+    await expect(page).toHaveURL(/\/mars$/);
+    await expect(page).toHaveTitle("Mars · Solar System Explorer");
     await expectPlanetView(page, "Mars");
     await expect(page.getByText("from the Sun")).toBeVisible();
   });
 
   test("opens directly from a link", async ({ page }) => {
-    await openApp(page, "#saturn");
+    await openApp(page, "saturn");
     await expectPlanetView(page, "Saturn");
   });
 
   test("opens the Sun and Pluto", async ({ page }) => {
-    await openApp(page, "#sun");
+    await openApp(page, "sun");
     await expectPlanetView(page, "Sun");
-    await page.goto("/#pluto");
+    await page.goto("/pluto");
     await expectPlanetView(page, "Pluto");
     await expect(page.locator(".feature__numeral")).toHaveText("Dwarf planet");
   });
 
   test("returns with Back to the system", async ({ page }) => {
-    await openApp(page, "#earth");
+    await openApp(page, "earth");
     await expectPlanetView(page, "Earth");
     await page.getByRole("button", { name: "Back to the system" }).click();
     await expectOverview(page);
-    await expect(page).not.toHaveURL(/#/);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/");
+    await expect(page).toHaveTitle(/^Solar System Explorer/);
   });
 
   test("returns with Escape", async ({ page }) => {
@@ -69,7 +71,7 @@ test.describe("planet view", () => {
   });
 
   test("steps through points of interest", async ({ page }) => {
-    await openApp(page, "#mars");
+    await openApp(page, "mars");
     await expectPlanetView(page, "Mars");
     const count = page.locator(".feature__count");
     const first = await page.locator(".feature__poi-name").textContent();
@@ -80,6 +82,12 @@ test.describe("planet view", () => {
     await page.getByRole("button", { name: "Previous point of interest" }).click();
     await page.getByRole("button", { name: "Previous point of interest" }).click();
     await expect(count).not.toHaveText(/^1 of /); // wraps around to the last
+  });
+
+  test("turns old #links into page URLs", async ({ page }) => {
+    await openApp(page, "#mars");
+    await expectPlanetView(page, "Mars");
+    await expect(page).toHaveURL(/\/mars$/);
   });
 
   test("ignores unknown and malformed hashes", async ({ page }) => {
@@ -123,7 +131,7 @@ test.describe("masthead", () => {
 
   test("brand link returns to the overview", async ({ page, isMobile }) => {
     test.skip(isMobile === true, "Phones hide the brand link; Back covers it");
-    await openApp(page, "#uranus");
+    await openApp(page, "uranus");
     await expectPlanetView(page, "Uranus");
     await page.getByRole("link", { name: "Solar System Explorer" }).click();
     await expectOverview(page);

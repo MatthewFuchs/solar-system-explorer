@@ -72,7 +72,7 @@ solar system, with planets lit by the Sun out of a violet-black abyss.
   Keep the in-app credit line, the Credits panel, and `public/textures/CREDITS.md`.
 
 ## Planet view
-Clicking a planet (or loading `#<planet-id>`) opens its planet view. This is the
+Clicking a planet (or loading `/<planet-id>`) opens its planet view. This is the
 site's signature moment; keep it intact.
 - **The zoom** (`ZOOM_MS` = 1.5s, ease-in-out, `src/scene/viewTransition.ts`): one
   `Timeline` drives the 3D scene. The planet travels to its feature placement while
@@ -88,7 +88,9 @@ site's signature moment; keep it intact.
   (`PlanetBody`), hidden on the far side. They brighten on hover and never animate
   on their own.
 - **Leaving:** "Back to the system", Escape, the Overview link, or the browser back
-  button all run the reverse transition. The URL hash is the source of truth.
+  button all run the reverse transition. The URL path (`/mars`) is the source of truth;
+  older `#mars` links are rewritten to the path on load (`planetFromUrl` in `Overview`).
+  The tab title follows the open world (`pageTitle` in `src/lib/seo.ts`).
 - **Two kinds of POI** (`src/data/solarSystem.ts`): `SurfacePOI` (lat/lon on the body) and
   `OrbitPOI` (moons, rings, spacecraft: a screen angle and distance beside the
   planet, which holds still when one is selected). Never put a moon or spacecraft on
@@ -173,8 +175,15 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
 
 ## Deployment and security
 - Deployed on Vercel. `vercel.json` holds the build settings and security headers
-  (strict CSP: scripts and images from `'self'` only, fonts from Google Fonts).
-  `vite.config.ts` mirrors those headers into `npm run preview`.
+  (strict CSP: scripts, styles, fonts, and images from `'self'` only) and clean URLs.
+  `vite.config.ts` mirrors the headers into `npm run preview`, and
+  `scripts/previewNotFound.ts` mirrors Vercel's 404s and trailing-slash redirects.
+- **Fonts are self-hosted** (`@fontsource/*`, imported in `src/main.tsx` and
+  `src/notFound.css`). Vite must not inline them as `data:` URLs (`assetsInlineLimit`).
+- **Privacy:** no cookies, analytics, or third-party requests, so no cookie banner.
+  An E2E test fails on any request to another site. Keep it that way.
+- **License:** proprietary, all rights reserved (`LICENSE`, `"license": "UNLICENSED"`).
+  Never add an open-source license or publish source maps.
 - Adding any external origin (fonts, images, analytics) means updating the CSP in
   `vercel.json` and checking `npm run preview` for CSP errors.
 - No inline `<script>`, `eval`, `dangerouslySetInnerHTML`, or injected `<style>`
@@ -190,11 +199,26 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   crowded planets overlap. `e2e/responsive.spec.ts` lists these as expected failures
   (`KNOWN_LABEL_COLLISIONS`); remove an entry once its layout is fixed.
 
+## SEO and prerendering
+- The build writes a page per URL (`/`, `/sun` … `/pluto`) with `scripts/prerender.ts`
+  (a Vite plugin): title, description, canonical, Open Graph, JSON-LD, and the world's
+  text in `#root` (`.prerendered`, replaced by React; it only shows if the app hasn't
+  started after 2.5s). Also `sitemap.xml` and `robots.txt`. Content comes from the data
+  file (`SITE`, each body's `wikipedia`); `index.html` keeps a `<!--seo-->` marker.
+- The site address comes from `SITE_URL`, else `VERCEL_PROJECT_PRODUCTION_URL`, else
+  localhost (`siteUrl()`).
+- Share images (`public/og/*.jpg`, 1200x630) come from `npm run og`; recapture and
+  commit them after visual changes. They are the only JPEGs and are never loaded by the app.
+- **404 page:** `404.html` is a second Vite entry with `src/notFound.css` (tokens shared
+  through `src/tokens.css`). Static, no script. Its chart (`scripts/notFoundChart.ts`)
+  and world links are filled in at build time.
+
 ## Folder structure
 - `src/scene/`: 3D layer (R3F), shaders, per-body appearance, and plate layout
 - `src/components/`: line work and UI layers (SVG arcs, labels, masthead, backdrop, cursor)
 - `src/lib/`, `src/hooks/`: small shared helpers
 - `src/data/`: typed content data
+- `scripts/`: build-time plugins (prerender, 404 chart, preview 404s) and the share-image script
 
 ## Git workflow
 - Commit after each working feature, with a clear, descriptive message.

@@ -1,0 +1,314 @@
+/*
+ * The 404 page: an engraved astrolabe on the abyss, its rule turned to the one empty
+ * place on the chart (scripts/notFoundChart.ts), and the way home. Static, no script.
+ */
+@import "@fontsource/marcellus/400.css";
+@import "@fontsource/cormorant-garamond/400-italic.css";
+@import "./tokens.css";
+
+:root {
+  /* The violet haze of the plate, and candlelight pooling around the instrument. */
+  background:
+    radial-gradient(circle at 70% 50%, rgba(214, 176, 106, 0.08), transparent 38vmax),
+    radial-gradient(ellipse at 30% 80%, rgba(76, 52, 110, 0.26), transparent 60%),
+    var(--abyss);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.stars {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--ivory);
+}
+
+/* Landscape: the instrument stands on the right, the text at the bottom-left. */
+.astrolabe {
+  position: fixed;
+  top: 50%;
+  right: 4vw;
+  width: min(88vh, 58vw);
+  height: min(88vh, 58vw);
+  transform: translateY(-50%);
+  overflow: visible;
+}
+
+/* Portrait: above the text. */
+@media (max-aspect-ratio: 3/4) {
+  .astrolabe {
+    top: max(7vh, 16px);
+    right: auto;
+    left: 50%;
+    width: min(92vw, 50vh);
+    height: min(92vw, 50vh);
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- The instrument ---------- */
+
+.limb,
+.limb__glow,
+.orbit,
+.ticks,
+.rule,
+.rule__glow,
+.world__ring,
+.sun__rim {
+  fill: none;
+  stroke: var(--gold);
+}
+
+.limb {
+  stroke-width: 1.4;
+  stroke-opacity: 0.75;
+}
+
+.limb--fine {
+  stroke-width: 0.8;
+  stroke-opacity: 0.4;
+}
+
+/* Glows are a second faint wide stroke, never a blur. */
+.limb__glow {
+  stroke-width: 14;
+  stroke-opacity: 0.05;
+}
+
+.ticks {
+  stroke-width: 1;
+  stroke-opacity: 0.55;
+}
+
+.numerals text {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  fill: var(--gold-soft);
+}
+
+.names text {
+  font-family: var(--font-body);
+  font-size: 21px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  fill: var(--ivory-soft);
+}
+
+.ring-star {
+  fill: var(--gold);
+}
+
+.orbit {
+  stroke-width: 0.9;
+  stroke-opacity: 0.3;
+}
+
+.orbit--uncharted {
+  stroke-width: 1.2;
+  stroke-opacity: 0.55;
+  stroke-dasharray: 2 7;
+}
+
+/* The rule: a faint gold blade with a hairline edge. */
+.rule {
+  fill: rgba(214, 176, 106, 0.07);
+  stroke-width: 1;
+  stroke-opacity: 0.8;
+}
+
+.rule__glow {
+  stroke-width: 10;
+  stroke-opacity: 0.06;
+}
+
+.world__halo {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 0.7;
+  stroke-opacity: 0.35;
+}
+
+.world__ring {
+  stroke-width: 1.4;
+  stroke-opacity: 0.6;
+}
+
+.sun__rim {
+  stroke-width: 1;
+  stroke-opacity: 0.6;
+}
+
+/* Where the world should be: an empty ring. */
+.void {
+  fill: var(--abyss);
+  stroke: var(--gold);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 4;
+}
+
+.void__inner {
+  fill: var(--gold);
+}
+
+.void__label {
+  font-family: var(--font-body);
+  font-size: 30px;
+  font-style: italic;
+  fill: var(--ivory);
+  paint-order: stroke;
+  stroke: var(--abyss);
+  stroke-width: 8px;
+}
+
+.void__meta {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--gold);
+  paint-order: stroke;
+  stroke: var(--abyss);
+  stroke-width: 6px;
+}
+
+/* ---------- The words ---------- */
+
+.lost {
+  position: fixed;
+  left: calc(var(--hud-inset) + clamp(18px, 3.5vw, 56px));
+  right: var(--hud-inset);
+  bottom: calc(var(--hud-inset) + clamp(18px, 3.5vw, 52px));
+  max-width: min(36rem, 40vw);
+  /* A warm near-black halo keeps the type clear of the line work behind it. */
+  text-shadow: 0 0 12px var(--abyss), 0 0 3px var(--abyss);
+}
+
+@media (max-aspect-ratio: 3/4) {
+  .lost {
+    max-width: 36rem;
+  }
+}
+
+.lost__code {
+  margin: 0 0 0.6em;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.lost__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 4.6vw, 76px);
+  font-weight: 400;
+  line-height: 1.04;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ivory);
+}
+
+.lost__text {
+  max-width: 40ch;
+  margin: 0.9em 0 1.4em;
+  font-size: clamp(17px, 1.4vw, 20px);
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ivory-soft);
+}
+
+.lost__home,
+.lost__worlds a {
+  text-decoration: none;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.lost__home {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border-bottom: 1px solid var(--gold-faint);
+  padding-bottom: 3px;
+}
+
+.lost__home:hover,
+.lost__home:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+/* Every world, as a quiet line of italic names divided by small gold stars. */
+.lost__worlds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 0;
+  margin: 1.6em 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: clamp(16px, 1.25vw, 18px);
+  font-style: italic;
+}
+
+.lost__worlds li:not(:last-child)::after {
+  content: "✦";
+  margin: 0 0.7em;
+  font-size: 0.55em;
+  font-style: normal;
+  vertical-align: 0.25em;
+  color: var(--gold-faint);
+}
+
+.lost__worlds a {
+  color: var(--ivory-soft);
+}
+
+.lost__worlds a:hover,
+.lost__worlds a:focus-visible {
+  color: var(--ivory);
+  outline: none;
+}
+
+/* Short landscape screens: a smaller title, and no world list. */
+@media (max-height: 520px) {
+  .lost__code,
+  .lost__worlds {
+    display: none;
+  }
+
+  .lost__title {
+    font-size: 28px;
+  }
+
+  .lost__text {
+    margin: 0.5em 0 0.9em;
+    font-size: 16px;
+  }
+}
+
+/* Short portrait screens: the text tightens below the instrument. */
+@media (max-aspect-ratio: 3/4) and (max-height: 700px) {
+  .lost__code {
+    display: none;
+  }
+
+  .lost__text {
+    margin: 0.6em 0 1em;
+  }
+
+  .lost__worlds {
+    margin-top: 1em;
+  }
+}

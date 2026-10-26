@@ -48,7 +48,7 @@ test("shows the notice when a planet texture fails", async ({ page }) => {
 
 test("keeps the overview map when the full-size map fails", async ({ page }) => {
   await page.route(/\/textures\/2k\//, (route) => route.abort());
-  await openApp(page, "#earth");
+  await openApp(page, "earth");
   await expectPlanetView(page, "Earth");
   await expect(page.locator(".plate-canvas canvas")).toBeVisible();
   await expect(page.getByTestId("scene-notice")).toHaveCount(0);
@@ -58,7 +58,7 @@ test("still draws moons when their maps fail", async ({ page }) => {
   await page.route(/\/textures\/moons\//, (route) => route.abort());
   const unhandled: string[] = [];
   page.on("pageerror", (e) => unhandled.push(e.message));
-  await openApp(page, "#jupiter");
+  await openApp(page, "jupiter");
   await expectPlanetView(page, "Jupiter");
   await expect(page.getByTestId("scene-notice")).toHaveCount(0);
   expect(unhandled).toEqual([]);
