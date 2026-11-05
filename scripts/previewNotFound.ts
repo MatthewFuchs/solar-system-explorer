@@ -12,15 +12,18 @@ export function previewNotFound(): Plugin {
     configurePreviewServer(server) {
       const out = resolve(server.config.root, server.config.build.outDir);
       const isFile = (p: string) => existsSync(p) && statSync(p).isFile();
+      // With a base (GitHub Pages' /repo/), pages live under it; leave other paths to Vite.
+      const base = server.config.base;
       server.middlewares.use((req, res, next) => {
         const [rawPath, query] = (req.url ?? "/").split("?");
+        if (!rawPath.startsWith(base) && `${rawPath}/` !== base) return next();
         // Like Vercel's trailingSlash: false, /mars/ redirects to /mars.
-        if (rawPath.length > 1 && rawPath.endsWith("/")) {
+        if (rawPath.length > base.length && rawPath.endsWith("/")) {
           res.statusCode = 308;
           res.setHeader("Location", rawPath.replace(/\/+$/, "") + (query ? `?${query}` : ""));
           return res.end();
         }
-        const path = decodeURIComponent(rawPath);
+        const path = `/${decodeURIComponent(rawPath).slice(base.length)}`;
         const file = join(out, path);
         if (!file.startsWith(out)) return next();
         if (path === "/" || isFile(file) || isFile(`${file}.html`) || isFile(join(file, "index.html"))) return next();

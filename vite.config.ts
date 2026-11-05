@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
+import type { Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
 import { notFound, prerender } from './scripts/prerender.ts'
 import { previewNotFound } from './scripts/previewNotFound.ts'
@@ -12,10 +13,28 @@ const siteHeaders = Object.fromEntries(
   vercel.headers.find((rule) => rule.source === '/(.*)')!.headers.map((h) => [h.key, h.value]),
 )
 
+// GitHub Pages serves the site from /<repo>/ and can't send headers, so its build sets
+// BASE_PATH and GITHUB_PAGES (see .github/workflows/ci.yml) and carries the same Content
+// Security Policy in a <meta> tag. frame-ancestors is dropped: browsers ignore it there.
+const base = process.env.BASE_PATH || '/'
+const metaCsp = siteHeaders['Content-Security-Policy']
+  .split(';')
+  .map((d) => d.trim())
+  .filter((d) => d && !d.startsWith('frame-ancestors'))
+  .join('; ')
+const cspMeta = (): Plugin => ({
+  name: 'csp-meta',
+  apply: 'build',
+  transformIndexHtml: () => [
+    { tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: metaCsp }, injectTo: 'head-prepend' },
+  ],
+})
+
 // https://vite.dev/config/
 export default defineConfig({
   // prerender writes a page per world, sitemap.xml, and robots.txt after the build.
-  plugins: [react(), prerender(), notFound(), previewNotFound()],
+  base,
+  plugins: [react(), prerender(), notFound(), previewNotFound(), ...(process.env.GITHUB_PAGES ? [cspMeta()] : [])],
   preview: { headers: siteHeaders },
   test: { include: ['test/**/*.test.ts'] },
   build: {

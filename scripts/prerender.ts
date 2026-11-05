@@ -40,17 +40,17 @@ function statsHtml(stats: POIStat[] | undefined) {
   return `<dl>${items.join("")}</dl>`;
 }
 
-function worldsNav(current?: CelestialBody) {
+function worldsNav(base: string, current?: CelestialBody) {
   const links = VIEWABLE.map((b) =>
-    b === current ? `<li aria-current="page">${escape(b.name)}</li>` : `<li><a href="/${b.id}">${escape(b.name)}</a></li>`,
+    b === current ? `<li aria-current="page">${escape(b.name)}</li>` : `<li><a href="${base}${b.id}">${escape(b.name)}</a></li>`,
   );
-  return `<nav aria-label="Worlds"><ul>${current ? `<li><a href="/">${escape(SITE.title)}</a></li>` : ""}${links.join("")}</ul></nav>`;
+  return `<nav aria-label="Worlds"><ul>${current ? `<li><a href="${base}">${escape(SITE.title)}</a></li>` : ""}${links.join("")}</ul></nav>`;
 }
 
 /** The world's text, as the app shows it across the planet view and its detail panels. */
-function articleHtml(body?: CelestialBody) {
+function articleHtml(base: string, body?: CelestialBody) {
   if (!body) {
-    return `<article class="prerendered"><h1>${escape(SITE.title)}</h1><p>${escape(SITE.intro)}</p>${worldsNav()}</article>`;
+    return `<article class="prerendered"><h1>${escape(SITE.title)}</h1><p>${escape(SITE.intro)}</p>${worldsNav(base)}</article>`;
   }
   const pois = body.pois.map(
     (poi) =>
@@ -63,7 +63,7 @@ function articleHtml(body?: CelestialBody) {
     body.tagline,
   )}</p>${body.distanceAU !== undefined ? `<p>${formatAU(body.distanceAU)} from the Sun</p>` : ""}${statsHtml(body.stats)}<h2>${
     surface ? "Points of interest" : "Around it"
-  }</h2>${pois.join("")}${worldsNav(body)}</article>`;
+  }</h2>${pois.join("")}${worldsNav(base, body)}</article>`;
 }
 
 function structuredData(site: string, body?: CelestialBody) {
@@ -93,8 +93,12 @@ function structuredData(site: string, body?: CelestialBody) {
   return JSON.stringify({ "@context": "https://schema.org", "@graph": graph }).replace(/</g, "\\u003c");
 }
 
-/** One page: the built index.html with this page's head tags and text. */
-export function renderPage(template: string, site: string, body?: CelestialBody, hasImage = false): string {
+/**
+ * One page: the built index.html with this page's head tags and text. `site` is the full
+ * address of the site's root (with any path, e.g. GitHub Pages' /repo); `base` is that
+ * path as the app sees it (Vite's `base`), for the links in the page.
+ */
+export function renderPage(template: string, site: string, body?: CelestialBody, hasImage = false, base = "/"): string {
   const url = body ? `${site}/${body.id}` : `${site}/`;
   const title = pageTitle(body);
   const description = describe(body);
@@ -125,13 +129,14 @@ export function renderPage(template: string, site: string, body?: CelestialBody,
   return template
     .replace(/<title>[\s\S]*?<\/title>\s*/, "")
     .replace("<!--seo-->", head)
-    .replace('<div id="root"></div>', `<div id="root">${articleHtml(body)}</div>`);
+    .replace('<div id="root"></div>', `<div id="root">${articleHtml(base, body)}</div>`);
 }
 
 /** The 404 page, with its astrolabe drawn and its line of links to every world filled in. */
-export function notFoundPage(template: string): string {
-  const links = VIEWABLE.map((b) => `<li><a href="/${b.id}">${escape(b.name)}</a></li>`).join("");
+export function notFoundPage(template: string, base = "/"): string {
+  const links = VIEWABLE.map((b) => `<li><a href="${base}${b.id}">${escape(b.name)}</a></li>`).join("");
   return template
+    .replace('class="lost__home" href="/"', `class="lost__home" href="${base}"`)
     .replace("<!--chart-->", notFoundStars() + notFoundChart())
     .replace("<!--worlds-->", `<ul class="lost__worlds" aria-label="Worlds">${links}</ul>`);
 }
@@ -167,8 +172,9 @@ export function prerender(): Plugin {
       const site = siteUrl();
       const template = readFileSync(join(out, "index.html"), "utf8");
       const hasImage = (id: string) => existsSync(join(config.publicDir, "og", `${id}.jpg`));
-      writeFileSync(join(out, "index.html"), renderPage(template, site, undefined, hasImage("home")));
-      for (const body of VIEWABLE) writeFileSync(join(out, `${body.id}.html`), renderPage(template, site, body, hasImage(body.id)));
+      const base = config.base;
+      writeFileSync(join(out, "index.html"), renderPage(template, site, undefined, hasImage("home"), base));
+      for (const body of VIEWABLE) writeFileSync(join(out, `${body.id}.html`), renderPage(template, site, body, hasImage(body.id), base));
       writeFileSync(join(out, "sitemap.xml"), sitemap(site));
       writeFileSync(join(out, "robots.txt"), robots(site));
       config.logger.info(`prerender: ${VIEWABLE.length + 1} pages for ${site}`);
@@ -182,11 +188,16 @@ export function prerender(): Plugin {
  */
 export function notFound(): Plugin {
   const worlds = new Set(VIEWABLE.map((b) => `/${b.id}`));
+  let base = "/";
   return {
     name: "not-found-page",
+    configResolved(resolved) {
+      base = resolved.base;
+    },
+    // The chart's Sun image needs no base here: Vite prefixes it, as a public file.
     transformIndexHtml: {
       order: "pre",
-      handler: (html, ctx) => (ctx.filename.endsWith("404.html") ? notFoundPage(html) : html),
+      handler: (html, ctx) => (ctx.filename.endsWith("404.html") ? notFoundPage(html, base) : html),
     },
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {

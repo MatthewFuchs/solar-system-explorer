@@ -174,7 +174,14 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   them stable callbacks (`useCallback`).
 
 ## Deployment and security
-- Deployed on Vercel. `vercel.json` holds the build settings and security headers
+- **GitHub Pages** (`.github/workflows/ci.yml`): every push and PR runs lint, build, and
+  unit tests, then e2e sharded over four runners (one worker each: software WebGL starves
+  with more). Pushes to `main` that pass everything are built with `GITHUB_PAGES=true`,
+  `BASE_PATH=/<repo>/`, and `SITE_URL` from `configure-pages`, then deployed. Pages sends
+  no custom headers, so that build carries the CSP from `vercel.json` in a `<meta>` (minus
+  `frame-ancestors`). All internal URLs must respect the base: `import.meta.env.BASE_URL`
+  in the app, `config.base` in build plugins; never hard-code a leading `/`.
+- Also deployable on Vercel. `vercel.json` holds the build settings and security headers
   (strict CSP: scripts, styles, fonts, and images from `'self'` only) and clean URLs.
   `vite.config.ts` mirrors the headers into `npm run preview`, and
   `scripts/previewNotFound.ts` mirrors Vercel's 404s and trailing-slash redirects.

@@ -52,6 +52,15 @@ describe("renderPage", () => {
     expect(renderPage(TEMPLATE, SITE)).toContain('<a href="/mars">Mars</a>');
   });
 
+  it("links under the site's base path (GitHub Pages)", () => {
+    const site = "https://someone.github.io/repo";
+    const page = renderPage(TEMPLATE, site, mars, true, "/repo/");
+    expect(page).toContain(`<link rel="canonical" href="${site}/mars" />`);
+    expect(page).toContain('<a href="/repo/">');
+    expect(page).toContain('<a href="/repo/earth">Earth</a>');
+    expect(page).not.toMatch(/href="\/(?!repo\/)[a-z]/);
+  });
+
   it("falls back to a small card without a share image", () => {
     expect(renderPage(TEMPLATE, SITE, mars, false)).toContain('<meta name="twitter:card" content="summary" />');
   });
@@ -81,5 +90,11 @@ describe("notFoundPage", () => {
 
   it("links every world", () => {
     for (const body of VIEWABLE) expect(html).toContain(`<a href="/${body.id}">${body.name}</a>`);
+  });
+
+  it("links under the site's base path (GitHub Pages)", () => {
+    const page = notFoundPage('<main><a class="lost__home" href="/">Home</a><!--chart--><!--worlds--></main>', "/repo/");
+    expect(page).toContain('<a class="lost__home" href="/repo/">');
+    for (const body of VIEWABLE) expect(page).toContain(`<a href="/repo/${body.id}">${body.name}</a>`);
   });
 });
