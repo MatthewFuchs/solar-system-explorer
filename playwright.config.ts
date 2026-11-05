@@ -14,7 +14,9 @@ export default defineConfig({
   // starved the main thread (zooms stuck mid-flight, contexts timing out), so CI runs one
   // worker per runner and splits the suite across runners instead (`--shard`, ci.yml).
   workers: process.env.CI ? 1 : 3,
-  timeout: 60_000,
+  // Under software WebGL on Linux, closing a page with a live context can take half a
+  // minute before the next test starts; CI gets room for it.
+  timeout: process.env.CI ? 120_000 : 60_000,
   expect: { timeout: 15_000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

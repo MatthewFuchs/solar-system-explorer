@@ -59,6 +59,13 @@ export function PlateScene({
       camera={{ position: [0, 0, 1000], zoom: 1, near: 1, far: 3000 }}
       gl={{ antialias: false, powerPreference: "high-performance" }}
       style={{ pointerEvents: "none" }}
+      // The scene unmounts only when it fails (SceneBoundary) or the page goes away. R3F then
+      // forces a WebGL context loss, which blocks the page for ~25s under software rendering
+      // (SwiftShader on Linux, machines without a GPU), so the Reload notice froze with it.
+      // The browser frees the context with its canvas anyway.
+      onCreated={({ gl }) => {
+        gl.forceContextLoss = () => {};
+      }}
     >
       <color attach="background" args={[PALETTE.abyss]} />
       <Starfield width={width} height={height} />
