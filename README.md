@@ -5,6 +5,8 @@ astrolabe. Start with an overview of the Sun and the eight planets, click a
 planet to fly to it, explore its points of interest (POIs), and click a POI to
 read facts about it.
 
+**Live site: [matthewfuchs.github.io/solar-system-explorer](https://matthewfuchs.github.io/solar-system-explorer/)**
+
 The layout is stylized for readability. Sizes, distances, and orbit speeds
 are **not** to scale.
 
@@ -33,7 +35,8 @@ The first end-to-end run needs a browser: `npx playwright install chromium`.
 ## Pages and URLs
 
 Each world has its own page: `/` is the overview, and `/sun`, `/mercury` …
-`/neptune`, and `/pluto` open a world's planet view. Escape, "Back to the system", and
+`/neptune`, and `/pluto` open a world's planet view. On GitHub Pages these sit under
+the repo's path, e.g. [`/solar-system-explorer/mars`](https://matthewfuchs.github.io/solar-system-explorer/mars). Escape, "Back to the system", and
 the browser's back button return to the overview. Older `/#mars` links still work and
 turn into `/mars`. Any other address shows the custom 404 page.
 
@@ -60,8 +63,9 @@ Link-preview images (1200×630) are in `public/og/`. After visual changes, run
 Canonical URLs, the sitemap, and preview images need the site's full address. The
 build uses, in order:
 
-1. `SITE_URL`, if set (e.g. `https://example.com`). **Set this in Vercel once you add
-   a custom domain.**
+1. `SITE_URL`, if set (e.g. `https://example.com`). The GitHub Pages deploy sets it
+   from the Pages address automatically, including a custom domain if you add one.
+   On Vercel, set it once you add a custom domain.
 2. Vercel's production URL (`VERCEL_PROJECT_PRODUCTION_URL`), set automatically.
 3. `http://localhost:4173` for local builds.
 
@@ -86,12 +90,42 @@ One `sessionStorage` flag remembers that the opening animation has played.
   JavaScript), the 404 page, and the error states (3D code or textures failing to load,
   no WebGL). Any console error fails a test.
 
-CI (`.github/workflows/ci.yml`) runs lint, build, and both suites on every push and
-pull request.
+CI (`.github/workflows/ci.yml`) runs on every push and pull request: lint, build, and
+unit tests first, then the end-to-end suite split across four runners (one browser
+worker each, since WebGL runs in software there), merged into one HTML report
+(the `playwright-report` artifact). Pushes to `main` deploy only when all of it passes.
 
 ## Deploying
 
-The site is static and deploys to [Vercel](https://vercel.com): import the repo
+### GitHub Pages (live)
+
+The site is hosted on GitHub Pages at **<https://matthewfuchs.github.io/solar-system-explorer/>**.
+Every push to `main` that passes CI is built and deployed by the `build-pages` and
+`deploy` jobs in `.github/workflows/ci.yml`. To deploy by hand, run the CI workflow
+from the Actions tab (`workflow_dispatch`).
+
+One-time setup: in the repo's **Settings → Pages**, set **Source** to **GitHub Actions**.
+
+GitHub Pages serves a project site from `/solar-system-explorer/` and can't send
+custom HTTP headers, so the Pages build differs from a plain one in two ways:
+
+- `BASE_PATH` sets Vite's `base`; the app, prerendered pages, sitemap, and 404 page
+  all link under it.
+- `GITHUB_PAGES=true` puts the Content Security Policy from `vercel.json` into a
+  `<meta>` tag (without `frame-ancestors`, which browsers ignore there). The other
+  headers (`X-Frame-Options`, `nosniff`, cache rules) aren't available on Pages.
+
+To try the Pages build locally:
+
+```bash
+GITHUB_PAGES=true BASE_PATH=/solar-system-explorer/ npm run build
+GITHUB_PAGES=true BASE_PATH=/solar-system-explorer/ npm run preview
+# then open http://localhost:4173/solar-system-explorer/
+```
+
+### Vercel
+
+The site can also deploy to [Vercel](https://vercel.com): import the repo
 and Vercel picks up `vercel.json` (Vite preset, `npm run build`, output `dist/`,
 clean URLs). No environment variables are required; see "Site address" for `SITE_URL`.
 
