@@ -25,7 +25,21 @@ export interface BodyAppearance {
   /** Axial slant on screen, in radians. */
   tilt: number;
   ring?: RingAppearance;
+  /** Stars other than the Sun: the colour their (borrowed) surface is recast in. */
+  tint?: string;
 }
+
+/** Another star: the Sun's surface, recast in the star's own colour; emissive and still. */
+const star = (tint: string): BodyAppearance => ({
+  texture: textureUrl("sun.webp"),
+  textureHd: textureUrl("sun.webp"),
+  atmosphere: tint,
+  rim: 0,
+  spin: 0.8,
+  spinSpeed: 0,
+  tilt: 0,
+  tint,
+});
 
 
 const APPEARANCE: Record<string, BodyAppearance> = {
@@ -49,8 +63,19 @@ const APPEARANCE: Record<string, BodyAppearance> = {
   uranus: { texture: textureUrl("uranus.webp"), textureHd: textureUrl("2k/uranus.webp"), atmosphere: "#A6F0F2", rim: 0.75, spin: 0, spinSpeed: -0.06, tilt: 0.3 },
   neptune: { texture: textureUrl("neptune.webp"), textureHd: textureUrl("2k/neptune.webp"), atmosphere: "#7FA2FF", rim: 0.85, spin: 0.5, spinSpeed: 0.065, tilt: 0.49 },
   // Pluto map: NASA/JHUAPL/SwRI New Horizons global mosaic (public domain); see public/textures/CREDITS.md.
+  // Stars: colour by spectral class, from the cool red of M dwarfs to the white of A stars.
+  "alpha-centauri": star("#FFE9C4"),
+  "barnards-star": star("#FF8E5E"),
+  "wolf-359": star("#FF6E4A"),
+  sirius: star("#E4ECFF"),
+  "epsilon-eridani": star("#FFC487"),
+  procyon: star("#FFF3DE"),
+  "tau-ceti": star("#FFDDB0"),
   pluto: { texture: textureUrl("pluto.webp"), textureHd: textureUrl("2k/pluto.webp"), atmosphere: "#A9C2EE", rim: 0.3, spin: 0, spinSpeed: -0.02, tilt: 0.35 },
 };
+
+// Sol is the Sun, seen from the neighbourhood plate.
+APPEARANCE.sol = APPEARANCE.sun;
 
 const FALLBACK: BodyAppearance = APPEARANCE.mercury;
 

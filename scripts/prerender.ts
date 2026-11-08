@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { Plugin, ResolvedConfig } from "vite";
 import { DESTINATIONS, SITE, isSurfacePOI, type CelestialBody, type POIStat } from "../src/data/solarSystem.ts";
 import { HOME, PAGES, segmentOf, type Route } from "../src/lib/routes.ts";
-import { bodyMark, formatAU } from "../src/lib/format.ts";
+import { bodyDistance, bodyMark } from "../src/lib/format.ts";
 import { pageTitle } from "../src/lib/seo.ts";
 import { notFoundChart, notFoundStars } from "./notFoundChart.ts";
 
@@ -67,9 +67,9 @@ function articleHtml(base: string, route: Route) {
         .join("")}</ul><p><a href="${escape(poi.source.url)}" rel="noreferrer">Learn more on ${escape(poi.source.label)}</a></p></section>`,
   );
   const surface = body.pois.some(isSurfacePOI);
-  return `<article class="prerendered"><p>${escape(bodyMark(body.kind, order(body)))}</p><h1>${escape(body.name)}</h1><p>${escape(
+  return `<article class="prerendered"><p>${escape(bodyMark(body, order(body)))}</p><h1>${escape(body.name)}</h1><p>${escape(
     body.tagline,
-  )}</p>${body.distanceAU !== undefined ? `<p>${formatAU(body.distanceAU)} from the Sun</p>` : ""}${statsHtml(body.stats)}<h2>${
+  )}</p>${bodyDistance(body) ? `<p>${escape(bodyDistance(body)!.long)}</p>` : ""}${statsHtml(body.stats)}<h2>${
     surface ? "Points of interest" : "Around it"
   }</h2>${pois.join("")}${worldsNav(base, route)}</article>`;
 }

@@ -98,3 +98,15 @@ test("cuts the last song short when another world is chosen", async ({ page }) =
   await page.getByRole("button", { name: /^Jupiter,/ }).click();
   await expect.poll(async () => (await audio(page)).cutoffs).toBe(1);
 });
+
+test("leaves other stars silent: they borrow neither the Sun's chord nor a glide", async ({ page }) => {
+  await openApp(page, "neighbourhood");
+  await page.getByRole("button", { name: "Sound" }).click();
+  await page.getByRole("button", { name: /^Sirius,/ }).click();
+  await expectPlanetView(page, "Sirius");
+  const { starts, curves } = await audio(page);
+  // The ambient notes start at D4 (293.66 Hz), so an audible pitch below 200 Hz could only be a
+  // song (the Sun's chord starts at D2). Sub-audio starts are the air's slow LFOs.
+  expect(starts.filter((f) => f > 20 && f < 200)).toEqual([]);
+  expect(curves).toEqual([]);
+});

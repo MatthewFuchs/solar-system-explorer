@@ -1,4 +1,5 @@
 import { VIEWABLE } from "../src/data/solarSystem";
+import { PAGES } from "../src/lib/routes";
 import { expectOverview, expectPlanetView, openApp, test, expect } from "./fixtures";
 
 /** Pull one tag's attribute out of raw HTML, as a crawler that runs no JavaScript sees it. */
@@ -27,9 +28,20 @@ test.describe("pages for search engines", () => {
     for (const body of VIEWABLE) expect(html).toContain(`<a href="/${body.id}">`);
   });
 
+  test("serves the neighbourhood and its stars as their own pages", async ({ request }) => {
+    const html = await (await request.get("/neighbourhood")).text();
+    expect(html).toContain("<title>Solar System Explorer · The Sun's nearest stars</title>");
+    expect(html).toContain('<a href="/sirius">Sirius</a>');
+    const sirius = await (await request.get("/sirius")).text();
+    expect(sirius).toContain("<h1>Sirius</h1>");
+    expect(sirius).toContain("8.6 light-years from the Sun");
+    // No share image yet: a small card, not a broken large one.
+    expect(sirius).toContain('<meta name="twitter:card" content="summary" />');
+  });
+
   test("lists every page in sitemap.xml, linked from robots.txt", async ({ request }) => {
     const sitemap = await (await request.get("/sitemap.xml")).text();
-    expect(sitemap.match(/<loc>/g)).toHaveLength(VIEWABLE.length + 1);
+    expect(sitemap.match(/<loc>/g)).toHaveLength(PAGES.length);
     expect(await (await request.get("/robots.txt")).text()).toMatch(/^Sitemap: .+\/sitemap\.xml$/m);
   });
 

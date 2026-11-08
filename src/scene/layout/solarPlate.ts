@@ -82,20 +82,53 @@ export interface PlateLayout {
   planets: PlanetPlacement[];
 }
 
+/**
+ * What sets one plate's composition apart. The defaults are the solar system's; other
+ * plates (the stellar neighbourhood) reuse the same placement and label logic.
+ */
+export interface PlateShape {
+  /** The centre star: where it sits and how big it is, given the screen's short side. */
+  centre: (unit: number) => SunPlacement;
+  /** Where each body sits between the centre's edge and the far corner (0–1). */
+  steps: number[];
+  /** Small swings off the diagonal, in radians. */
+  swings: number[];
+  /** Half-length of each arc, in radians. */
+  spans: number[];
+  /** A body's drawn radius in CSS pixels. */
+  bodyRadius: (body: CelestialBody, unit: number) => number;
+  /** Labels also keep clear of the title and the credit line. Off for the solar plate, whose layout is locked. */
+  labelsAvoidReserved?: boolean;
+  /** Pixels at the bottom of a landscape screen that bodies stay above (room for the credit line). */
+  bottomClear?: number;
+}
+
+export const SOLAR_SHAPE: PlateShape = {
+  // The Sun as a quarter disk, its centre just off the top-left corner.
+  centre: (unit) => {
+    const r = unit * 0.26;
+    return { x: -r * 0.12, y: -r * 0.12, r };
+  },
+  steps: ORBIT_STEPS,
+  swings: ANGLE_SWINGS,
+  spans: ARC_SPANS,
+  // Compressed sizing keeps the giants dominant without dwarfing Mercury.
+  bodyRadius: (body, unit) => Math.max(7, unit * 0.03 * Math.pow(body.displayRadius, 0.55)),
+};
+
 export function computePlateLayout(
   star: CelestialBody,
   planets: CelestialBody[],
   width: number,
   height: number,
+  shape: PlateShape = SOLAR_SHAPE,
 ): PlateLayout {
   const unit = Math.min(width, height);
-  const sunR = unit * 0.26;
-  const sx = -sunR * 0.12;
-  const sy = -sunR * 0.12;
+  const { x: sx, y: sy, r: sunR } = shape.centre(unit);
 
   // On portrait screens the planets stop above the title band.
   const portrait = width / height < PORTRAIT_ASPECT;
-  const plateHeight = portrait ? height * 0.72 : height;
+  const plateHeight = portrait ? height * 0.72 : height - (shape.bottomClear ?? 0);
   // On a steep portrait diagonal, angle swings turn into big sideways jumps; damp them.
   const swingScale = portrait ? 0.35 : 1;
 
@@ -107,11 +140,10 @@ export function computePlateLayout(
 
   const base: { body: CelestialBody; order: number; x: number; y: number; r: number; reach: number }[] = [];
   planets.forEach((body, i) => {
-    // Compressed sizing keeps the giants dominant without dwarfing Mercury.
-    const r = Math.max(7, unit * 0.03 * Math.pow(body.displayRadius, 0.55));
+    const r = shape.bodyRadius(body, unit);
     const reach = r * reachFactor(body.id);
-    const d = near + (far - near) * ORBIT_STEPS[i % ORBIT_STEPS.length];
-    const a0 = diagonal + ANGLE_SWINGS[i % ANGLE_SWINGS.length] * swingScale;
+    const d = near + (far - near) * shape.steps[i % shape.steps.length];
+    const a0 = diagonal + shape.swings[i % shape.swings.length] * swingScale;
     // If clamping to the screen pushes a body onto one already placed (outer bodies on a
     // narrow screen), slide it along its own orbit until it is clear.
     let x = 0;
@@ -128,6 +160,17 @@ export function computePlateLayout(
   const labelSize = width < 640 || height < SHORT_HEIGHT ? LABEL_NARROW : LABEL_WIDE;
 
   const placedBoxes: Box[] = [];
+
+  const reserved: Box[] = [
+    // Title block, bottom-left (approximate; matches .plate-title).
+    portrait
+      ? { left: 0, top: height * 0.74, right: width, bottom: height }
+      : height < SHORT_HEIGHT
+        ? { left: 0, top: height - 70, right: Math.min(width * 0.42, 360), bottom: height }
+        : { left: 0, top: height * 0.6, right: Math.min(width * 0.46, 640), bottom: height },
+    // Credit line, bottom-right.
+    { left: width - 440, top: height - 44, right: width, bottom: height },
+  ];
 
   // The Sun's label sits just past its visible edge, toward the planets, with a short
   // leader dropping from the rim. Placed first, so planet labels keep clear of it.
@@ -188,6 +231,7 @@ export function computePlateLayout(
         if (j !== i && circleHitsBox(o.x, o.y, o.reach + 8, box)) hits += 1;
       });
       for (const other of placedBoxes) if (boxesOverlap(box, other)) hits += 1;
+      if (shape.labelsAvoidReserved) for (const r of reserved) if (boxesOverlap(box, r)) hits += 2;
       return hits;
     };
     let best = PLACEMENTS[0];
@@ -208,7 +252,7 @@ export function computePlateLayout(
       ...p,
       orbitR: Math.hypot(p.x - sx, p.y - sy),
       angle: Math.atan2(p.y - sy, p.x - sx),
-      arcSpan: ARC_SPANS[i % ARC_SPANS.length],
+      arcSpan: shape.spans[i % shape.spans.length],
       labelSide,
       labelBox,
       connector: connectorFor(labelSide, lift),
@@ -220,16 +264,7 @@ export function computePlateLayout(
     height,
     diagonal,
     bounds: { left: margin, top: topMargin, right: width - margin, bottom: plateHeight - margin * 0.5 },
-    reserved: [
-      // Title block, bottom-left (approximate; matches .plate-title).
-      portrait
-        ? { left: 0, top: height * 0.74, right: width, bottom: height }
-        : height < SHORT_HEIGHT
-          ? { left: 0, top: height - 70, right: Math.min(width * 0.42, 360), bottom: height }
-          : { left: 0, top: height * 0.6, right: Math.min(width * 0.46, 640), bottom: height },
-      // Credit line, bottom-right.
-      { left: width - 440, top: height - 44, right: width, bottom: height },
-    ],
+    reserved,
     inset: clamp(width * 0.018, 12, 24),
     sun: { x: sx, y: sy, r: sunR },
     star: starPlacement,

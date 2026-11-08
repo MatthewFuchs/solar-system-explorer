@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PLATES, SOLAR_PLATE, plateOf } from "../src/data/plates";
+import { NEIGHBOURHOOD_PLATE, PLATES, SOLAR_PLATE, plateOf } from "../src/data/plates";
 import { VIEWABLE } from "../src/data/solarSystem";
 import { HOME, PAGES, pathFor, routeFor, routeFromLocation, segmentOf } from "../src/lib/routes";
 
@@ -17,6 +17,18 @@ describe("pages", () => {
   it("finds a body's plate", () => {
     expect(plateOf("mars")).toBe(SOLAR_PLATE);
     expect(plateOf("nowhere")).toBeUndefined();
+  });
+});
+
+describe("other plates", () => {
+  it("opens the neighbourhood and its stars from their paths", () => {
+    expect(routeFromLocation("/neighbourhood", "", "/")).toMatchObject({ plate: NEIGHBOURHOOD_PLATE, body: null });
+    expect(routeFromLocation("/sirius", "", "/")).toMatchObject({ plate: NEIGHBOURHOOD_PLATE, body: { id: "sirius" } });
+    expect(pathFor({ plate: NEIGHBOURHOOD_PLATE, body: null }, "/repo/")).toBe("/repo/neighbourhood");
+  });
+
+  it("finds a star's plate", () => {
+    expect(plateOf("tau-ceti")).toBe(NEIGHBOURHOOD_PLATE);
   });
 });
 

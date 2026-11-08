@@ -361,6 +361,73 @@ body,
   pointer-events: none;
 }
 
+/* The way one scale out, at the end of the plate's introduction. The destination's
+   name surfaces beside it on hover, as a label's tagline does, without taking space. */
+.plate-beyond {
+  /* The overview layer lets clicks through to the plate; the link takes them back. */
+  pointer-events: auto;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
+  color: var(--ivory);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* A gold hairline leading into the words, like a leader. */
+.plate-beyond::before {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: var(--gold-soft);
+  transition: width var(--dur) var(--ease);
+}
+
+.plate-beyond__line {
+  transition: color var(--dur) var(--ease);
+}
+
+.plate-beyond__name {
+  position: absolute;
+  left: 100%;
+  margin-left: 12px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  pointer-events: none;
+}
+
+.plate-beyond:is(:hover, :focus-visible) .plate-beyond__line {
+  color: var(--gold);
+}
+
+.plate-beyond:is(:hover, :focus-visible)::before {
+  width: 36px;
+}
+
+.plate-beyond:is(:hover, :focus-visible) .plate-beyond__name {
+  opacity: 1;
+  transform: none;
+}
+
+/* Narrow screens: the name surfaces above the words, not off the screen's edge. */
+@media (max-width: 639px) {
+  .plate-beyond__name {
+    left: 30px;
+    bottom: 100%;
+    margin: 0 0 2px;
+    transform: translateY(4px);
+  }
+}
+
 /* On desktop the detail panel covers the bottom-right; the credit steps aside to the left. */
 @media (min-width: 640px) {
   .plate:has(.poi-panel) .plate-credit {
@@ -1803,6 +1870,11 @@ body,
   opacity: 1;
 }
 
+/* A change of scale (another plate) dissolves more slowly, with the house ease. */
+.view-veil[data-kind='scale'] {
+  transition: opacity var(--dur) var(--ease);
+}
+
 @keyframes rm-fade-in {
   from {
     opacity: 0;
@@ -1969,8 +2041,17 @@ body,
     display: inline;
   }
 
-  .plate-title p {
+  /* The introduction gives way to the compact title; only the way out stays. */
+  .plate-title__intro {
     display: none;
+  }
+
+  .plate-title p {
+    margin-top: 0.2em;
+  }
+
+  .plate-beyond {
+    margin-left: 0;
   }
 
   /* Name only at rest, as on phones; details unfold on hover or tap. */

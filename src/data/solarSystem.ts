@@ -11,7 +11,10 @@ export type POICategory =
   | "culture"
   | "ring"
   | "storm"
-  | "surface";
+  | "surface"
+  | "star"
+  | "planet"
+  | "disk";
 
 /** A measurement with real units, shown as a small data label. */
 export interface POIStat {
@@ -83,7 +86,7 @@ export function isSurfacePOI(poi: POI): poi is SurfacePOI {
 export interface CelestialBody {
   id: string;
   name: string;
-  /** The Sun is a star; dwarf planets get a destination but no Roman numeral. Defaults to planet. */
+  /** Stars (the Sun and its neighbours); dwarf planets get a destination but no Roman numeral. Defaults to planet. */
   kind?: "star" | "planet" | "dwarf";
   /** Hex color used for the stylized sphere/material. */
   color: string;
@@ -99,6 +102,10 @@ export interface CelestialBody {
   tagline: string;
   /** Mean distance from the Sun in astronomical units (real value, shown in labels). Omitted for the Sun. */
   distanceAU?: number;
+  /** Distance from the Sun in light-years (real value), for stars beyond it. */
+  distanceLy?: number;
+  /** Spectral class (real value, e.g. "M5.5V"), shown in place of a numeral for other stars. */
+  spectralType?: string;
   /** How stretched the orbit is (real value, 0 = a circle). Sets the planet's song: how far its
       pitch rises from the far end of its orbit to the near end, as Kepler heard it. */
   eccentricity?: number;

@@ -93,6 +93,7 @@ export function PlateScene({
           return (
             <PlanetBody
               key={p.body.id}
+              star={p.body.kind === "star"}
               base={{ x: p.x, y: p.y, r: p.r }}
               sun={sun}
               appearance={appearanceFor(p.body.id)}

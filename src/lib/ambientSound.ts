@@ -170,6 +170,8 @@ const SUN_CHORD = [73.42, 110, 146.83];
 export interface SongSource {
   kind?: "star" | "planet" | "dwarf";
   distanceAU?: number;
+  /** Other stars have no song yet; only the Sun's chord and its worlds' glides sound. */
+  spectralType?: string;
   eccentricity?: number;
 }
 
@@ -290,7 +292,7 @@ export class AmbientSound {
   /** Sing a body's song when it is chosen. Silent unless sound is on; a new song cuts off the last. */
   sing(body: SongSource) {
     const g = this.graph;
-    if (!this.on || !g) return;
+    if (!this.on || !g || body.spectralType) return;
     if (this.song) {
       const { gain } = this.song;
       gain.cancelScheduledValues(g.ctx.currentTime);

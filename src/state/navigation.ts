@@ -28,6 +28,9 @@ export function initialNav(route: Route): NavState {
   return { shown: route, target: route, phase: route.body ? "planet" : "overview", poiIndex: 0 };
 }
 
+/** Whether a move from one page to another crosses to a different plate (a change of scale). */
+export const crossesPlates = (from: Route, to: Route) => from.plate !== to.plate;
+
 export const samePage = (a: Route, b: Route) => segmentOf(a) === segmentOf(b);
 
 export function navReducer(state: NavState, action: NavAction): NavState {
@@ -35,6 +38,8 @@ export function navReducer(state: NavState, action: NavAction): NavState {
     case "go": {
       const { to } = action;
       if (samePage(to, state.target)) return state;
+      // To another plate: a dissolve covers the change, so it arrives already at rest.
+      if (to.plate !== state.target.plate) return initialNav(to);
       // Into a body: it is shown from the start of the zoom, facing its first point of interest.
       if (to.body) return { shown: to, target: to, phase: "entering", poiIndex: 0 };
       // Out to the plate: the body stays shown until the zoom has carried it back.

@@ -6,7 +6,13 @@ import type { PanelState } from "./SidePanel";
 
 interface TopBarProps {
   inOverview: boolean;
+  /** The open plate's overview: its path, and how to get there. */
+  overviewPath: string;
   onOverview: () => void;
+  /** Back to the front page (the solar system), from the site's name. */
+  onHome: () => void;
+  /** Only plates with spacecraft offer the toggle. */
+  hasSpacecraft: boolean;
   showSpacecraft: boolean;
   onToggleSpacecraft: () => void;
   soundOn: boolean;
@@ -19,7 +25,10 @@ interface TopBarProps {
  */
 export const TopBar = memo(function TopBar({
   inOverview,
+  overviewPath,
   onOverview,
+  onHome,
+  hasSpacecraft,
   showSpacecraft,
   onToggleSpacecraft,
   soundOn,
@@ -33,15 +42,19 @@ export const TopBar = memo(function TopBar({
     e.preventDefault();
     onOverview();
   };
+  const toHome = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onHome();
+  };
 
   return (
     <>
       <header className="masthead">
-        <a className="masthead__brand" href={pagePath(HOME)} onClick={toOverview}>
+        <a className="masthead__brand" href={pagePath(HOME)} onClick={toHome}>
           Solar System Explorer
         </a>
         <nav className="masthead__nav" aria-label="Main">
-          {inOverview && (
+          {inOverview && hasSpacecraft && (
             <button type="button" className="masthead__toggle" aria-pressed={showSpacecraft} onClick={onToggleSpacecraft}>
               <span className="masthead__toggle-mark" aria-hidden="true" />
               Spacecraft
@@ -51,7 +64,7 @@ export const TopBar = memo(function TopBar({
             <span className="masthead__toggle-mark" aria-hidden="true" />
             Sound
           </button>
-          <a className="masthead__overview" href={pagePath(HOME)} aria-current={inOverview ? "page" : undefined} onClick={toOverview}>
+          <a className="masthead__overview" href={overviewPath} aria-current={inOverview ? "page" : undefined} onClick={toOverview}>
             Overview
           </a>
           <button

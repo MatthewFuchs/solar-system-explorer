@@ -36,7 +36,7 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
     entries: [
       {
         title: "Sun, planets, Saturn's rings, and the Moon",
-        detail: "Solar System Scope, licensed CC BY 4.0. Resized and re-encoded for the web.",
+        detail: "Solar System Scope, licensed CC BY 4.0. Resized and re-encoded for the web. The other stars reuse the Sun's map, recoloured to each star's light.",
         link: { label: "Solar System Scope", url: "https://www.solarsystemscope.com/textures/" },
       },
       {
@@ -59,7 +59,7 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
       {
         title: "Sources",
         detail:
-          "Compiled from NASA Science, NASA, NOAA Ocean Service, and Wikipedia. Each point of interest links to its source. Figures are rounded; sizes and distances on the map are not to scale.",
+          "Compiled from NASA Science, NASA, NOAA Ocean Service, the European Southern Observatory (ESO), and Wikipedia. Each point of interest links to its source. Figures are rounded; sizes and distances on the map are not to scale.",
         link: { label: "NASA Science", url: "https://science.nasa.gov/" },
       },
     ],

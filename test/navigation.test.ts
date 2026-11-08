@@ -38,6 +38,15 @@ describe("navigation", () => {
     expect(run(initialNav(mars), { type: "go", to: venus })).toMatchObject({ shown: venus, phase: "entering" });
   });
 
+  it("arrives at rest on another plate, from anywhere", () => {
+    const neighbourhood = routeFor("neighbourhood")!;
+    const sirius = routeFor("sirius")!;
+    expect(run(initialNav(mars), { type: "go", to: neighbourhood })).toEqual(initialNav(neighbourhood));
+    expect(run(initialNav(HOME), { type: "go", to: sirius })).toEqual(initialNav(sirius));
+    // Even mid-zoom: leaving Mars for the neighbourhood doesn't wait for Mars to fly back.
+    expect(run(initialNav(mars), { type: "go", to: HOME }, { type: "go", to: neighbourhood })).toMatchObject({ shown: neighbourhood, phase: "overview" });
+  });
+
   it("does nothing on settle when already at rest", () => {
     const rest = initialNav(HOME);
     expect(navReducer(rest, { type: "settle" })).toBe(rest);

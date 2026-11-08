@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { bodyMark, formatAU } from "../lib/format";
+import { bodyDistance, bodyMark, bodyNoun } from "../lib/format";
 import type { PlateLayout } from "../scene/layout/solarPlate";
 import { StatList } from "./StatList";
 
@@ -20,8 +20,8 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
     <>
       {[layout.star, ...layout.planets].map((p) => {
         const hitR = Math.max(p.r + 10, 22);
-        const numeral = bodyMark(p.body.kind, p.order);
-        const au = p.body.distanceAU;
+        const numeral = bodyMark(p.body, p.order);
+        const distance = bodyDistance(p.body);
         // Room between the label node and the screen edge, so the expanded tagline never clips.
         const room = p.labelSide === 1 ? layout.width - p.connector.x2 : p.connector.x2;
         // Left-side labels are anchored by their right edge, so the browser sizes them
@@ -55,10 +55,10 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
                   {p.body.kind !== "dwarf" && (
                     <>
                       <span className="dest-label__numeral">{numeral}</span>
-                      {au !== undefined && <span className="dest-label__rule" />}
+                      {distance && <span className="dest-label__rule" />}
                     </>
                   )}
-                  {au !== undefined && <span>{formatAU(au)}</span>}
+                  {distance && <span>{distance.short}</span>}
                 </span>
                 <div className="dest-label__more">
                   {/* One child, so the grid-row reveal (0fr to 1fr) unfolds tagline and stats together. */}
@@ -73,7 +73,7 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
               type="button"
               className="plate-hit"
               style={{ left: p.x - hitR, top: p.y - hitR, width: hitR * 2, height: hitR * 2 }}
-              aria-label={`${p.body.name}, ${p.body.kind === "star" ? "our star" : p.body.kind === "dwarf" ? "dwarf planet" : `planet ${numeral}`}${au !== undefined ? `, ${formatAU(au)} from the Sun` : ""}. Open its view.`}
+              aria-label={`${p.body.name}, ${bodyNoun(p.body, p.order)}${distance ? `, ${distance.long}` : ""}. ${p.body.pois.length ? "Open its view" : "Return to it"}.`}
               onClick={() => onSelect(p.body.id)}
               onPointerEnter={() => onHover(p.body.id)}
               onPointerLeave={() => onHover(null)}

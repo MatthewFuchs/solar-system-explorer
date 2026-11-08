@@ -151,6 +151,8 @@ export function PlanetBody({
       uMap: { value: null as Texture | null },
       uSunPos: { value: new Vector3() },
       uIntensity: { value: SUN_GLOW },
+      uTint: { value: new Color() },
+      uTintMix: { value: 0 },
       uAtmosphere: { value: new Color() },
       uRim: { value: 0 },
       uLight: { value: 0 },
@@ -194,6 +196,8 @@ export function PlanetBody({
     p.uMap.value = textures[0];
     p.uAtmosphere.value.set(appearance.atmosphere);
     p.uRim.value = appearance.rim;
+    p.uTint.value.set(appearance.tint ?? "#ffffff");
+    p.uTintMix.value = appearance.tint ? 1 : 0;
     if (s) {
       s.uAtmosphere.value.set(appearance.atmosphere);
       s.uRim.value = appearance.rim;

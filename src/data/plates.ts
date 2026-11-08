@@ -1,7 +1,8 @@
 // The site's plates: each scale of the map (the solar system, and later the stellar
 // neighbourhood, the Milky Way, the Local Group) is one fixed, art-directed composition.
 // A plate's own words live here; its bodies' content lives in their data files.
-import { SITE, VIEWABLE, type CelestialBody } from "./solarSystem.ts";
+import { NEIGHBOURS, SOL } from "./neighbourhood.ts";
+import { BELTS, SITE, SPACECRAFT, VIEWABLE, type Belt, type CelestialBody, type Spacecraft } from "./solarSystem.ts";
 
 export interface Plate {
   /** Stable id, used in code and CSS (`data-plate`). */
@@ -16,12 +17,22 @@ export interface Plate {
   tagline: string;
   /** One line for search results and link previews. */
   description: string;
+  /** The body view's way back to this plate. */
+  backLabel: string;
   /** The small credit line, bottom-right, for the plate's images. */
   credit: string;
-  /** The plate that holds this one, one scale out. */
-  parent?: string;
+  /** The plate one scale out, which holds this one. */
+  outward?: string;
+  /** The way one scale in: a point of light on this plate that opens a smaller plate. */
+  inward?: { body: CelestialBody; plate: string };
+  /** The plate's centre: the star its arcs are drawn around (on the solar plate, the Sun). */
+  centre: CelestialBody;
   /** Every body with its own view on this plate, in reading order. */
   bodies: CelestialBody[];
+  /** Stippled belts between bodies' orbits (solar plate). */
+  belts?: Belt[];
+  /** Spacecraft drawn beside their bodies (solar plate). */
+  spacecraft?: Spacecraft[];
 }
 
 export const SOLAR_PLATE: Plate = {
@@ -32,12 +43,38 @@ export const SOLAR_PLATE: Plate = {
     "A chart of the Sun's family, from the scorched to the frozen. Distances are in AU, the span from Earth to the Sun. Choose a world, and it will come to you.",
   tagline: "An interactive map of the solar system",
   description: SITE.description,
+  backLabel: "Back to the system",
   credit: "Textures: Solar System Scope, CC BY 4.0. Pluto: NASA/JHUAPL/SwRI.",
+  outward: "neighbourhood",
+  centre: VIEWABLE[0],
   bodies: VIEWABLE,
+  belts: BELTS,
+  spacecraft: SPACECRAFT,
+};
+
+export const NEIGHBOURHOOD_PLATE: Plate = {
+  id: "neighbourhood",
+  path: "neighbourhood",
+  title: "The Stellar Neighbourhood",
+  intro:
+    "The Sun's nearest neighbours, a few light-years out, where each star is a sun of its own. A light-year is the distance light travels in a year. Choose a star.",
+  tagline: "The Sun's nearest stars",
+  description: "The stars nearest the Sun, drawn like a candlelit astrolabe: Alpha Centauri, Sirius, Barnard's Star and more, with their worlds and stories.",
+  backLabel: "Back to the neighbourhood",
+  credit: "Star surfaces: Solar System Scope, CC BY 4.0, recoloured.",
+  inward: { body: SOL, plate: "solar" },
+  centre: SOL,
+  bodies: NEIGHBOURS,
 };
 
 /** Every plate, innermost first. */
-export const PLATES: Plate[] = [SOLAR_PLATE];
+export const PLATES: Plate[] = [SOLAR_PLATE, NEIGHBOURHOOD_PLATE];
+
+export function plateById(id: string): Plate {
+  const plate = PLATES.find((p) => p.id === id);
+  if (!plate) throw new Error(`No plate "${id}"`);
+  return plate;
+}
 
 /** The plate a body belongs to. */
 export function plateOf(bodyId: string): Plate | undefined {

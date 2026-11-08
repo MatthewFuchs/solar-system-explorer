@@ -1,10 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { BELTS, DESTINATIONS, SPACECRAFT, SUN, type Belt, type Spacecraft } from "../data/solarSystem";
+import { plateById } from "../data/plates";
+import type { Belt, Spacecraft } from "../data/solarSystem";
 import { useElementSize } from "../hooks/useElementSize";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { reachFactor } from "../scene/bodyAppearance";
 import { computeFeaturePlacement } from "../scene/layout/screen";
-import { computePlateLayout, placeBelts, placeSpacecraft } from "../scene/layout/solarPlate";
+import { composePlate } from "../scene/layout/plates";
+import { placeBelts, placeSpacecraft } from "../scene/layout/solarPlate";
 import { Timeline, TURN_MS, ZOOM_MS, type ZoomFrame } from "../scene/viewTransition";
 import { BeltLabels } from "./BeltLabels";
 import { DestinationLabels } from "./DestinationLabels";
@@ -18,8 +20,8 @@ import { SpacecraftLayer } from "./SpacecraftLayer";
 import { TopBar } from "./TopBar";
 import { AmbientSound } from "../lib/ambientSound";
 import { pagePath, pageTitle } from "../lib/seo";
-import { routeFromLocation, type Route } from "../lib/routes";
-import { initialNav, navReducer, samePage } from "../state/navigation";
+import { HOME, routeFromLocation, type Route } from "../lib/routes";
+import { crossesPlates, initialNav, navReducer, samePage } from "../state/navigation";
 
 // The 3D engine (three.js and friends) is most of the JavaScript; load it in its own
 // chunk so the typography and HUD can paint while it downloads.
@@ -35,6 +37,8 @@ const FADE_MS = 500;
 const ENTRANCE_WAIT_MS = 2500;
 /** Reduced motion: the dissolve that replaces the zoom, each way. */
 const VEIL_MS = 220;
+/** Between plates (a change of scale): a slower dissolve, each way. Matches --dur in CSS. */
+const SCALE_VEIL_MS = 380;
 
 /** waiting: hidden until the scene is ready; playing: the sequence; fade: reduced motion. */
 type Entrance = "waiting" | "playing" | "fade" | "done";
@@ -87,6 +91,8 @@ export function Overview() {
   const [markerEls] = useState(() => new Map<string, HTMLElement>());
   const [entrance, setEntrance] = useState<Entrance>(() => (initialFocus || entrancePlayed() ? "done" : "waiting"));
   const [veil, setVeil] = useState(false);
+  /** quick: the reduced-motion stand-in for a zoom; scale: a change of plate. */
+  const [veilKind, setVeilKind] = useState<"quick" | "scale">("quick");
   const [sound] = useState(() => new AmbientSound());
   const [soundOn, setSoundOn] = useState(false);
   const targetRef = useRef<Route>(initialRoute);
@@ -95,15 +101,12 @@ export function Overview() {
   const zoomMs = reducedMotion ? 0 : ZOOM_MS;
   const turnMs = reducedMotion ? 0 : TURN_MS;
 
-  const layout = useMemo(
-    () => (size.width > 0 ? computePlateLayout(SUN, DESTINATIONS, size.width, size.height) : null),
-    [size.width, size.height],
-  );
-  const beltShapes = useMemo(() => (layout ? placeBelts(layout, BELTS) : []), [layout]);
+  const layout = useMemo(() => (size.width > 0 ? composePlate(plate, size.width, size.height) : null), [plate, size.width, size.height]);
+  const beltShapes = useMemo(() => (layout && plate.belts ? placeBelts(layout, plate.belts) : []), [layout, plate]);
   // Spacecraft keep clear of the belt labels as well as planets, labels, and the title.
   const craftSpots = useMemo(
-    () => (layout ? placeSpacecraft(layout, SPACECRAFT, beltShapes.map((b) => b.labelBox)) : []),
-    [layout, beltShapes],
+    () => (layout && plate.spacecraft ? placeSpacecraft(layout, plate.spacecraft, beltShapes.map((b) => b.labelBox)) : []),
+    [layout, plate, beltShapes],
   );
 
   const focus = !layout || !focusId ? null : focusId === layout.star.body.id ? layout.star : (layout.planets.find((p) => p.body.id === focusId) ?? null);
@@ -119,20 +122,33 @@ export function Overview() {
   const go = useCallback(
     (to: Route) => {
       if (samePage(to, targetRef.current)) return;
+      // A change of scale arrives at rest (a dissolve covers it); a body zooms in or out.
+      const crossing = crossesPlates(targetRef.current, to);
       targetRef.current = to;
       window.clearTimeout(timerRef.current);
       const now = performance.now();
       dispatch({ type: "go", to });
       setMarkerHover(false);
-      if (to.body) {
+      if (to.body || crossing) {
         setHoveredId(null);
         setDetail(null);
       }
-      zoom.play(to.body ? 1 : 0, zoomMs, now);
+      zoom.play(to.body ? 1 : 0, crossing ? 0 : zoomMs, now);
       timerRef.current = window.setTimeout(() => dispatch({ type: "settle" }), zoom.remaining(now));
     },
     [zoom, zoomMs],
   );
+
+  /** Fade to the abyss, run `change` under cover, and fade back. */
+  const dissolve = useCallback((change: () => void, kind: "quick" | "scale") => {
+    const ms = kind === "scale" ? SCALE_VEIL_MS : VEIL_MS;
+    setVeilKind(kind);
+    setVeil(true);
+    window.setTimeout(() => {
+      change();
+      setVeil(false);
+    }, ms);
+  }, []);
 
   /** Change view and record it in the URL, so it can be linked and the back button works. */
   const navigate = useCallback(
@@ -144,15 +160,13 @@ export function Overview() {
         window.history.pushState(null, "", pagePath(to));
         go(to);
       };
-      if (!reducedMotion) return change();
-      // Reduced motion: no zoom; dissolve to the abyss, change the view, dissolve back.
-      setVeil(true);
-      window.setTimeout(() => {
-        change();
-        setVeil(false);
-      }, VEIL_MS);
+      const crossing = crossesPlates(targetRef.current, to);
+      if (!reducedMotion && !crossing) return change();
+      // A change of scale, or any change with reduced motion: dissolve to the abyss,
+      // change the view, dissolve back.
+      dissolve(change, crossing ? "scale" : "quick");
     },
-    [go, reducedMotion, sound],
+    [go, reducedMotion, sound, dissolve],
   );
 
   // The tab title follows the open world, as the prerendered pages' titles do.
@@ -163,7 +177,9 @@ export function Overview() {
   useEffect(() => {
     const sync = () => {
       upgradeHashLink();
-      go(routeFromUrl());
+      const to = routeFromUrl();
+      if (crossesPlates(targetRef.current, to)) dissolve(() => go(to), "scale");
+      else go(to);
     };
     window.addEventListener("popstate", sync);
     window.addEventListener("hashchange", sync);
@@ -171,7 +187,7 @@ export function Overview() {
       window.removeEventListener("popstate", sync);
       window.removeEventListener("hashchange", sync);
     };
-  }, [go]);
+  }, [go, dissolve]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -237,8 +253,20 @@ export function Overview() {
   }, [sound, soundOn]);
 
   const toOverview = useCallback(() => navigate({ plate: targetRef.current.plate, body: null }), [navigate]);
+  const toHome = useCallback(() => navigate(HOME), [navigate]);
+  /** One scale out: the plate that holds this one. */
+  const outer = plate.outward ? plateById(plate.outward) : null;
+  const toOuter = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (outer) navigate({ plate: outer, body: null });
+    },
+    [navigate, outer],
+  );
   const selectBody = useCallback(
     (id: string) => {
+      // The point of light that leads one scale in (Sol, on the neighbourhood plate).
+      if (plate.inward?.body.id === id) return navigate({ plate: plateById(plate.inward.plate), body: null });
       const body = plate.bodies.find((b) => b.id === id);
       if (body) navigate({ plate, body });
     },
@@ -294,7 +322,10 @@ export function Overview() {
       )}
       <TopBar
         inOverview={inOverview}
+        overviewPath={pagePath({ plate, body: null })}
         onOverview={toOverview}
+        onHome={toHome}
+        hasSpacecraft={craftSpots.length > 0}
         showSpacecraft={showSpacecraft}
         onToggleSpacecraft={toggleSpacecraft}
         soundOn={soundOn}
@@ -307,7 +338,18 @@ export function Overview() {
               {/* Two spans, so the title can break onto two lines. */}
               <span>{plate.title.split(" ").slice(0, -1).join(" ")}</span> <span>{plate.title.split(" ").at(-1)}</span>
             </h1>
-            <p>{plate.intro}</p>
+            <p>
+              <span className="plate-title__intro">{plate.intro}</span>
+              {outer && (
+                <>
+                  {" "}
+                  <a className="plate-beyond" href={pagePath({ plate: outer, body: null })} onClick={toOuter} aria-label={`And beyond: ${outer.title}`}>
+                    <span className="plate-beyond__line">and beyond</span>
+                    <span className="plate-beyond__name">{outer.title}</span>
+                  </a>
+                </>
+              )}
+            </p>
             {sceneFailure && <SceneNotice failure={sceneFailure} />}
           </div>
           {layout && (
@@ -356,11 +398,12 @@ export function Overview() {
             onPoiIndex={setPoiIndex}
             onMarkerHover={setMarkerHover}
             onBack={toOverview}
+            backLabel={plate.backLabel}
           />
         )}
       </main>
       <p className="plate-credit">{plate.credit}</p>
-      <div className="view-veil" data-on={veil} aria-hidden="true" />
+      <div className="view-veil" data-on={veil} data-kind={veilKind} aria-hidden="true" />
       <PlateCursor active={hoveredId !== null || markerHover} />
     </div>
   );
