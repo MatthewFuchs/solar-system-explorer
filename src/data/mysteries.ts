@@ -102,7 +102,40 @@ export const MYSTERIES: Mystery[] = [
     entry: "In 1929 Edwin Hubble showed that galaxies are moving away from us, the more distant ones faster: the first great sign that the universe is expanding.",
     trigger: { kind: "secret" },
   },
+  {
+    id: "golden-record",
+    title: "The Golden Record",
+    clue: "Among the travellers' belongings, something golden waits to be played.",
+    reveal: "Sounds and pictures of Earth, sent out with both Voyagers in 1977.",
+    entry: "You found the Golden Record each Voyager carries: a message to whoever might find it, with directions home drawn on its cover.",
+    trigger: { kind: "secret" },
+  },
+  {
+    id: "sky-on-the-day",
+    title: "Sky on the Day",
+    clue: "Come back on a night when the sky puts on a show.",
+    reveal: "You came on a night of falling stars.",
+    entry: "You visited on a night when a meteor shower was near its peak: the Earth passing through the dust a comet, or an asteroid, left behind.",
+    trigger: { kind: "secret" },
+  },
 ];
+
+/**
+ * The Golden Record, shown when its egg is found in either Voyager's details. Sources: The
+ * Planetary Society, "The Voyager Golden Records" (disc, greetings, images, committee); NASA,
+ * "Instructions for Aliens" (the cover).
+ */
+export const GOLDEN_RECORD = {
+  title: "The Golden Record",
+  /** The spacecraft whose details hold it. */
+  carriers: ["voyager-1", "voyager-2"],
+  facts: [
+    "Each Voyager carries a 12-inch gold-plated copper disc, with greetings in 55 languages and 115 images of Earth.",
+    "Its contents were chosen by a committee chaired by Carl Sagan.",
+    "Its cover shows how to play it, and a map that places the Sun by fourteen pulsars, with the hydrogen atom as its unit of time.",
+  ],
+  source: { label: "The Planetary Society", url: "https://www.planetary.org/articles/the-voyager-golden-records" },
+};
 
 /** The names that, typed anywhere, are easter eggs: name → mystery id. */
 export const SPOKEN_NAMES: Record<string, string> = { KEPLER: "kepler", HUBBLE: "hubble" };

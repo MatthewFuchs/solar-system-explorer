@@ -9,15 +9,34 @@ const IGNORED = [/GL Driver Message/, /THREE\.Clock: This module has been deprec
  * Security Policy violations. Tests that break things on purpose opt out with
  * `test.use({ allowErrors: true })`.
  */
-export const test = base.extend<{ allowErrors: boolean; errors: string[] }>({
+export const test = base.extend<{ allowErrors: boolean; today: number; errors: string[] }>({
   allowErrors: [false, { option: true }],
+  /** The page's calendar day (ms since 1970): an ordinary day, unless a test about dates sets one. */
+  today: [new Date(2026, 2, 3, 21, 0).getTime(), { option: true }],
   errors: [
-    async ({ page, allowErrors, javaScriptEnabled }, use) => {
+    async ({ page, allowErrors, javaScriptEnabled, today }, use) => {
       const errors: string[] = [];
       page.on("console", (m) => {
         if (m.type() === "error" && !IGNORED.some((re) => re.test(m.text()))) errors.push(m.text());
       });
       page.on("pageerror", (e) => errors.push(e.message));
+      // Pin the calendar day, so a real meteor shower's peak night (Sky on the Day) never changes
+      // what a test sees. Only Date: Playwright's clock would also stop performance.now, and with
+      // it every animation. The day stays fixed; the time of day runs on.
+      await page.addInitScript((day: number) => {
+        const Real = Date;
+        const offset = day - Real.now();
+        class Pinned extends Real {
+          constructor(...args: unknown[]) {
+            if (args.length === 0) super(Real.now() + offset);
+            else super(...(args as [number]));
+          }
+          static now() {
+            return Real.now() + offset;
+          }
+        }
+        window.Date = Pinned as DateConstructor;
+      }, today);
       await withCoverage(page, javaScriptEnabled !== false, () => use(errors));
       if (!allowErrors) expect(errors, "console errors").toEqual([]);
     },

@@ -24,6 +24,7 @@ import { AmbientSound } from "../lib/ambientSound";
 import { journey } from "../lib/journey";
 import { MYSTERIES, SPOKEN_NAMES } from "../data/mysteries";
 import { PLANETS } from "../data/solarSystem";
+import { SKY_DAYS, skyDayFor } from "../data/skyDays";
 import { pagePath, pageTitle } from "../lib/seo";
 import { HOME, routeFromLocation, type Route } from "../lib/routes";
 import { crossesPlates, initialNav, navReducer, samePage } from "../state/navigation";
@@ -286,6 +287,22 @@ export function Overview() {
     if (!soundOn) spheresRef.current = 0;
   }, [soundOn]);
 
+  // Easter egg, Sky on the Day: on the peak nights of a meteor shower, a line under the title,
+  // and being here then is noted.
+  const [skyDay] = useState(() => {
+    // In development only, ?sky=leonids (or perseids, geminids) previews a night without
+    // changing the clock. The built site never reads it.
+    if (import.meta.env.DEV) {
+      const preview = new URLSearchParams(window.location.search).get("sky");
+      const day = SKY_DAYS.find((d) => d.id === preview);
+      if (day) return day;
+    }
+    return skyDayFor(new Date());
+  });
+  useEffect(() => {
+    if (skyDay) journey.discover("sky-on-the-day");
+  }, [skyDay]);
+
   // Easter egg, the Pale Blue Dot: from among the stars, linger over the Sun.
   useEffect(() => {
     if (hoveredId !== "sol" && hoveredId !== "sol-milky-way") return;
@@ -509,6 +526,7 @@ export function Overview() {
                 </>
               )}
             </p>
+            {skyDay && <p className="plate-sky">{skyDay.line}</p>}
             {sceneFailure && <SceneNotice failure={sceneFailure} />}
           </div>
           {layout && (

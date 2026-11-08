@@ -3,6 +3,7 @@ import { MYSTERIES, type Mystery } from "../src/data/mysteries";
 import { PLANETS } from "../src/data/solarSystem";
 import { createJourney, EMPTY_JOURNEY, entryCount, JOURNEY_KEY, parseJourney, triggered } from "../src/lib/journey";
 import { routeFor } from "../src/lib/routes";
+import { skyDayFor } from "../src/data/skyDays";
 
 /** A Map-backed stand-in for localStorage. */
 function memoryStorage(initial?: string) {
@@ -125,5 +126,17 @@ describe("the logbook's mysteries", () => {
     expect(triggered(tour.trigger, visited)).toBe(false);
     expect(triggered(tour.trigger, { ...visited, visited: PLANETS.map((p) => p.id) })).toBe(true);
     expect(PLANETS).toHaveLength(8);
+  });
+});
+
+describe("sky on the day", () => {
+  it("knows the meteor showers' peak nights, every year, and nothing between them", () => {
+    expect(skyDayFor(new Date(2026, 7, 12))?.id).toBe("perseids");
+    expect(skyDayFor(new Date(2031, 7, 11))?.id).toBe("perseids");
+    expect(skyDayFor(new Date(2026, 7, 14))).toBeNull();
+    expect(skyDayFor(new Date(2026, 10, 17))?.id).toBe("leonids");
+    expect(skyDayFor(new Date(2026, 11, 14))?.id).toBe("geminids");
+    expect(skyDayFor(new Date(2026, 10, 8))).toBeNull();
+    expect(skyDayFor(new Date(2026, 0, 1))).toBeNull();
   });
 });

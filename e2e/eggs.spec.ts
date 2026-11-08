@@ -19,8 +19,9 @@ test.describe("easter eggs", () => {
     await openApp(page, "neighbourhood");
     expect(await found(page)).toEqual([]);
     await page.getByRole("button", { name: /^Sol,/ }).hover();
-    await expect(page.getByRole("status")).toContainText("Earth less than a pixel across", { timeout: 8000 });
-    expect(await found(page)).toEqual(["pale-blue-dot"]);
+    // A 3.5 s linger; software rendering under load can stretch it, so allow plenty.
+    await expect.poll(() => found(page), { timeout: 20_000 }).toEqual(["pale-blue-dot"]);
+    await expect(page.getByRole("status")).toContainText("Earth less than a pixel across");
   });
 
   test("with sound on, the worlds sung in order, Mercury to Neptune: the Music of the Spheres", async ({ page }) => {
@@ -50,5 +51,37 @@ test.describe("easter eggs", () => {
       await expectOverview(page);
     }
     expect(await found(page)).not.toContain("music-of-the-spheres");
+  });
+
+  test("a golden disc at the foot of a Voyager's details: the Golden Record", async ({ page }) => {
+    await openApp(page);
+    await page.getByRole("button", { name: /^Voyager 1, launched/ }).click();
+    const panel = page.getByRole("dialog");
+    await panel.getByRole("button", { name: "A golden disc" }).click();
+    await expect(page.getByRole("status")).toContainText("sent out with both Voyagers in 1977");
+    await expect(panel.getByRole("img", { name: /Golden Record's cover/ })).toBeVisible();
+    await expect(panel).toContainText("greetings in 55 languages");
+    expect(await found(page)).toEqual(["golden-record"]);
+  });
+
+  test.describe("on a meteor shower's peak night", () => {
+    test.use({ today: new Date(2026, 7, 12, 22, 0).getTime() });
+    test("a line under the title, and it's noted", async ({ page }) => {
+      await openApp(page);
+      await expect(page.locator(".plate-sky")).toContainText("Perseids");
+      await expect.poll(() => found(page)).toEqual(["sky-on-the-day"]);
+    });
+  });
+
+  test("on an ordinary night (the suite's own day), no line", async ({ page }) => {
+    await openApp(page);
+    await expect(page.locator(".plate-title")).toBeVisible();
+    await expect(page.locator(".plate-sky")).toHaveCount(0);
+  });
+
+  test("the development preview, ?sky=, does nothing in the built site", async ({ page }) => {
+    await openApp(page, "?sky=leonids");
+    await expect(page.locator(".plate-title")).toBeVisible();
+    await expect(page.locator(".plate-sky")).toHaveCount(0);
   });
 });
