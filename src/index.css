@@ -1087,6 +1087,17 @@ body,
   transform: none;
 }
 
+/* Near the right edge a plain marker's name sits on its left instead of running off screen. */
+.poi-marker:not([data-object])[data-side='left'] .poi-marker__name {
+  left: auto;
+  right: 36px;
+  transform: translateX(4px);
+}
+
+.poi-marker:not([data-object])[data-side='left']:is(:hover, :focus-visible, [data-active='true']) .poi-marker__name {
+  transform: none;
+}
+
 .poi-marker:focus-visible {
   outline: none;
 }

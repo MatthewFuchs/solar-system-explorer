@@ -44,12 +44,30 @@ const SHELL_SCALE_CLOSE = 1.028;
 const RING_VIEW_TILT = 0.38;
 /** Markers fade out as they approach the limb and are hidden on the far side. */
 const MARKER_LIMB = [0.12, 0.38] as const;
-/** Room an orbit object's name needs beside it before it moves to the other side. */
+/** The radius of the object a marker stands for: a moon (in planet radii), a spacecraft drawing, or a plain marker. */
+function objectRadius(poi: POI, planetR: number) {
+  const look = orbiterFor(poi.id);
+  return look?.kind === "moon" ? look.radius * planetR : look?.kind === "craft" ? look.size / 2 : 18;
+}
+
+/** Room a marker's name needs beside it before it moves to the other side. */
 const LABEL_ROOM = 210;
 
 /** The Sun's brightness: values above 1 feed the bloom. Eased down up close so its surface reads. */
 const SUN_GLOW = 3.0;
 const SUN_GLOW_CLOSE = 0.95;
+/**
+ * Other stars, up close: bright enough that their centre just passes the bloom threshold and
+ * glows, whatever their colour. A white star (Sirius) needs far less than a red dwarf, so the
+ * brightness is set from the star's own luminance, aiming its centre at this level.
+ */
+const STAR_PEAK_CLOSE = 1.2;
+function starGlowClose(tint: string) {
+  const c = new Color(tint);
+  const luminance = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+  // 1.2 is the recoloured surface's typical brightness (0.6 + 0.75 × the map's luminance, in shaders.ts).
+  return Math.min(3, Math.max(1, STAR_PEAK_CLOSE / (luminance * 1.2)));
+}
 
 interface PlanetBodyProps {
   /** Render as the Sun: an emissive star with no atmosphere shell or sunlight shading. */
@@ -144,6 +162,7 @@ export function PlanetBody({
   const shellRef = useRef<ShaderMaterial>(null);
   const ringRef = useRef<ShaderMaterial>(null);
   const rotRef = useRef({ x: 0, y: appearance.spin });
+  const closeGlow = useMemo(() => (appearance.tint ? starGlowClose(appearance.tint) : SUN_GLOW_CLOSE), [appearance.tint]);
   const turnRef = useRef<Turn | null>(null);
 
   const planetUniforms = useMemo(
@@ -259,7 +278,7 @@ export function PlanetBody({
     group.position.set(me.x - halfW, halfH - me.y, 0);
     group.scale.setScalar(me.r / base.r);
     const fade = zoomFrame && !isFocus ? smoothstep(0, 0.55, e) : 0;
-    if (star) setUniform(planetRef.current, "uIntensity", lerp(SUN_GLOW, SUN_GLOW_CLOSE, isFocus ? e : 0));
+    if (star) setUniform(planetRef.current, "uIntensity", lerp(SUN_GLOW, closeGlow, isFocus ? e : 0));
     group.visible = fade < 0.995;
 
     // Rotation: a timed turn toward a POI, otherwise the slow spin.
@@ -317,8 +336,7 @@ export function PlanetBody({
         } else {
           // Turned along its orbit if needed to stay on screen (Orbiters places moons the same way).
           const look = orbiterFor(poi.id);
-          const endR = zoomFrame?.to.r ?? me.r;
-          const objR = look?.kind === "moon" ? look.radius * endR : look?.kind === "craft" ? look.size / 2 : 18;
+          const objR = objectRadius(poi, zoomFrame?.to.r ?? me.r);
           const angle = zoomFrame ? fitOrbitAngle(poi.orbit.angle, poi.orbit.distance, objR, zoomFrame.to, size.width, size.height, featureKeepOut(size.width, size.height)) : poi.orbit.angle;
           const a = (angle * Math.PI) / 180;
           x = me.x + Math.cos(a) * poi.orbit.distance * me.r;
@@ -326,10 +344,11 @@ export function PlanetBody({
           alpha = arrived;
           // A moon's button covers the moon, which grows with the planet.
           if (look?.kind === "moon") el.style.setProperty("--obj-r", `${(look.radius * me.r).toFixed(1)}px`);
-          // Its name sits to the right, or to the left when the right edge is too close.
-          const side = x + objR + LABEL_ROOM > size.width ? "left" : "right";
-          if (look && el.dataset.side !== side) el.dataset.side = side;
         }
+        // A marker's name sits to the right, or to the left when the right edge is too close.
+        const room = isSurfacePOI(poi) ? 18 : objectRadius(poi, zoomFrame?.to.r ?? me.r);
+        const side = x + room + LABEL_ROOM > size.width ? "left" : "right";
+        if (el.dataset.side !== side) el.dataset.side = side;
         const transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
         if (el.style.transform !== transform) el.style.transform = transform;
         el.style.opacity = alpha.toFixed(3);

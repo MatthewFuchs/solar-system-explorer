@@ -123,8 +123,9 @@ export const sunShader = {
       // Other stars reuse the Sun's surface, recoloured: a faint trace of its granulation
       // in their own light, kept bright so up close they still read as stars, not moons.
       float lum = dot(tex, vec3(0.299, 0.587, 0.114));
-      tex = mix(tex, uTint * (0.78 + 0.4 * lum), uTintMix);
-      float limb = mix(0.5, 1.0, pow(mu, 0.45));
+      tex = mix(tex, uTint * (0.6 + 0.75 * lum), uTintMix);
+      // Other stars darken more toward the limb, so up close they read as spheres of light.
+      float limb = mix(mix(0.5, 0.22, uTintMix), 1.0, pow(mu, mix(0.45, 0.9, uTintMix)));
       // The hot-core boost scales with intensity, so the eased-down close-up does not clip to white.
       vec3 core = mix(vec3(1.0, 0.82, 0.55), uTint, uTintMix);
       vec3 col = tex * limb * uIntensity + core * pow(mu, 2.0) * 0.3 * uIntensity;
