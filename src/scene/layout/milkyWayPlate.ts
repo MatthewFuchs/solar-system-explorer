@@ -112,9 +112,11 @@ export function computeMilkyWayLayout(
     avoid: reserved,
     farLeaders: true,
   };
-  // On a narrow portrait screen the landmarks around the Sun are a few pixels apart, with no
-  // room for their names to fan out: stack them in a column beside it, like a map's callouts.
-  const stacked = portrait ? stackCluster(sized, sx, solR, width, labelSize.h) : new Map<number, LabelPlacement>();
+  // The landmarks around the Sun are a few pixels apart, with no room for their names to fan
+  // out: stack them in a column beside the cluster, like a map's callouts, in the same order
+  // top to bottom as their points, so no leader crosses another.
+  const cluster = Math.max(CLUSTER_PX, CLUSTER_LY / lyPerPx);
+  const stacked = stackCluster(sized, { x: cx, y: cy }, cluster + solR, width, margin, labelSize.h);
   for (const s of stacked.values()) space.placed.push(s.labelBox);
   const placed = bodies.map((b, i): PlanetPlacement => ({ ...b, arcSpan: 0, ...(stacked.get(i) ?? placeLabel(i, space)) }));
 
@@ -136,8 +138,9 @@ export function computeMilkyWayLayout(
 
 type LabelPlacement = Pick<PlanetPlacement, "labelSide" | "labelBox" | "connector">;
 
-/** Landmarks this close to the Sun (in pixels) are part of its cluster. */
+/** Landmarks this close to the Sun are part of its cluster: within this many pixels, or light-years, whichever is wider. */
 const CLUSTER_PX = 46;
+const CLUSTER_LY = 9000;
 
 /**
  * Callout labels for the Sun and the landmarks crowded around it: a column of names beside the
@@ -145,22 +148,27 @@ const CLUSTER_PX = 46;
  */
 function stackCluster(
   bodies: { x: number; y: number; r: number; labelW: number }[],
-  sx: number,
-  solR: number,
+  centre: { x: number; y: number },
+  radius: number,
   width: number,
+  margin: number,
   labelH: number,
 ): Map<number, LabelPlacement> {
   const row = labelH + 3;
   const sun = bodies[0];
   const cluster = bodies
     .map((b, i) => ({ b, i }))
-    .filter(({ b }) => Math.hypot(b.x - sun.x, b.y - sun.y) <= CLUSTER_PX + solR)
+    .filter(({ b }) => Math.hypot(b.x - sun.x, b.y - sun.y) <= radius)
     .sort((a, b) => a.b.y - b.b.y);
   const out = new Map<number, LabelPlacement>();
   if (cluster.length < 3) return out;
-  const side: 1 | -1 = sx < width / 2 ? 1 : -1;
-  const edge = side === 1 ? Math.max(...cluster.map(({ b }) => b.x + b.r)) : Math.min(...cluster.map(({ b }) => b.x - b.r));
-  const x2 = edge + side * 30;
+  // Outward, away from the galaxy's bright core, if the names fit there; otherwise inward.
+  const widest = Math.max(...cluster.map(({ b }) => b.labelW));
+  const edgeOf = (side: 1 | -1) => (side === 1 ? Math.max(...cluster.map(({ b }) => b.x + b.r)) : Math.min(...cluster.map(({ b }) => b.x - b.r)));
+  const fits = (side: 1 | -1) => (side === 1 ? edgeOf(1) + 30 + widest <= width - margin * 0.5 : edgeOf(-1) - 30 - widest >= margin * 0.5);
+  const outward: 1 | -1 = sun.x >= centre.x ? 1 : -1;
+  const side: 1 | -1 = fits(outward) ? outward : (-outward as 1 | -1);
+  const x2 = edgeOf(side) + side * 30;
   const mid = cluster.reduce((sum, { b }) => sum + b.y, 0) / cluster.length;
   cluster.forEach(({ b, i }, k) => {
     const y1 = mid + (k - (cluster.length - 1) / 2) * row;

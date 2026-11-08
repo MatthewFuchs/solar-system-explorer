@@ -60,6 +60,12 @@ export function PlateHud({ layout, hoveredId }: PlateHudProps) {
         );
       })}
 
+      {/* On the galaxy, whose stars crowd behind them, each landmark is marked with a fine ring. */}
+      {layout.galaxy &&
+        planets.map((p) => (
+          <circle key={p.body.id} className="hud-mark" data-state={stateOf(p.body.id)} cx={p.x} cy={p.y} r={p.r + 4} />
+        ))}
+
       {bodies.map((p) => {
         const R = p.reach + HALO_GAP;
         return (
