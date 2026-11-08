@@ -1,4 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { journey } from "../lib/journey";
+import { GOLDEN_RECORD } from "../data/mysteries";
+import { GoldenRecord } from "./GoldenRecord";
 import type { POIContent } from "../data/solarSystem";
 import { SidePanel, type PanelState } from "./SidePanel";
 import { line } from "./panelLine";
@@ -20,6 +23,10 @@ interface PoiPanelProps {
 /** Details for a point of interest, spacecraft, or belt. */
 export function PoiPanel({ poi, eyebrow, state, onClose, onClosed }: PoiPanelProps) {
   const titleRef = useRef<HTMLHeadingElement>(null);
+  // Reading a point of interest is part of the journey (the logbook counts what's been read).
+  useEffect(() => {
+    journey.record({ type: "read", id: poi.id });
+  }, [poi.id]);
 
   let i = 0;
   return (
@@ -83,6 +90,7 @@ export function PoiPanel({ poi, eyebrow, state, onClose, onClosed }: PoiPanelPro
             <span className="visually-hidden"> (opens in a new tab)</span>
           </a>
         )}
+        {GOLDEN_RECORD.carriers.includes(poi.id) && <GoldenRecord />}
       </div>
     </SidePanel>
   );

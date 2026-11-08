@@ -5,6 +5,7 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import { describe as describePage, notFound, prerender } from "../scripts/prerender";
 import { previewNotFound } from "../scripts/previewNotFound";
 import { VIEWABLE } from "../src/data/solarSystem";
+import { PAGES, routeFor } from "../src/lib/routes";
 
 type Handler = (req: { url?: string; headers: Record<string, string> }, res: FakeRes, next: (err?: unknown) => void) => unknown;
 type FakeRes = { statusCode: number; headers: Record<string, string>; body?: string; setHeader(k: string, v: string): void; end(b?: unknown): void };
@@ -160,14 +161,14 @@ describe("prerender plugin", () => {
     expect(readFileSync(join(out, "mars.html"), "utf8")).not.toContain("og/mars.jpg");
     expect(readFileSync(join(out, "sitemap.xml"), "utf8")).toContain("<loc>https://stars.example/mars</loc>");
     expect(readFileSync(join(out, "robots.txt"), "utf8")).toContain("Sitemap: https://stars.example/sitemap.xml");
-    expect(info).toHaveBeenCalledWith(`prerender: ${VIEWABLE.length + 1} pages for https://stars.example`);
+    expect(info).toHaveBeenCalledWith(`prerender: ${PAGES.length} pages for https://stars.example`);
   });
 });
 
 describe("long descriptions", () => {
   it("are cut on a whole word with an ellipsis", () => {
-    const mars = VIEWABLE.find((b) => b.id === "mars")!;
-    const d = describePage({ ...mars, tagline: "Rust and dust and ancient riverbeds ".repeat(10) });
+    const mars = routeFor("mars")!;
+    const d = describePage({ ...mars, body: { ...mars.body!, tagline: "Rust and dust and ancient riverbeds ".repeat(10) } });
     expect(d.length).toBeLessThanOrEqual(160);
     expect(d.endsWith("…")).toBe(true);
     expect(d.slice(0, -1)).toMatch(/(riverbeds|Rust|and|dust|ancient)$/);

@@ -145,6 +145,43 @@ function playNote(g: Graph, freq: number, delay = 0) {
   }
 }
 
+// ---------- Discoveries ----------
+/**
+ * A discovery's own voice, distinct from the ambient notes: three notes rising through the
+ * scale (D5, F#5, A5), each blooming quickly rather than swelling, centred rather than drifting,
+ * a little clearer, with a faint twelfth (the third partial) that gives it a bell's edge. The
+ * ambient voice never sounds that partial, so a discovery always reads as itself.
+ */
+export const DISCOVERY_NOTES = [587.33, 739.99, 880.0] as const;
+const DISCOVERY_STEP = 0.24;
+const DISCOVERY_LEVEL = 0.07;
+const DISCOVERY_RING = 3.2;
+
+function playDiscovery(g: Graph) {
+  const { ctx, notes } = g;
+  DISCOVERY_NOTES.forEach((freq, i) => {
+    const t0 = ctx.currentTime + i * DISCOVERY_STEP;
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0, t0);
+    env.gain.linearRampToValueAtTime(DISCOVERY_LEVEL, t0 + 0.06);
+    env.gain.exponentialRampToValueAtTime(0.0001, t0 + DISCOVERY_RING);
+    env.connect(notes);
+    for (const [mult, level] of [
+      [1, 1],
+      [2, 0.16],
+      [3, 0.05],
+    ]) {
+      const osc = ctx.createOscillator();
+      osc.frequency.value = freq * mult;
+      const partial = ctx.createGain();
+      partial.gain.value = level;
+      osc.connect(partial).connect(env);
+      osc.start(t0);
+      osc.stop(t0 + DISCOVERY_RING + 0.1);
+    }
+  });
+}
+
 // ---------- Planet songs ----------
 // Clicking a world plays its song, after Kepler's Harmonices Mundi (1619): a planet's pitch
 // follows its speed, rising as it swings in close to the Sun and falling as it slows at the
@@ -168,9 +205,14 @@ const SONG_LEVEL = 0.085;
 const SUN_CHORD = [73.42, 110, 146.83];
 
 export interface SongSource {
-  kind?: "star" | "planet" | "dwarf";
+  kind?: "star" | "planet" | "dwarf" | "deep-sky";
   distanceAU?: number;
+  /** Another star's class: its chord is pitched by how hot it is (starChord). */
+  spectralType?: string;
   eccentricity?: number;
+  /** What a deep-sky object is ("Nebula", "Black hole"): it sets the object's voice. */
+  mark?: string;
+  name?: string;
 }
 
 function nearestInScale(freq: number) {
@@ -209,6 +251,105 @@ function voice(ctx: AudioContext, out: AudioNode, freq: number, t0: number, end:
   return oscs;
 }
 
+// ---------- Stars and the galaxy's landmarks ----------
+// Other stars don't orbit the Sun, so they have no Kepler glide. Each sings a chord like the
+// Sun's, pitched by its temperature: the hotter its spectral class, the higher it sounds. A
+// G star like the Sun (Alpha Centauri, Tau Ceti) sounds the Sun's chord an octave up, as if
+// from far off; cool red M dwarfs sit lower, hot white A stars (Sirius) higher.
+
+/** Spectral classes from hottest to coolest. */
+const CLASSES = "OBAFGKM";
+
+/** A star's chord, from its class: root, the note three steps up the pentatonic, and the octave. */
+export function starChord(spectralType: string): number[] | null {
+  const c = CLASSES.indexOf(spectralType[0]);
+  if (c < 0) return null;
+  // G (the Sun's class) on D3; one pentatonic step per class.
+  const root = 5 + (CLASSES.indexOf("G") - c);
+  return [SONG_SCALE[root], SONG_SCALE[root + 3], SONG_SCALE[root] * 2];
+}
+
+/**
+ * The galaxy's landmarks each sing after what they are:
+ * - a nebula: two notes swelling slowly and fading, a cloud of sound, slightly detuned;
+ * - a supernova remnant (the Crab): a note that pulses 30 times a second, the real rate of the
+ *   pulsar at its heart (NASA Chandra);
+ * - a globular cluster: a shimmer of many quiet notes up the scale, for its crowd of stars;
+ * - a black hole: the lowest voice on the site, gliding down, as light climbing out of its
+ *   gravity is stretched to longer wavelengths.
+ */
+function playLandmark(g: Graph, env: GainNode, body: SongSource, t0: number) {
+  const { ctx } = g;
+  const level = SONG_LEVEL * 0.8;
+  switch (body.mark) {
+    case "Black hole": {
+      const end = t0 + 7.5;
+      env.gain.linearRampToValueAtTime(level * 1.1, t0 + 1.4);
+      env.gain.exponentialRampToValueAtTime(0.0001, end - 0.1);
+      const low = SONG_SCALE[0];
+      const steps = 48;
+      for (const { osc, mult } of voice(ctx, env, low, t0, end)) {
+        const curve = new Float32Array(steps);
+        // Down a fifth, slowing as it falls.
+        for (let i = 0; i < steps; i++) curve[i] = low * mult * (2 / 3) ** Math.sqrt(i / (steps - 1));
+        osc.frequency.setValueCurveAtTime(curve, t0 + 0.8, 5.5);
+      }
+      return;
+    }
+    case "Supernova remnant": {
+      const end = t0 + 6;
+      env.gain.linearRampToValueAtTime(level, t0 + 0.6);
+      env.gain.exponentialRampToValueAtTime(0.0001, end - 0.1);
+      // The pulsar: 30 pulses a second, beating the note's loudness.
+      const beat = ctx.createGain();
+      beat.gain.value = 0.55;
+      beat.connect(env);
+      const pulsar = ctx.createOscillator();
+      pulsar.frequency.value = 30;
+      const depth = ctx.createGain();
+      depth.gain.value = 0.45;
+      pulsar.connect(depth).connect(beat.gain);
+      pulsar.start(t0);
+      pulsar.stop(end);
+      voice(ctx, beat, SONG_SCALE[8], t0, end);
+      return;
+    }
+    case "Globular cluster": {
+      // Many small stars: quick, quiet notes climbing the scale, the swarm thinning upward.
+      const end = t0 + 5.5;
+      env.gain.setValueAtTime(level * 0.9, t0);
+      env.gain.setValueAtTime(level * 0.9, t0 + 3);
+      env.gain.exponentialRampToValueAtTime(0.0001, end - 0.1);
+      for (let i = 0; i < 12; i++) {
+        const at = t0 + i * 0.13 + (i % 3) * 0.03;
+        const note = ctx.createGain();
+        note.gain.setValueAtTime(0, at);
+        note.gain.linearRampToValueAtTime(0.5 - i * 0.03, at + 0.03);
+        note.gain.exponentialRampToValueAtTime(0.0001, at + 1.6);
+        note.connect(env);
+        const osc = ctx.createOscillator();
+        osc.frequency.value = SONG_SCALE[10 + (i % 8)];
+        osc.connect(note);
+        osc.start(at);
+        osc.stop(at + 1.7);
+      }
+      return;
+    }
+    default: {
+      // A nebula: two notes, each a pair of voices a few cents apart, swelling slowly. Which
+      // two depends on the nebula, so each has its own.
+      const end = t0 + 8;
+      env.gain.linearRampToValueAtTime(level * 0.9, t0 + 2.4);
+      env.gain.setValueAtTime(level * 0.9, t0 + 3.6);
+      env.gain.exponentialRampToValueAtTime(0.0001, end - 0.1);
+      const base = 9 + ((body.name ?? "").length % 3);
+      for (const step of [0, 4]) {
+        for (const cents of [-5, 5]) voice(ctx, env, SONG_SCALE[base + step] * 2 ** (cents / 1200), t0, end);
+      }
+    }
+  }
+}
+
 /** Plays one body's song into the notes bus; returns its envelope so a new song can cut it short. */
 function playSong(g: Graph, body: SongSource) {
   const { ctx, notes } = g;
@@ -216,6 +357,21 @@ function playSong(g: Graph, body: SongSource) {
   const env = ctx.createGain();
   env.connect(notes);
   env.gain.setValueAtTime(0, t0);
+
+  if (body.kind === "deep-sky") {
+    playLandmark(g, env, body, t0);
+    return env;
+  }
+  const chord = body.spectralType ? starChord(body.spectralType) : null;
+  if (chord) {
+    // Another star: a chord like the Sun's, swelling and settling, a little quieter (far off).
+    const end = t0 + 1.2 + 1.6 + SONG_RELEASE * 1.4 + 0.1;
+    env.gain.linearRampToValueAtTime(SONG_LEVEL * 0.65, t0 + 1.2);
+    env.gain.setValueAtTime(SONG_LEVEL * 0.65, t0 + 2.8);
+    env.gain.exponentialRampToValueAtTime(0.0001, end - 0.1);
+    chord.forEach((f) => voice(ctx, env, f, t0, end));
+    return env;
+  }
 
   const pitch = songPitch(body);
   if (!pitch) {
@@ -285,6 +441,35 @@ export class AmbientSound {
     window.clearTimeout(this.noteTimer);
     void this.graph?.ctx.close();
     this.graph = null;
+  }
+
+  /**
+   * The Music of the Spheres: every world's song at once, each holding its lowest note, swelling
+   * and resolving, after `delay` seconds (so the last song can finish). Silent unless sound is on.
+   */
+  harmony(bodies: SongSource[], delay = 0) {
+    const g = this.graph;
+    if (!this.on || !g) return;
+    const { ctx, notes } = g;
+    const t0 = ctx.currentTime + delay;
+    const end = t0 + 9;
+    const env = ctx.createGain();
+    env.connect(notes);
+    env.gain.setValueAtTime(0, t0);
+    env.gain.linearRampToValueAtTime(SONG_LEVEL * 0.35, t0 + 2.5);
+    env.gain.setValueAtTime(SONG_LEVEL * 0.35, t0 + 4.5);
+    env.gain.exponentialRampToValueAtTime(0.0001, end - 0.1);
+    for (const body of bodies) {
+      const pitch = songPitch(body);
+      if (pitch) voice(ctx, env, pitch.low, t0, end);
+    }
+  }
+
+  /** A discovery: its own short rising figure (playDiscovery). Silent unless sound is on. */
+  chime() {
+    const g = this.graph;
+    if (!this.on || !g) return;
+    playDiscovery(g);
   }
 
   /** Sing a body's song when it is chosen. Silent unless sound is on; a new song cuts off the last. */

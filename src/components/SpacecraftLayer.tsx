@@ -1,6 +1,6 @@
 import { memo, type CSSProperties } from "react";
 import type { Spacecraft } from "../data/solarSystem";
-import type { SpacecraftSpot } from "../scene/plateLayout";
+import type { SpacecraftSpot } from "../scene/layout/solarPlate";
 import { SpacecraftDrawingSvg } from "./spacecraftDrawings";
 
 interface SpacecraftLayerProps {

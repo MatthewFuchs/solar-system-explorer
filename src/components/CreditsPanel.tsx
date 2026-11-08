@@ -36,7 +36,7 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
     entries: [
       {
         title: "Sun, planets, Saturn's rings, and the Moon",
-        detail: "Solar System Scope, licensed CC BY 4.0. Resized and re-encoded for the web.",
+        detail: "Solar System Scope, licensed CC BY 4.0. Resized and re-encoded for the web. The other stars reuse the Sun's map, recoloured to each star's light.",
         link: { label: "Solar System Scope", url: "https://www.solarsystemscope.com/textures/" },
       },
       {
@@ -59,8 +59,18 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
       {
         title: "Sources",
         detail:
-          "Compiled from NASA Science, NASA, NOAA Ocean Service, and Wikipedia. Each point of interest links to its source. Figures are rounded; sizes and distances on the map are not to scale.",
+          "Compiled from NASA (NASA Science, Webb, the NASA Exoplanet Catalog, the Chandra X-ray Center, the Scientific Visualization Studio, JPL, and the Astrophysics Data System), the Space Telescope Science Institute, NOAA Ocean Service, ESA/Hubble, ESA/Webb, the European Southern Observatory and the Event Horizon Telescope, NSF NOIRLab, W. M. Keck Observatory, Green Bank Observatory, the American Astronomical Society, the Nobel Foundation, peer-reviewed papers via arXiv, Sky & Telescope, and EarthSky. Each point of interest links to its source. Figures are rounded. The solar system's sizes and distances are not to scale; the neighbourhood and the Milky Way place everything at its real distance, and the galaxy's spiral arms are a sketch.",
         link: { label: "NASA Science", url: "https://science.nasa.gov/" },
+      },
+    ],
+  },
+  {
+    heading: "Your logbook",
+    entries: [
+      {
+        title: "Kept only in this browser",
+        detail:
+          "Once you discover something, a logbook appears. It and the places you've been are kept in this browser's local storage (one entry, sse-journey-v1) and are never sent anywhere: this site has no server, no cookies, and no analytics. Forget it from the logbook at any time.",
       },
     ],
   },
@@ -69,7 +79,7 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
     entries: [
       {
         title: "Software",
-        detail: "React, three.js, React Three Fiber, drei, and postprocessing, all MIT licensed. Ambient sound is generated live in your browser. Each world's song follows Johannes Kepler's Harmonices Mundi (1619): its pitch rises and falls with its real orbital speed.",
+        detail: "React, three.js, React Three Fiber, drei, and postprocessing, all MIT licensed. Ambient sound is generated live in your browser. Each world's song follows Johannes Kepler's Harmonices Mundi (1619): its pitch rises and falls with its real orbital speed. Other stars sing chords pitched by how hot they are; the galaxy's landmarks sing after what they are, the Crab Nebula at its pulsar's real 30 beats a second.",
       },
     ],
   },

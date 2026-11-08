@@ -163,6 +163,41 @@ body,
   stroke-opacity: 0.1;
 }
 
+/* The neighbourhood chart: distance rings (every other one fainter), the hour dial's
+   numerals, and a sight line from Sol to each star that brightens with its star. */
+.hud-arc[data-kind='ring'] .hud-arc__line[data-faint='true'] {
+  stroke-opacity: 0.18;
+}
+
+.hud-chart__label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  fill: var(--gold);
+  fill-opacity: 0.55;
+  transition: fill-opacity var(--dur) var(--ease);
+}
+
+.hud-arc[data-state='dimmed'] .hud-chart__label {
+  fill-opacity: 0.25;
+}
+
+.hud-ray {
+  stroke: var(--gold);
+  stroke-width: 0.6;
+  stroke-opacity: 0.24;
+  stroke-dasharray: 1 5;
+  transition: stroke-opacity var(--dur) var(--ease);
+}
+
+.hud-ray[data-state='active'] {
+  stroke-opacity: 0.7;
+}
+
+.hud-ray[data-state='dimmed'] {
+  stroke-opacity: 0.06;
+}
+
 .hud-leader polyline {
   fill: none;
   stroke: var(--gold);
@@ -216,6 +251,19 @@ body,
 .hud-halo[data-state='active'] {
   opacity: 1;
   transform: scale(1);
+}
+
+/* A landmark's ring on the galaxy: always there, so its point can be found among the stars. */
+.hud-mark {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1;
+  stroke-opacity: 0.85;
+  transition: stroke-opacity var(--dur) var(--ease);
+}
+
+.hud-mark[data-state='dimmed'] {
+  stroke-opacity: 0.3;
 }
 
 /* ---------- Masthead ---------- */
@@ -361,6 +409,73 @@ body,
   pointer-events: none;
 }
 
+/* The way one scale out, at the end of the plate's introduction. The destination's
+   name surfaces beside it on hover, as a label's tagline does, without taking space. */
+.plate-beyond {
+  /* The overview layer lets clicks through to the plate; the link takes them back. */
+  pointer-events: auto;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
+  color: var(--ivory);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* A gold hairline leading into the words, like a leader. */
+.plate-beyond::before {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: var(--gold-soft);
+  transition: width var(--dur) var(--ease);
+}
+
+.plate-beyond__line {
+  transition: color var(--dur) var(--ease);
+}
+
+.plate-beyond__name {
+  position: absolute;
+  left: 100%;
+  margin-left: 12px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  pointer-events: none;
+}
+
+.plate-beyond:is(:hover, :focus-visible) .plate-beyond__line {
+  color: var(--gold);
+}
+
+.plate-beyond:is(:hover, :focus-visible)::before {
+  width: 36px;
+}
+
+.plate-beyond:is(:hover, :focus-visible) .plate-beyond__name {
+  opacity: 1;
+  transform: none;
+}
+
+/* Narrow screens: the name surfaces above the words, not off the screen's edge. */
+@media (max-width: 639px) {
+  .plate-beyond__name {
+    left: 30px;
+    bottom: 100%;
+    margin: 0 0 2px;
+    transform: translateY(4px);
+  }
+}
+
 /* On desktop the detail panel covers the bottom-right; the credit steps aside to the left. */
 @media (min-width: 640px) {
   .plate:has(.poi-panel) .plate-credit {
@@ -411,6 +526,22 @@ body,
   text-align: right;
 }
 
+/* Set directly under (or over) its point, as on a map: centred, with no leader or star. */
+.dest-label[data-side='center'] {
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -11px);
+  text-align: center;
+}
+
+.dest-label[data-side='center'] .dest-label__node {
+  display: none;
+}
+
+.dest-label[data-side='center'] .dest-label__text {
+  align-items: center;
+}
+
 .dest-label[data-state='dimmed'] {
   opacity: 0.35;
 }
@@ -431,6 +562,8 @@ body,
 .dest-label__text {
   display: flex;
   flex-direction: column;
+  /* The name is clickable too: a larger target than a pinpoint (the label itself stays inert). */
+  pointer-events: auto;
 }
 
 .dest-label[data-side='left'] .dest-label__text {
@@ -765,7 +898,9 @@ body,
   width: min(36vw, 500px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* Centred while it fits; a taller column starts at the top, never under the bar. No scrolling:
+     that would make the big name, which may run past the column, scroll sideways. */
+  justify-content: safe center;
 }
 
 .feature__numeral,
@@ -787,11 +922,26 @@ body,
 .feature__name {
   margin: 0.1em 0 0;
   font-family: var(--font-body);
-  font-size: clamp(64px, 9.5vw, 156px);
+  /* Shorter screens shrink it too, so the column fits (unchanged from 900px tall up). */
+  font-size: clamp(64px, min(9.5vw, 15.5vh), 156px);
   font-style: italic;
   font-weight: 500;
   line-height: 0.92;
   color: var(--ivory);
+}
+
+/* Wide screens only (phones and short landscape set their own, smaller sizes below). */
+@media (min-aspect-ratio: 17/20) and (min-height: 520px) {
+  /* What a deep-sky object is ("Supernova remnant"): a word, set smaller than a numeral. */
+  .feature__numeral[data-word='true'] {
+    font-size: clamp(18px, 1.7vw, 26px);
+    letter-spacing: 0.16em;
+  }
+
+  /* Long names ("The Pillars of Creation") would fill the column at full size. */
+  .feature__name[data-long='true'] {
+    font-size: clamp(52px, min(6.2vw, 10.5vh), 104px);
+  }
 }
 
 .feature__tagline {
@@ -969,6 +1119,17 @@ body,
   transform: none;
 }
 
+/* Near the right edge a plain marker's name sits on its left instead of running off screen. */
+.poi-marker:not([data-object])[data-side='left'] .poi-marker__name {
+  left: auto;
+  right: 36px;
+  transform: translateX(4px);
+}
+
+.poi-marker:not([data-object])[data-side='left']:is(:hover, :focus-visible, [data-active='true']) .poi-marker__name {
+  transform: none;
+}
+
 .poi-marker:focus-visible {
   outline: none;
 }
@@ -1075,7 +1236,7 @@ body,
   border-color: var(--gold);
 }
 
-/* Portrait: planet above, text below. Matches PORTRAIT_ASPECT in plateLayout.ts. */
+/* Portrait: planet above, text below. Matches PORTRAIT_ASPECT in src/scene/layout/screen.ts. */
 @media (max-aspect-ratio: 17/20) {
   .feature__column {
     top: 49%;
@@ -1734,7 +1895,7 @@ body,
   animation-name: ent-fade;
 }
 
-.plate[data-entrance='playing'] :is(.hud-arc__ticks, .hud-arc__end, .hud-arc__glow) {
+.plate[data-entrance='playing'] :is(.hud-arc__ticks, .hud-arc__end, .hud-arc__glow, .hud-chart__label, .hud-ray) {
   animation: ent-fade 700ms var(--ease) both;
   animation-delay: calc(800ms + var(--i) * 75ms);
 }
@@ -1801,6 +1962,11 @@ body,
 
 .view-veil[data-on='true'] {
   opacity: 1;
+}
+
+/* A change of scale (another plate) dissolves more slowly, with the house ease. */
+.view-veil[data-kind='scale'] {
+  transition: opacity var(--dur) var(--ease);
 }
 
 @keyframes rm-fade-in {
@@ -1954,7 +2120,15 @@ body,
   }
 }
 
-/* Short landscape screens (phones on their side). Matches SHORT_HEIGHT in plateLayout.ts. */
+/* Phones and short landscape screens: labels drop a leading "The" (labelName), as map labels do.
+   Matches labelSizeFor in src/scene/layout/labels.ts. */
+@media (max-width: 639px), (max-height: 519px) {
+  .dest-label__article {
+    display: none;
+  }
+}
+
+/* Short landscape screens (phones on their side). Matches SHORT_HEIGHT in src/scene/layout/screen.ts. */
 @media (max-height: 519px) and (min-aspect-ratio: 17/20) {
   .plate-title {
     bottom: calc(var(--hud-inset) + 8px);
@@ -1969,8 +2143,17 @@ body,
     display: inline;
   }
 
-  .plate-title p {
+  /* The introduction gives way to the compact title; only the way out stays. */
+  .plate-title__intro {
     display: none;
+  }
+
+  .plate-title p {
+    margin-top: 0.2em;
+  }
+
+  .plate-beyond {
+    margin-left: 0;
   }
 
   /* Name only at rest, as on phones; details unfold on hover or tap. */
@@ -2167,4 +2350,391 @@ body,
     0 0 2px var(--halo),
     0 0 7px var(--halo),
     0 0 16px var(--halo);
+}
+
+/* ---------- The voyage between scales ---------- */
+
+/* The labels move with their plate (positioned exactly as before; only transformed mid-voyage). */
+.plate-stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Mid-voyage, the plate's line work, labels, and sunglow follow the stage transform the
+   voyage writes each frame (the 3D bodies read the same transform). The title steps aside. */
+.plate[data-voyage] :is(.hud-layer, .plate-stage) {
+  /* ScaleVoyage writes transform and opacity onto these two layers each frame. */
+  transform-origin: 0 0;
+  will-change: transform, opacity;
+}
+
+/* The sunglow is a full-screen layer: scaling it would show its edges, so it steps aside too. */
+.plate[data-voyage] :is(.plate-title, .plate-credit, .space-sunglow) {
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.voyage {
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.voyage__rings {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.voyage__ring text {
+  transition: opacity var(--dur) var(--ease);
+}
+
+.voyage__ring circle {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 0.8;
+  stroke-opacity: 0.55;
+}
+
+.voyage__ring-name {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--gold);
+}
+
+.voyage__ring-note {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-style: italic;
+  fill: var(--ivory-soft);
+}
+
+/* The Sun as a lone point of light, while neither plate shows. */
+.voyage__sol {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.voyage__sol::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  top: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6e0 0, #ffd68a 18%, rgba(240, 162, 90, 0.35) 40%, transparent 70%);
+}
+
+.voyage__sol-name {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.voyage__span {
+  position: absolute;
+  bottom: calc(var(--hud-inset) + 18px);
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.voyage__span-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.voyage__span-value {
+  margin-left: 0.5em;
+  font-size: 22px;
+  font-style: italic;
+  color: var(--ivory);
+}
+
+.voyage__skip {
+  position: absolute;
+  top: calc(var(--bar-h) + 12px);
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%);
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ivory-soft);
+  animation: voyage-hint 2.4s var(--ease) both;
+}
+
+/* The hint shows briefly, then gets out of the way. */
+@keyframes voyage-hint {
+  0%,
+  10% {
+    opacity: 0;
+  }
+  25%,
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- The journey: discoveries and the logbook ---------- */
+
+/* A discovery: one quiet line near the foot of the screen that inks in, rests, and fades. Not a
+   toast: no box, no icon. */
+.discovery {
+  position: absolute;
+  /* Beneath the panels (9): an open logbook covers the line rather than wearing it. */
+  z-index: 8;
+  /* Full width, centred text: centring with left: 50% would halve the room it may wrap in. */
+  left: var(--hud-inset);
+  right: var(--hud-inset);
+  bottom: calc(var(--hud-inset) + 52px);
+  margin: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.discovery__line {
+  display: inline-block;
+  padding: 22px 40px;
+  /* A soft pool of the abyss behind the words, fading to nothing at its edges (never a box),
+     so they read over planets and labels. */
+  background: radial-gradient(closest-side, rgba(6, 4, 11, 0.9), rgba(6, 4, 11, 0.7) 55%, rgba(6, 4, 11, 0));
+  animation: discovery 5200ms var(--ease) both;
+}
+
+/* An easter egg's reveal: a larger line above the note, lingering longer. */
+.discovery__line[data-reveal='true'] {
+  animation-duration: 9000ms;
+}
+
+.discovery__reveal {
+  display: block;
+  max-width: 34ch;
+  margin: 0 auto 14px;
+  font-size: clamp(22px, 2.4vw, 32px);
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--ivory);
+  text-shadow: var(--halo);
+}
+
+.discovery__label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.discovery__title {
+  display: block;
+  margin-top: 4px;
+  font-size: clamp(20px, 2vw, 26px);
+  font-style: italic;
+  color: var(--ivory);
+  text-shadow: var(--halo);
+}
+
+@keyframes discovery {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  14%,
+  78% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The masthead's logbook appears once, softly, with the first discovery. */
+.masthead__logbook {
+  animation: ent-fade 1200ms var(--ease) both;
+}
+
+.logbook__entries {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logbook__entry {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--gold-faint);
+}
+
+.logbook__title {
+  margin: 0;
+  font-size: 22px;
+  font-style: italic;
+  color: var(--ivory);
+}
+
+.logbook__date {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.logbook__text {
+  margin: 10px 0 0;
+  line-height: 1.5;
+  color: var(--ivory);
+}
+
+/* A clue to what hasn't been found: engraved faintly, not yet inked. */
+.logbook__clue {
+  margin: 0;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ivory);
+  opacity: 0.42;
+}
+
+.logbook__forget {
+  margin-top: 26px;
+  font-size: 16px;
+}
+
+.logbook__forget button {
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid var(--gold-faint);
+  background: none;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.logbook__forget p {
+  margin: 0;
+  line-height: 2;
+  color: var(--ivory);
+}
+
+/* Phones: the sound toggle shows only its mark (its name stays for screen readers), so the
+   masthead keeps clear of the body view's way back once the logbook joins it. */
+@media (max-width: 639px) {
+  /* The text column fills the foot of a phone's body view: the line comes in at the top. */
+  .discovery {
+    top: calc(var(--bar-h) + 4px);
+    bottom: auto;
+  }
+
+  .discovery__line {
+    padding: 18px 14px;
+  }
+
+  .masthead__toggle-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Sky on the Day: one short italic line in the space below the introduction, out of the title
+   block's flow, so the block (anchored to the bottom) never grows upward over the plate. */
+.plate-sky {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  white-space: nowrap;
+  margin: 0.5em 0 0;
+  font-size: clamp(15px, 1.2vw, 18px);
+  font-style: italic;
+  color: var(--gold);
+}
+
+/* The Golden Record's disc: small, unlabelled, at the foot of a Voyager's details. */
+.golden-record__disc {
+  display: block;
+  margin: 28px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.golden-record__disc:hover,
+.golden-record__disc:focus-visible {
+  opacity: 1;
+}
+
+.golden-record__disc svg,
+.golden-record__cover {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1;
+}
+
+.golden-record {
+  margin: 28px 0 0;
+  animation: ent-fade 900ms var(--ease) both;
+}
+
+.golden-record__cover {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+}
+
+.golden-record__sun {
+  fill: var(--gold);
+}
+
+.golden-record__title {
+  margin: 16px 0 0;
+  font-size: 22px;
+  font-style: italic;
+  color: var(--ivory);
+}
+
+/* A phone's title band has room above it: the sky's line joins the block, clear of the credit
+   line. (After .plate-sky, so it wins.) */
+@media (max-width: 639px) {
+  .plate-sky {
+    position: static;
+    white-space: normal;
+  }
 }

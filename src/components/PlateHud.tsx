@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
-import type { PlateLayout, PlanetPlacement } from "../scene/plateLayout";
+import { hourAngle } from "../scene/layout/neighbourhoodPlate";
+import type { ChartEngraving, PlateLayout, PlanetPlacement } from "../scene/layout/solarPlate";
 
 interface PlateHudProps {
   layout: PlateLayout;
@@ -40,13 +41,17 @@ export function PlateHud({ layout, hoveredId }: PlateHudProps) {
       </defs>
 
       <g clipPath="url(#hud-bounds)" mask="url(#arc-mask)">
-        {planets.map((p) => (
-          <OrbitArc key={p.body.id} p={p} sun={sun} state={stateOf(p.body.id)} />
-        ))}
+        {layout.chart ? (
+          <Chart chart={layout.chart} sun={sun} planets={planets} hoveredId={hoveredId} stateOf={stateOf} />
+        ) : (
+          planets.map((p) => <OrbitArc key={p.body.id} p={p} sun={sun} state={stateOf(p.body.id)} />)
+        )}
       </g>
 
       {bodies.map((p) => {
         const c = p.connector;
+        // A name set right under or over its point needs no leader.
+        if (p.labelSide === 0) return null;
         return (
           <g key={p.body.id} className="hud-leader" data-state={stateOf(p.body.id)} style={{ "--i": p.order } as CSSProperties}>
             <polyline points={`${c.x0},${c.y0} ${c.x1},${c.y1} ${c.x2},${c.y1}`} />
@@ -54,6 +59,12 @@ export function PlateHud({ layout, hoveredId }: PlateHudProps) {
           </g>
         );
       })}
+
+      {/* On the galaxy, whose stars crowd behind them, each landmark is marked with a fine ring. */}
+      {layout.galaxy &&
+        planets.map((p) => (
+          <circle key={p.body.id} className="hud-mark" data-state={stateOf(p.body.id)} cx={p.x} cy={p.y} r={p.r + 4} />
+        ))}
 
       {bodies.map((p) => {
         const R = p.reach + HALO_GAP;
@@ -96,6 +107,86 @@ function OrbitArc({ p, sun, state }: { p: PlanetPlacement; sun: { x: number; y: 
       <circle className="hud-arc__end" cx={sun.x + R * Math.cos(a0)} cy={sun.y + R * Math.sin(a0)} r={2} />
       <circle className="hud-arc__end" cx={sun.x + R * Math.cos(a1)} cy={sun.y + R * Math.sin(a1)} r={2} />
     </g>
+  );
+}
+
+/**
+ * A to-scale chart's engraving: distance rings, a dial at the rim (the neighbourhood's hour
+ * dial of right ascension), and a faint sight line from the Sun to each body that brightens
+ * on hover. The layout places everything; rings open toward the title, like partial arcs.
+ */
+function Chart({
+  chart,
+  sun,
+  planets,
+  hoveredId,
+  stateOf,
+}: {
+  chart: ChartEngraving;
+  sun: { x: number; y: number; r: number };
+  planets: PlanetPlacement[];
+  hoveredId: string | null;
+  stateOf: (id: string) => HudState;
+}) {
+  const ringState: HudState = hoveredId === null ? "rest" : "dimmed";
+  const { gap } = chart;
+  // Sight lines run from the Sun; rings and the dial circle the chart's own centre.
+  const c = chart.centre ?? sun;
+  // Each ring runs the long way round, from the opening's far side to its near side.
+  const from = gap.to;
+  const to = gap.from + Math.PI * 2;
+  const inGap = (a: number) => {
+    const mid = (gap.from + gap.to) / 2;
+    return Math.abs(Math.atan2(Math.sin(a - mid), Math.cos(a - mid))) < (gap.to - gap.from) / 2;
+  };
+  let hourTicks = "";
+  for (let k = 0; chart.hours.length > 0 && k < 48; k++) {
+    const a = hourAngle(k / 2, chart.zeroHour);
+    if (inGap(a)) continue;
+    const len = k % 12 === 0 ? 9 : k % 2 === 0 ? 5 : 2.5;
+    hourTicks += `M ${polar(c, chart.dial, a)} L ${polar(c, chart.dial + len, a)} `;
+  }
+  const rings = [...chart.rings, { r: chart.dial, strong: true }];
+
+  return (
+    <>
+      {rings.map((ring, i) => (
+        <g key={ring.r} className="hud-arc" data-kind="ring" data-state={ringState} style={{ "--i": i } as CSSProperties}>
+          <path
+            className="hud-arc__line"
+            d={`M ${polar(c, ring.r, from)} A ${ring.r} ${ring.r} 0 1 1 ${polar(c, ring.r, to)}`}
+            pathLength={1}
+            data-faint={!ring.strong}
+          />
+          <circle className="hud-arc__end" cx={c.x + ring.r * Math.cos(from)} cy={c.y + ring.r * Math.sin(from)} r={2} />
+          <circle className="hud-arc__end" cx={c.x + ring.r * Math.cos(to)} cy={c.y + ring.r * Math.sin(to)} r={2} />
+        </g>
+      ))}
+      <g className="hud-arc" data-kind="dial" data-state={ringState} style={{ "--i": rings.length } as CSSProperties}>
+        <path className="hud-arc__ticks" d={hourTicks} />
+        {chart.hours.map((l) => (
+          <text key={l.h} className="hud-chart__label" x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle">
+            {l.h}h
+          </text>
+        ))}
+      </g>
+      {planets.map((p) => {
+        const dx = Math.cos(p.angle);
+        const dy = Math.sin(p.angle);
+        return (
+          <line
+            key={p.body.id}
+            className="hud-ray"
+            data-state={stateOf(p.body.id)}
+            style={{ "--i": p.order } as CSSProperties}
+            x1={sun.x + dx * (sun.r + 6)}
+            y1={sun.y + dy * (sun.r + 6)}
+            x2={p.x - dx * (p.r + 6)}
+            y2={p.y - dy * (p.r + 6)}
+          />
+        );
+      })}
+    </>
   );
 }
 

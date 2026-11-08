@@ -1,7 +1,8 @@
 import { useFrame, useThree } from "@react-three/fiber";
+import { IDENTITY_STAGE, type StageRef } from "./voyage";
 import { useEffect, useMemo, useRef } from "react";
 import { BufferGeometry, Float32BufferAttribute, type ShaderMaterial } from "three";
-import type { BeltShape } from "./plateLayout";
+import type { BeltShape } from "./layout/solarPlate";
 import { setUniform } from "./uniforms";
 import { lerp, smoothstep, type Timeline, type ZoomFrame } from "./viewTransition";
 
@@ -11,6 +12,8 @@ interface BeltFieldProps {
   height: number;
   zoom: Timeline;
   zoomFrame: ZoomFrame | null;
+  /** The voyage between scales (identity otherwise). */
+  stage?: StageRef;
 }
 
 /** Seeded so the stipple is identical on every load. */
@@ -57,7 +60,7 @@ const fragmentShader = /* glsl */ `
  * The asteroid and Kuiper belts as static stipple. Dots are generated once, in screen
  * pixels, denser toward the middle of each band and thinning at its ends.
  */
-export function BeltField({ belts, width, height, zoom, zoomFrame }: BeltFieldProps) {
+export function BeltField({ belts, width, height, zoom, zoomFrame, stage }: BeltFieldProps) {
   const dpr = useThree((s) => s.viewport.dpr);
   const materialRef = useRef<ShaderMaterial>(null);
 
@@ -110,18 +113,21 @@ export function BeltField({ belts, width, height, zoom, zoomFrame }: BeltFieldPr
     if (!m) return;
     const e = zoom.value(performance.now());
     m.uniforms.uHalf.value = [width / 2, height / 2];
+    let from: [number, number] = [0, 0];
+    let center: [number, number] = [0, 0];
+    let scale = 1;
     if (zoomFrame && e > 0) {
-      const scale = Math.exp(Math.log(zoomFrame.to.r / zoomFrame.from.r) * e);
-      m.uniforms.uFrom.value = [zoomFrame.from.x, zoomFrame.from.y];
-      m.uniforms.uCenter.value = [lerp(zoomFrame.from.x, zoomFrame.to.x, e), lerp(zoomFrame.from.y, zoomFrame.to.y, e)];
-      setUniform(m, "uScale", scale);
-    } else {
-      m.uniforms.uFrom.value = [0, 0];
-      m.uniforms.uCenter.value = [0, 0];
-      setUniform(m, "uScale", 1);
+      scale = Math.exp(Math.log(zoomFrame.to.r / zoomFrame.from.r) * e);
+      from = [zoomFrame.from.x, zoomFrame.from.y];
+      center = [lerp(zoomFrame.from.x, zoomFrame.to.x, e), lerp(zoomFrame.from.y, zoomFrame.to.y, e)];
     }
+    // The voyage between scales, on top of the zoom: p' = P + s (p - A).
+    const st = stage?.current ?? IDENTITY_STAGE;
+    m.uniforms.uFrom.value = from;
+    m.uniforms.uCenter.value = [st.px + st.s * (center[0] - st.ax), st.py + st.s * (center[1] - st.ay)];
+    setUniform(m, "uScale", scale * st.s);
     setUniform(m, "uDpr", dpr);
-    setUniform(m, "uFade", zoomFrame ? smoothstep(0, 0.5, e) : 0);
+    setUniform(m, "uFade", Math.max(zoomFrame ? smoothstep(0, 0.5, e) : 0, 1 - st.opacity));
   });
 
   return (

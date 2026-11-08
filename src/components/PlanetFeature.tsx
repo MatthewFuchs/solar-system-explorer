@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CelestialBody } from "../data/solarSystem";
-import { bodyMark, formatAU } from "../lib/format";
+import { bodyDistance, bodyMark } from "../lib/format";
 import { ZOOM_EASING_CSS } from "../scene/viewTransition";
 import { PoiMarkers } from "./PoiMarkers";
 import { PoiPanel, type PanelState } from "./PoiPanel";
 import { StatList } from "./StatList";
-
-export type ViewPhase = "overview" | "entering" | "planet" | "leaving";
+import type { ViewPhase } from "../state/navigation";
 
 interface PlanetFeatureProps {
   planet: CelestialBody;
@@ -18,6 +17,8 @@ interface PlanetFeatureProps {
   onPoiIndex: (index: number) => void;
   onMarkerHover: (hovering: boolean) => void;
   onBack: () => void;
+  /** The way back's wording, which names the plate. */
+  backLabel: string;
 }
 
 /**
@@ -61,14 +62,15 @@ export function PlanetFeature({
   onPoiIndex,
   onMarkerHover,
   onBack,
+  backLabel,
 }: PlanetFeatureProps) {
   const numeralRef = useRef<HTMLParagraphElement>(null);
   const nameRef = useRef<HTMLHeadingElement>(null);
   const anims = useRef<Animation[]>([]);
-  const numeral = bodyMark(planet.kind, order);
+  const numeral = bodyMark(planet, order);
   const pois = planet.pois;
   const poi = pois[poiIndex];
-  const au = planet.distanceAU;
+  const distance = bodyDistance(planet);
   const [panel, setPanel] = useState<PanelState | "closed">("closed");
   const closePanel = useCallback(() => setPanel((p) => (p === "open" ? "closing" : p)), []);
   const closedPanel = useCallback(() => setPanel("closed"), []);
@@ -111,19 +113,20 @@ export function PlanetFeature({
     <section className="feature" data-phase={phase} aria-labelledby="feature-name">
       <button type="button" className="feature__back feature__rest" onClick={onBack}>
         <span className="feature__back-rule" aria-hidden="true" />
-        Back to the system
+        {backLabel}
       </button>
 
       <div className="feature__column">
-        <p className="feature__numeral" ref={numeralRef}>
+        {/* A word ("Supernova remnant") is set smaller than a numeral; a long name smaller than a short one. */}
+        <p className="feature__numeral" ref={numeralRef} data-word={planet.mark !== undefined}>
           {numeral}
         </p>
-        <h2 className="feature__name" id="feature-name" ref={nameRef}>
+        <h2 className="feature__name" id="feature-name" ref={nameRef} data-long={planet.name.length > 15}>
           {planet.name}
         </h2>
         <div className="feature__rest">
           <p className="feature__tagline">{planet.tagline}</p>
-          {au !== undefined && <p className="feature__meta">{formatAU(au)} from the Sun</p>}
+          {distance && <p className="feature__meta">{distance.long}</p>}
           {planet.stats && planet.stats.length > 0 && <StatList stats={planet.stats} variant="feature" />}
 
           {poi && (

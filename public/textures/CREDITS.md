@@ -8,6 +8,9 @@ Changes: all maps are re-encoded as WebP. Planet maps in this folder are resized
 2048×1024 to 1024×512 for the overview; `2k/` holds full-size planet maps, loaded for
 the planet view. The Sun is resized to 1536×768.
 
+The other stars on the stellar neighbourhood plate reuse the Sun's map, recoloured at
+render time (in the shader) to each star's light; no new image is stored.
+
 ## Pluto
 
 `pluto.webp` and `2k/pluto.webp` are from NASA/Johns Hopkins University Applied Physics

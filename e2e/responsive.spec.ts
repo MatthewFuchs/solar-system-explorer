@@ -13,9 +13,25 @@ const VIEWPORTS = [
 /**
  * Known label collisions among the crowded outer planets on some portrait screens,
  * kept as expected failures so they show up (and flip to passing) when the layout
- * is fixed. See src/scene/plateLayout.ts.
+ * is fixed. See src/scene/layout/solarPlate.ts.
  */
 const KNOWN_LABEL_COLLISIONS = new Set(["768x1024", "360x740", "375x667"]);
+
+/** Each plate's overview, and the screens where its labels are known to collide. */
+const PLATES = [
+  { path: "", name: "solar system", known: KNOWN_LABEL_COLLISIONS },
+  { path: "neighbourhood", name: "neighbourhood", known: new Set<string>() },
+  { path: "milky-way", name: "Milky Way", known: new Set<string>() },
+];
+
+/** The text's own bounds of each label's name (not its box, which may stretch wider than the word). */
+const nameRects = () =>
+  [...document.querySelectorAll<HTMLElement>(".dest-label")].map((label) => {
+    const range = document.createRange();
+    range.selectNodeContents(label.querySelector(".dest-label__name")!);
+    const r = range.getBoundingClientRect();
+    return { id: label.dataset.planet, left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+  });
 
 for (const viewport of VIEWPORTS) {
   const size = `${viewport.width}x${viewport.height}`;
@@ -23,42 +39,48 @@ for (const viewport of VIEWPORTS) {
   test.describe(size, () => {
     test.use({ viewport });
 
-    test("fits the overview without sideways scrolling", async ({ page }) => {
-      await openApp(page);
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow).toBeLessThanOrEqual(0);
-      for (const name of await page.locator(".dest-label__name").all()) {
-        const box = (await name.boundingBox())!;
-        expect(box.x).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-      }
-    });
+    for (const plate of PLATES) {
+      test(`fits the ${plate.name} without sideways scrolling`, async ({ page }) => {
+        await openApp(page, plate.path);
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+        expect(overflow).toBeLessThanOrEqual(0);
+        for (const name of await page.locator(".dest-label__name").all()) {
+          const box = (await name.boundingBox())!;
+          expect(box.x).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+        }
+      });
 
-    test("keeps planet names from overlapping", async ({ page }) => {
-      test.fail(KNOWN_LABEL_COLLISIONS.has(size), "known collision among the outer planets");
-      await openApp(page);
-      const overlaps = await page.evaluate(() => {
-        const names = [...document.querySelectorAll<HTMLElement>(".dest-label")].map((label) => ({
-          id: label.dataset.planet,
-          // The text's own bounds, not its box, which may stretch wider than the word.
-          r: (() => {
-            const range = document.createRange();
-            range.selectNodeContents(label.querySelector(".dest-label__name")!);
-            return range.getBoundingClientRect();
-          })(),
-        }));
+      test(`keeps the ${plate.name}'s names from overlapping`, async ({ page }) => {
+        test.fail(plate.known.has(size), "known collision among the outer planets");
+        await openApp(page, plate.path);
+        const names = await page.evaluate(nameRects);
         const hits: string[] = [];
         for (let i = 0; i < names.length; i++)
           for (let j = i + 1; j < names.length; j++) {
-            const a = names[i].r;
-            const b = names[j].r;
+            const [a, b] = [names[i], names[j]];
             const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
             const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-            if (x > 2 && y > 2) hits.push(`${names[i].id}/${names[j].id}`);
+            if (x > 2 && y > 2) hits.push(`${a.id}/${b.id}`);
           }
-        return hits;
+        expect(hits).toEqual([]);
       });
-      expect(overlaps).toEqual([]);
+    }
+
+    test("keeps the neighbourhood's star names clear of the title, credit line, and dial numerals", async ({ page }) => {
+      await openApp(page, "neighbourhood");
+      const names = await page.evaluate(nameRects);
+      const numerals = await page.locator(".hud-chart__label").all();
+      expect(numerals).toHaveLength(4);
+      for (const target of [page.locator(".plate-title h1"), page.locator(".plate-credit"), ...numerals]) {
+        const r = (await target.boundingBox())!;
+        const selector = (await target.textContent())?.slice(0, 20);
+        for (const n of names) {
+          const x = Math.min(n.right, r.x + r.width) - Math.max(n.left, r.x);
+          const y = Math.min(n.bottom, r.y + r.height) - Math.max(n.top, r.y);
+          expect(x > 2 && y > 2, `${n.id} overlaps ${selector}`).toBe(false);
+        }
+      }
     });
 
     test("lays out the planet view", async ({ page }) => {

@@ -1,6 +1,6 @@
 import { memo } from "react";
 import type { Belt } from "../data/solarSystem";
-import type { BeltShape } from "../scene/plateLayout";
+import type { BeltShape } from "../scene/layout/solarPlate";
 
 interface BeltLabelsProps {
   shapes: BeltShape[];

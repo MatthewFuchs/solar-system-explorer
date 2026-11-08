@@ -15,7 +15,7 @@
   /* Slow-in, soft landing; unhurried but responsive. No overshoot. */
   --ease: cubic-bezier(0.25, 0.8, 0.25, 1);
   --dur: 380ms;
-  --bar-h: 52px; /* Matches TOP_BAR_HEIGHT in plateLayout.ts. */
+  --bar-h: 52px; /* Matches TOP_BAR_HEIGHT in src/scene/layout/screen.ts. */
   --hud-inset: clamp(12px, 1.8vw, 24px); /* Matches layout.inset. */
 
   color-scheme: dark;
