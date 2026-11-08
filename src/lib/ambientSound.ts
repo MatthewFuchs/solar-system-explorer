@@ -177,6 +177,19 @@ function nearestInScale(freq: number) {
   return SONG_SCALE.reduce((best, f) => (Math.abs(Math.log(f / freq)) < Math.abs(Math.log(best / freq)) ? f : best));
 }
 
+/**
+ * A body's song: the note it starts from (set by distance, snapped to the pentatonic) and
+ * how far it glides up, Kepler's ((1+e)/(1-e))^2. Null for the Sun, which plays a chord.
+ */
+export function songPitch(body: SongSource): { low: number; ratio: number } | null {
+  if (body.kind === "star" || body.distanceAU === undefined || body.eccentricity === undefined) return null;
+  const e = body.eccentricity;
+  return { low: nearestInScale(SONG_EARTH * body.distanceAU ** -SONG_SPREAD), ratio: ((1 + e) / (1 - e)) ** 2 };
+}
+
+/** Every note a song may start on: D pentatonic from D2 up five octaves. */
+export const SONG_NOTES: readonly number[] = SONG_SCALE;
+
 /** A voice: a sine with a soft octave and a whisper of the twelfth, so low songs still carry on small speakers. */
 function voice(ctx: AudioContext, out: AudioNode, freq: number, t0: number, end: number) {
   const oscs = [
@@ -204,7 +217,8 @@ function playSong(g: Graph, body: SongSource) {
   env.connect(notes);
   env.gain.setValueAtTime(0, t0);
 
-  if (body.kind === "star" || body.distanceAU === undefined || body.eccentricity === undefined) {
+  const pitch = songPitch(body);
+  if (!pitch) {
     // The Sun doesn't travel, so it doesn't glide: a low chord swells and settles.
     const end = t0 + 1.2 + 1.6 + SONG_RELEASE * 1.4 + 0.1;
     env.gain.linearRampToValueAtTime(SONG_LEVEL * 0.8, t0 + 1.2);
@@ -214,9 +228,7 @@ function playSong(g: Graph, body: SongSource) {
     return env;
   }
 
-  const low = nearestInScale(SONG_EARTH * body.distanceAU ** -SONG_SPREAD);
-  const e = body.eccentricity;
-  const ratio = ((1 + e) / (1 - e)) ** 2;
+  const { low, ratio } = pitch;
   const glideStart = t0 + SONG_ATTACK * 0.6;
   const end = glideStart + SONG_ORBIT + SONG_RELEASE + 0.1;
   env.gain.linearRampToValueAtTime(SONG_LEVEL, t0 + SONG_ATTACK);

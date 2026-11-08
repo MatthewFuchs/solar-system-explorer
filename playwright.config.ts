@@ -9,6 +9,9 @@ const PORT = 4173;
  */
 export default defineConfig({
   testDir: "e2e",
+  // `npm run coverage` records which app code the suite runs (e2e/coverage.ts).
+  globalSetup: "./e2e/coverage-setup.ts",
+  globalTeardown: "./e2e/coverage-teardown.ts",
   fullyParallel: true,
   // WebGL runs in software in headless Chromium and is heavy. Two workers on a CI runner
   // starved the main thread (zooms stuck mid-flight, contexts timing out), so CI runs one

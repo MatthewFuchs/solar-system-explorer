@@ -20,7 +20,116 @@ test.describe("overview", () => {
   });
 });
 
+test.describe("private browsing", () => {
+  test("plays the entrance and works when session storage is blocked", async ({ page }) => {
+    await page.addInitScript(() =>
+      Object.defineProperty(window, "sessionStorage", {
+        get() {
+          throw new DOMException("The operation is insecure.", "SecurityError");
+        },
+      }),
+    );
+    await page.goto("/");
+    await expect(page.locator(".plate")).toHaveAttribute("data-entrance", "done", { timeout: 10_000 });
+    await page.getByRole("button", { name: /^Mars,/ }).click();
+    await expectPlanetView(page, "Mars");
+  });
+});
+
+test.describe("cursor", () => {
+  test("is a point of light that follows the mouse and brightens over a world", async ({ page, isMobile }) => {
+    test.skip(isMobile === true, "Touch screens keep no cursor");
+    await openApp(page);
+    const cursor = page.locator(".plate-cursor");
+    await expect(cursor).toHaveAttribute("data-visible", "false");
+    await page.mouse.move(400, 300);
+    await expect(cursor).toHaveAttribute("data-visible", "true");
+    await expect
+      .poll(() => cursor.evaluate((el) => (new DOMMatrix(getComputedStyle(el).transform).m41 + new DOMMatrix(getComputedStyle(el).transform).m42)))
+      .toBeCloseTo(700, 0);
+    await page.getByRole("button", { name: /^Mars,/ }).hover();
+    await expect(cursor).toHaveAttribute("data-active", "true");
+  });
+
+  test("hides when the pointer leaves the window or the window loses focus", async ({ page, isMobile }) => {
+    test.skip(isMobile === true, "Touch screens keep no cursor");
+    await openApp(page);
+    const cursor = page.locator(".plate-cursor");
+    await page.mouse.move(400, 300);
+    await expect(cursor).toHaveAttribute("data-visible", "true");
+
+    // An element vanishing under a still pointer is not leaving: the cursor stays.
+    await page.evaluate(() => document.dispatchEvent(new MouseEvent("mouseout", { clientX: 400, clientY: 300 })));
+    await expect(cursor).toHaveAttribute("data-visible", "true");
+    await page.evaluate(() => document.dispatchEvent(new MouseEvent("mouseout", { clientX: 0, clientY: 200 })));
+    await expect(cursor).toHaveAttribute("data-visible", "false");
+
+    await page.mouse.move(420, 320);
+    await expect(cursor).toHaveAttribute("data-visible", "true");
+    await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+    await expect(cursor).toHaveAttribute("data-visible", "false");
+  });
+
+  test("is left to the system on touch screens", async ({ page, isMobile }) => {
+    test.skip(isMobile !== true, "Checked on the phone project");
+    await openApp(page);
+    await expect(page.locator(".plate-cursor")).toBeHidden();
+  });
+});
+
+test.describe("hover", () => {
+  test("lights the hovered world, unfolds its tagline, and dims the rest", async ({ page, isMobile }) => {
+    test.skip(isMobile === true, "Touch screens have no hover");
+    await openApp(page);
+    const label = (id: string) => page.locator(`.dest-label[data-planet="${id}"]`);
+    await expect(label("mars")).toHaveAttribute("data-state", "rest");
+    const tagline = label("mars").locator(".dest-label__more");
+    const folded = (await tagline.boundingBox())?.height ?? 0;
+
+    await page.getByRole("button", { name: /^Mars,/ }).hover();
+    await expect(label("mars")).toHaveAttribute("data-state", "active");
+    for (const id of ["sun", "earth", "jupiter", "pluto"]) await expect(label(id)).toHaveAttribute("data-state", "dimmed");
+    await expect.poll(async () => (await tagline.boundingBox())?.height ?? 0).toBeGreaterThan(folded);
+
+    await page.mouse.move(5, 450);
+    await expect(label("mars")).toHaveAttribute("data-state", "rest");
+    await expect(label("earth")).toHaveAttribute("data-state", "rest");
+  });
+});
+
 test.describe("planet view", () => {
+  test("opens from the keyboard", async ({ page }) => {
+    await openApp(page);
+    await page.getByRole("button", { name: /^Earth,/ }).focus();
+    await page.keyboard.press("Enter");
+    await expectPlanetView(page, "Earth");
+    await expect(page).toHaveURL(/\/earth$/);
+  });
+
+  test("turns back cleanly when interrupted mid-zoom", async ({ page }) => {
+    await openApp(page);
+    // Click and press Escape from inside the page, 400ms apart, so the interruption lands
+    // mid-zoom (it lasts 1.5s) however slow the test runner is.
+    const phaseAtEscape = await page.evaluate(
+      () =>
+        new Promise<string | null>((resolve) => {
+          document.querySelector<HTMLButtonElement>('.plate-hit[aria-label^="Mars,"]')!.click();
+          setTimeout(() => {
+            const phase = document.querySelector(".feature")?.getAttribute("data-phase") ?? null;
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+            resolve(phase);
+          }, 400);
+        }),
+    );
+    expect(phaseAtEscape).toBe("entering");
+    await expectOverview(page);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/");
+    await expect(page).toHaveTitle(/^Solar System Explorer · /);
+    // And the next trip still works.
+    await page.getByRole("button", { name: /^Mars,/ }).click();
+    await expectPlanetView(page, "Mars");
+  });
+
   test("opens a planet on click and records it in the URL", async ({ page }) => {
     await openApp(page);
     await page.getByRole("button", { name: /^Mars,/ }).click();
