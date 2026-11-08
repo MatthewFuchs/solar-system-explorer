@@ -39,3 +39,6 @@ Thumbs.db
 test-results
 playwright-report
 blob-report
+
+# Project notes for Claude Code: kept locally, not in the repository
+CLAUDE.md
