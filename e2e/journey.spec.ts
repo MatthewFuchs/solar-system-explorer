@@ -15,8 +15,9 @@ test.describe("the logbook", () => {
   test("appears with the first discovery, which is noted quietly and inked into it", async ({ page }) => {
     await openApp(page, "neighbourhood");
     await page.getByRole("button", { name: /^Sirius,/ }).click();
-    await expectPlanetView(page, "Sirius");
+    // The line is brief by design: catch it while it shows, before waiting out the zoom.
     await expect(page.getByRole("status")).toContainText("Beyond the Sun");
+    await expectPlanetView(page, "Sirius");
     await logbook(page).click();
     const panel = page.getByRole("dialog", { name: "Logbook" });
     await expect(panel.locator('.logbook__entry[data-found="true"]')).toContainText("Alpha Centauri");
