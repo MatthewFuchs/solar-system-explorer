@@ -70,6 +70,17 @@ test.describe("easter eggs", () => {
       await openApp(page);
       await expect(page.locator(".plate-sky")).toContainText("Perseids");
       await expect.poll(() => found(page)).toEqual(["sky-on-the-day"]);
+      // The first time, the reveal names where tonight's falling stars come from.
+      await expect(page.getByRole("status")).toContainText("Comet Swift-Tuttle");
+    });
+
+    test("hangs its line below the title, never pushing the title up over the plate", async ({ page }) => {
+      await page.setViewportSize({ width: 1470, height: 831 });
+      await openApp(page);
+      const block = (await page.locator(".plate-title").boundingBox())!;
+      const line = (await page.locator(".plate-sky").boundingBox())!;
+      expect(line.y).toBeGreaterThanOrEqual(block.y + block.height - 1);
+      expect(line.y + line.height).toBeLessThanOrEqual(831);
     });
   });
 

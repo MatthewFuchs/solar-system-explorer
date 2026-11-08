@@ -267,28 +267,7 @@ export function Overview() {
   );
 
   // A discovery is noted with a quiet line (and two soft notes, if sound is on).
-  const [noted, setNoted] = useState<{ key: number; title: string; reveal?: string } | null>(null);
-  useEffect(() => {
-    let known = new Set(Object.keys(journey.get().found));
-    return journey.subscribe(() => {
-      const ids = Object.keys(journey.get().found);
-      const fresh = ids.filter((id) => !known.has(id));
-      known = new Set(ids);
-      const mystery = MYSTERIES.find((m) => m.id === fresh.at(-1));
-      if (!mystery) return;
-      setNoted({ key: performance.now(), title: mystery.title, reveal: mystery.reveal });
-      sound.chime();
-    });
-  }, [sound]);
-  const clearNoted = useCallback(() => setNoted(null), []);
-
-  useEffect(() => {
-    soundOnRef.current = soundOn;
-    if (!soundOn) spheresRef.current = 0;
-  }, [soundOn]);
-
-  // Easter egg, Sky on the Day: on the peak nights of a meteor shower, a line under the title,
-  // and being here then is noted.
+  // Easter egg, Sky on the Day: on the peak nights of a meteor shower (see below).
   const [skyDay] = useState(() => {
     // In development only, ?sky=leonids (or perseids, geminids) previews a night without
     // changing the clock. The built site never reads it.
@@ -299,6 +278,29 @@ export function Overview() {
     }
     return skyDayFor(new Date());
   });
+  const [noted, setNoted] = useState<{ key: number; title: string; reveal?: string } | null>(null);
+  useEffect(() => {
+    let known = new Set(Object.keys(journey.get().found));
+    return journey.subscribe(() => {
+      const ids = Object.keys(journey.get().found);
+      const fresh = ids.filter((id) => !known.has(id));
+      known = new Set(ids);
+      const mystery = MYSTERIES.find((m) => m.id === fresh.at(-1));
+      if (!mystery) return;
+      // Sky on the Day says which shower it is.
+      const reveal = mystery.id === "sky-on-the-day" && skyDay ? skyDay.detail : mystery.reveal;
+      setNoted({ key: performance.now(), title: mystery.title, reveal });
+      sound.chime();
+    });
+  }, [sound, skyDay]);
+  const clearNoted = useCallback(() => setNoted(null), []);
+
+  useEffect(() => {
+    soundOnRef.current = soundOn;
+    if (!soundOn) spheresRef.current = 0;
+  }, [soundOn]);
+
+  // Sky on the Day: a line under the title, and being here then is noted.
   useEffect(() => {
     if (skyDay) journey.discover("sky-on-the-day");
   }, [skyDay]);

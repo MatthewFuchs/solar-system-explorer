@@ -2670,10 +2670,14 @@ body,
   }
 }
 
-/* Sky on the Day: one quiet italic line under the plate's introduction. */
+/* Sky on the Day: one short italic line in the space below the introduction, out of the title
+   block's flow, so the block (anchored to the bottom) never grows upward over the plate. */
 .plate-sky {
-  max-width: 40ch;
-  margin: 0.8em 0 0;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  white-space: nowrap;
+  margin: 0.5em 0 0;
   font-size: clamp(15px, 1.2vw, 18px);
   font-style: italic;
   color: var(--gold);
@@ -2724,4 +2728,13 @@ body,
   font-size: 22px;
   font-style: italic;
   color: var(--ivory);
+}
+
+/* A phone's title band has room above it: the sky's line joins the block, clear of the credit
+   line. (After .plate-sky, so it wins.) */
+@media (max-width: 639px) {
+  .plate-sky {
+    position: static;
+    white-space: normal;
+  }
 }
