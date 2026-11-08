@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Color, DataTexture, SRGBColorSpace, TextureLoader, Vector3, type Mesh, type ShaderMaterial, type Texture } from "three";
 import { isSurfacePOI, type POI } from "../data/solarSystem";
 import { orbiterFor } from "./bodyAppearance";
-import { featureKeepOut } from "./plateLayout";
+import { featureKeepOut } from "./layout/screen";
 import { planetShader } from "./shaders";
 import { configureTextures } from "./textureSetup";
 import { setUniform } from "./uniforms";

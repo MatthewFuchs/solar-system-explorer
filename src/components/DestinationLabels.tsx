@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { bodyMark, formatAU } from "../lib/format";
-import type { PlateLayout } from "../scene/plateLayout";
+import type { PlateLayout } from "../scene/layout/solarPlate";
 import { StatList } from "./StatList";
 
 interface DestinationLabelsProps {

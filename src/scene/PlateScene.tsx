@@ -5,7 +5,7 @@ import type { POI } from "../data/solarSystem";
 import { BeltField } from "./BeltField";
 import { PALETTE } from "../lib/palette";
 import { appearanceFor } from "./bodyAppearance";
-import type { BeltShape, PlateLayout } from "./plateLayout";
+import type { BeltShape, PlateLayout } from "./layout/solarPlate";
 import { Orbiters } from "./Orbiters";
 import { PlanetBody } from "./PlanetBody";
 import { Starfield } from "./Starfield";

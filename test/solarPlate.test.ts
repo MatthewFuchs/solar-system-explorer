@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { BELTS, DESTINATIONS, SPACECRAFT, SUN } from "../src/data/solarSystem";
 import { reachFactor } from "../src/scene/bodyAppearance";
-import { computeFeaturePlacement, computePlateLayout, featureKeepOut, placeBelts, placeSpacecraft } from "../src/scene/plateLayout";
+import { computeFeaturePlacement, featureKeepOut } from "../src/scene/layout/screen";
+import { computePlateLayout, placeBelts, placeSpacecraft } from "../src/scene/layout/solarPlate";
 
 /** The viewports the project is checked at (CLAUDE.md), plus a desktop. */
 const VIEWPORTS: [number, number][] = [

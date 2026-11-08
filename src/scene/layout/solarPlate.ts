@@ -1,8 +1,10 @@
 // The overview is a fixed composition: the Sun as a quarter disk in the top-left
 // corner, planets falling along the page diagonal on concentric partial arcs.
 // Positions are art-directed, not astronomical. All values are CSS pixels, origin top-left.
-import type { Belt, CelestialBody, Spacecraft } from "../data/solarSystem";
-import { reachFactor } from "./bodyAppearance";
+import type { Belt, CelestialBody, Spacecraft } from "../../data/solarSystem";
+import { reachFactor } from "../bodyAppearance";
+import { boxAround, boxesOverlap, circleHitsBox, clamp, type Box } from "./geometry";
+import { PORTRAIT_ASPECT, SHORT_HEIGHT, TOP_BAR_HEIGHT } from "./screen";
 
 /** Where each body sits between the Sun's edge and the far corner (0–1); the ninth is Pluto. */
 const ORBIT_STEPS = [0.12, 0.21, 0.3, 0.39, 0.53, 0.67, 0.8, 0.92, 0.985];
@@ -14,14 +16,6 @@ const ARC_SPANS = [0.5, 0.46, 0.42, 0.39, 0.35, 0.32, 0.29, 0.26, 0.22];
 /** Angle offsets (radians) tried in order when a body would overlap another. */
 const BODY_NUDGES = [0, 0.06, -0.06, 0.12, -0.12, 0.2, -0.2, 0.3, -0.3, 0.42, -0.42, 0.56, -0.56];
 
-/** Below this height (landscape phones) the layout goes compact. Matches index.css. */
-const SHORT_HEIGHT = 520;
-
-/** Below this aspect ratio the title gets its own band at the bottom of the screen. */
-const PORTRAIT_ASPECT = 0.85;
-/** Height of the top bar, which planets keep clear of. Matches --bar-h in CSS. */
-export const TOP_BAR_HEIGHT = 52;
-
 /** Resting label footprint (name + meta line), used to choose a side that stays clear. */
 const LABEL_WIDE = { w: 170, h: 46 };
 // On narrow screens labels show only the name at rest (see index.css), so they are shorter.
@@ -29,7 +23,6 @@ const LABEL_NARROW = { w: 120, h: 24 };
 /** Horizontal run of the connector after its diagonal elbow. */
 const CONNECTOR_RUN = 22;
 
-export type Box = { left: number; right: number; top: number; bottom: number };
 /** Label to the right (1) or left (-1), with a connector that rises (-1) or drops (1). */
 type Placement = [side: 1 | -1, lift: 1 | -1];
 /** Label placements in order of preference. */
@@ -244,44 +237,6 @@ export function computePlateLayout(
   };
 }
 
-function clamp(v: number, min: number, max: number) {
-  return Math.min(Math.max(v, min), max);
-}
-
-function boxesOverlap(a: Box, b: Box) {
-  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-}
-
-function circleHitsBox(cx: number, cy: number, r: number, b: Box) {
-  const nx = clamp(cx, b.left, b.right);
-  const ny = clamp(cy, b.top, b.bottom);
-  return Math.hypot(cx - nx, cy - ny) < r;
-}
-
-/**
- * The focused planet in planet view: large, framed like a magazine feature image.
- * Landscape puts it right of the text column; portrait puts it above the text.
- * Ringed planets shrink so their rings stay in frame.
- */
-export function computeFeaturePlacement(width: number, height: number, reach: number) {
-  const ringScale = reach > 1 ? reach * 0.72 : 1;
-  if (width / height < PORTRAIT_ASPECT) {
-    return { x: width * 0.5, y: height * 0.28, r: Math.min(width * 0.32, height * 0.18) / ringScale };
-  }
-  return { x: width * 0.665, y: height * 0.52, r: Math.min(height * 0.34, width * 0.24) / ringScale };
-}
-
-/**
- * In the planet view, the x that moons and spacecraft keep right of: the text column's right
- * edge where it is a scrolling panel beside the planet (short landscape screens; mirrors
- * .feature__column in index.css). Elsewhere its text is narrow enough not to need one.
- */
-export function featureKeepOut(width: number, height: number) {
-  if (width / height < PORTRAIT_ASPECT || height >= SHORT_HEIGHT) return 0;
-  const inset = Math.min(24, Math.max(12, width * 0.018));
-  return inset + Math.min(72, Math.max(18, width * 0.04)) + Math.min(width * 0.42, 420) + 12;
-}
-
 const DEG = Math.PI / 180;
 
 export interface SpacecraftSpot {
@@ -297,10 +252,6 @@ const BELT_LABEL = { w: 120, h: 26 };
 /** Alternatives tried, in order, when a preferred spot is taken: bearing offsets (degrees) and distance scales. */
 const BEARING_NUDGES = [0, 18, -18, 36, -36, 56, -56, 80, -80, 110, -110, 150, -150, 180];
 const DISTANCE_NUDGES = [1, 1.35, 0.8, 1.7];
-
-function boxAround(x: number, y: number, w: number, h: number): Box {
-  return { left: x - w / 2, right: x + w / 2, top: y - h / 2, bottom: y + h / 2 };
-}
 
 /** How many things a box would collide with; going out of bounds counts double. */
 function crowding(box: Box, layout: PlateLayout, others: Box[]) {

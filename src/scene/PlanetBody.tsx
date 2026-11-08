@@ -17,7 +17,7 @@ import {
 } from "three";
 import { isSurfacePOI, type POI } from "../data/solarSystem";
 import { orbiterFor, type BodyAppearance } from "./bodyAppearance";
-import { featureKeepOut } from "./plateLayout";
+import { featureKeepOut } from "./layout/screen";
 import { atmosphereShader, planetShader, ringShader, sunShader } from "./shaders";
 import { configureTextures } from "./textureSetup";
 import { setUniform } from "./uniforms";

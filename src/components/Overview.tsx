@@ -3,7 +3,8 @@ import { BELTS, DESTINATIONS, SITE, SPACECRAFT, SUN, VIEWABLE, type Belt, type S
 import { useElementSize } from "../hooks/useElementSize";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { reachFactor } from "../scene/bodyAppearance";
-import { computeFeaturePlacement, computePlateLayout, placeBelts, placeSpacecraft } from "../scene/plateLayout";
+import { computeFeaturePlacement } from "../scene/layout/screen";
+import { computePlateLayout, placeBelts, placeSpacecraft } from "../scene/layout/solarPlate";
 import { Timeline, TURN_MS, ZOOM_MS, type ZoomFrame } from "../scene/viewTransition";
 import { BeltLabels } from "./BeltLabels";
 import { DestinationLabels } from "./DestinationLabels";

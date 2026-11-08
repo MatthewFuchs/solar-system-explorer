@@ -1,5 +1,5 @@
 import { memo, type CSSProperties } from "react";
-import type { PlateLayout } from "../scene/plateLayout";
+import type { PlateLayout } from "../scene/layout/solarPlate";
 
 interface SpaceBackdropProps {
   layout: PlateLayout;

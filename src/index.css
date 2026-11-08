@@ -1075,7 +1075,7 @@ body,
   border-color: var(--gold);
 }
 
-/* Portrait: planet above, text below. Matches PORTRAIT_ASPECT in plateLayout.ts. */
+/* Portrait: planet above, text below. Matches PORTRAIT_ASPECT in src/scene/layout/screen.ts. */
 @media (max-aspect-ratio: 17/20) {
   .feature__column {
     top: 49%;
@@ -1954,7 +1954,7 @@ body,
   }
 }
 
-/* Short landscape screens (phones on their side). Matches SHORT_HEIGHT in plateLayout.ts. */
+/* Short landscape screens (phones on their side). Matches SHORT_HEIGHT in src/scene/layout/screen.ts. */
 @media (max-height: 519px) and (min-aspect-ratio: 17/20) {
   .plate-title {
     bottom: calc(var(--hud-inset) + 8px);

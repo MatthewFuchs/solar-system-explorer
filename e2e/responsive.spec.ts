@@ -13,7 +13,7 @@ const VIEWPORTS = [
 /**
  * Known label collisions among the crowded outer planets on some portrait screens,
  * kept as expected failures so they show up (and flip to passing) when the layout
- * is fixed. See src/scene/plateLayout.ts.
+ * is fixed. See src/scene/layout/solarPlate.ts.
  */
 const KNOWN_LABEL_COLLISIONS = new Set(["768x1024", "360x740", "375x667"]);
 

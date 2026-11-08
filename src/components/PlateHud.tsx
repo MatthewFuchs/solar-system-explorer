@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { PlateLayout, PlanetPlacement } from "../scene/plateLayout";
+import type { PlateLayout, PlanetPlacement } from "../scene/layout/solarPlate";
 
 interface PlateHudProps {
   layout: PlateLayout;

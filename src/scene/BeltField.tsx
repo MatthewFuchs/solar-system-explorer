@@ -1,7 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { BufferGeometry, Float32BufferAttribute, type ShaderMaterial } from "three";
-import type { BeltShape } from "./plateLayout";
+import type { BeltShape } from "./layout/solarPlate";
 import { setUniform } from "./uniforms";
 import { lerp, smoothstep, type Timeline, type ZoomFrame } from "./viewTransition";
 
