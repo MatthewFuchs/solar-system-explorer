@@ -44,6 +44,13 @@ describe("neighbourhood data", () => {
     for (const poi of NEIGHBOURS.flatMap((s) => s.pois)) expect(new URL(poi.source.url).protocol, poi.id).toBe("https:");
   });
 
+  it("gives every star at least three points of interest, each with at least three facts", () => {
+    for (const s of NEIGHBOURS) {
+      expect(s.pois.length, s.id).toBeGreaterThanOrEqual(3);
+      for (const poi of s.pois) expect(poi.facts.length, poi.id).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it("draws every star as a recoloured star, and Sol as the Sun", () => {
     for (const s of NEIGHBOURS) expect(appearanceFor(s.id).tint, s.id).toMatch(/^#[0-9A-F]{6}$/i);
     expect(appearanceFor(SOL.id)).toBe(appearanceFor("sun"));
@@ -119,6 +126,13 @@ describe.each(VIEWPORTS)("neighbourhood chart at %ix%i", (width, height) => {
   it("keeps the hour dial on screen", () => {
     expect(sun.y - chart!.dial).toBeGreaterThan(0);
     expect(sun.y + chart!.dial).toBeLessThan(height);
+  });
+});
+
+describe("sources", () => {
+  it("cites primary or institutional sources, never an encyclopedia anyone can edit", () => {
+    const content = PLATES.flatMap((p) => [...p.bodies.flatMap((b) => b.pois), ...(p.spacecraft ?? []), ...(p.belts ?? [])]);
+    for (const c of content) expect(new URL(c.source.url).hostname, c.id).not.toMatch(/wikipedia\.org$/);
   });
 });
 

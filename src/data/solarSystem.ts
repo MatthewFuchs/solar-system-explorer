@@ -168,7 +168,7 @@ export const SUN: CelestialBody = {
       category: "storm",
       summary: "Sudden flashes of light and radiation, the most powerful explosions in the solar system.",
       facts: [
-        "A large flare releases, in minutes, energy equivalent to millions of hydrogen bombs.",
+        "The biggest flares release as much energy as a billion hydrogen bombs.",
         "Flares are ranked in classes A, B, C, M, and X, each ten times stronger than the one before.",
         "Their light reaches Earth in about eight minutes, fast enough to disrupt radio and GPS before any warning could arrive.",
       ],
@@ -373,17 +373,18 @@ export const PLANETS: CelestialBody[] = [
         lat: -3,
         lon: -60,
         category: "surface",
-        summary: "The largest tropical rainforest on Earth, a forest that makes its own weather.",
+        summary: "Earth's largest rainforest, a forest that makes its own weather.",
         facts: [
-          "It spans about 5.5 million square kilometers across nine countries.",
-          "It shelters roughly one in ten of the species known on Earth.",
-          "Its trees breathe out so much moisture that they help seed their own rain, sending 'flying rivers' of vapor across the continent.",
+          "The Amazon basin spans at least 6 million square kilometers, nearly twice the size of India, across eight countries; rainforest covers about 80 percent of it.",
+          "It is home to about one-fifth of the world's land species, many found nowhere else, and to more than 30 million people.",
+          "Its trees breathe out so much water vapor that they start their own rainy season, a finding drawn from NASA satellite measurements.",
+          "That is why clearing the forest is linked to less rain in the region.",
         ],
         stats: [
-          { label: "Area", value: "~5.5 million", unit: "km²" },
-          { label: "Known species", value: "~10", unit: "%" },
+          { label: "Basin", value: "6+ million", unit: "km²" },
+          { label: "Land species", value: "~1 in 5" },
         ],
-        source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Amazon_rainforest" },
+        source: NASA("https://science.nasa.gov/earth/earth-observatory/mapping-the-amazon-145649/"),
       },
       {
         id: "earth-iss",
@@ -579,11 +580,13 @@ export const PLANETS: CelestialBody[] = [
         facts: [
           "Beneath its cracked ice lies an ocean that may hold about twice as much water as all of Earth's oceans.",
           "Kept liquid by tidal heating, that ocean makes Europa one of the most promising places to look for life beyond Earth.",
+          "Flying past in 2022, NASA's Juno peered beneath the ice with microwaves and found the shell averages about 29 km thick where it looked.",
           "NASA's Europa Clipper launched in October 2024 and is due to arrive in 2030.",
         ],
         stats: [
           { label: "Diameter", value: "3,122", unit: "km" },
-          { label: "Ice shell", value: "15–25", unit: "km" },
+          // Juno's Microwave Radiometer, reported January 2026, over the region it observed.
+          { label: "Ice shell", value: "~29", unit: "km" },
         ],
         source: NASA("https://science.nasa.gov/jupiter/jupiter-moons/europa/"),
       },
@@ -627,12 +630,16 @@ export const PLANETS: CelestialBody[] = [
         category: "storm",
         summary: "A six-sided jet stream circling Saturn's north pole.",
         facts: [
-          "Each side of the hexagon is longer than Earth is wide.",
-          "First glimpsed by Voyager in the early 1980s, it has held its shape for decades.",
+          "It spans about 30,000 km across, so each of its six sides is longer than Earth is wide.",
+          "Its winds race at about 320 km/h around a huge rotating storm at its centre.",
+          "First glimpsed by the twin Voyagers in the early 1980s, it has held its shape for decades.",
           "NASA's Cassini watched its color shift from blue toward gold as northern summer approached.",
         ],
-        stats: [{ label: "Side length", value: "~14,500", unit: "km" }],
-        source: NASA("https://science.nasa.gov/mission/cassini/"),
+        stats: [
+          { label: "Across", value: "~30,000", unit: "km" },
+          { label: "Winds", value: "~320", unit: "km/h" },
+        ],
+        source: NASA("https://science.nasa.gov/saturn/facts/"),
       },
       {
         id: "saturn-rings",

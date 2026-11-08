@@ -59,7 +59,7 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
       {
         title: "Sources",
         detail:
-          "Compiled from NASA Science, NASA, NOAA Ocean Service, the European Southern Observatory (ESO), and Wikipedia. Each point of interest links to its source. Figures are rounded; sizes and distances on the map are not to scale.",
+          "Compiled from NASA (NASA Science, the NASA Exoplanet Catalog, the Chandra X-ray Center, and the Astrophysics Data System), NOAA Ocean Service, ESA/Hubble, the European Southern Observatory, NSF NOIRLab, W. M. Keck Observatory, Green Bank Observatory, the American Astronomical Society, peer-reviewed papers via arXiv, Sky & Telescope, and EarthSky. Each point of interest links to its source. Figures are rounded; sizes and distances on the map are not to scale.",
         link: { label: "NASA Science", url: "https://science.nasa.gov/" },
       },
     ],
