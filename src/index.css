@@ -163,6 +163,41 @@ body,
   stroke-opacity: 0.1;
 }
 
+/* The neighbourhood chart: distance rings (every other one fainter), the hour dial's
+   numerals, and a sight line from Sol to each star that brightens with its star. */
+.hud-arc[data-kind='ring'] .hud-arc__line[data-faint='true'] {
+  stroke-opacity: 0.18;
+}
+
+.hud-chart__label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  fill: var(--gold);
+  fill-opacity: 0.55;
+  transition: fill-opacity var(--dur) var(--ease);
+}
+
+.hud-arc[data-state='dimmed'] .hud-chart__label {
+  fill-opacity: 0.25;
+}
+
+.hud-ray {
+  stroke: var(--gold);
+  stroke-width: 0.6;
+  stroke-opacity: 0.24;
+  stroke-dasharray: 1 5;
+  transition: stroke-opacity var(--dur) var(--ease);
+}
+
+.hud-ray[data-state='active'] {
+  stroke-opacity: 0.7;
+}
+
+.hud-ray[data-state='dimmed'] {
+  stroke-opacity: 0.06;
+}
+
 .hud-leader polyline {
   fill: none;
   stroke: var(--gold);
@@ -476,6 +511,22 @@ body,
   flex-direction: row-reverse;
   transform: translate(6px, -11px);
   text-align: right;
+}
+
+/* Set directly under (or over) its point, as on a map: centred, with no leader or star. */
+.dest-label[data-side='center'] {
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -11px);
+  text-align: center;
+}
+
+.dest-label[data-side='center'] .dest-label__node {
+  display: none;
+}
+
+.dest-label[data-side='center'] .dest-label__text {
+  align-items: center;
 }
 
 .dest-label[data-state='dimmed'] {
@@ -1801,7 +1852,7 @@ body,
   animation-name: ent-fade;
 }
 
-.plate[data-entrance='playing'] :is(.hud-arc__ticks, .hud-arc__end, .hud-arc__glow) {
+.plate[data-entrance='playing'] :is(.hud-arc__ticks, .hud-arc__end, .hud-arc__glow, .hud-chart__label, .hud-ray) {
   animation: ent-fade 700ms var(--ease) both;
   animation-delay: calc(800ms + var(--i) * 75ms);
 }

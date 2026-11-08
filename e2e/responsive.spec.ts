@@ -66,11 +66,14 @@ for (const viewport of VIEWPORTS) {
       });
     }
 
-    test("keeps the neighbourhood's star names clear of the title and credit line", async ({ page }) => {
+    test("keeps the neighbourhood's star names clear of the title, credit line, and dial numerals", async ({ page }) => {
       await openApp(page, "neighbourhood");
       const names = await page.evaluate(nameRects);
-      for (const selector of [".plate-title h1", ".plate-credit"]) {
-        const r = (await page.locator(selector).boundingBox())!;
+      const numerals = await page.locator(".hud-chart__label").all();
+      expect(numerals).toHaveLength(4);
+      for (const target of [page.locator(".plate-title h1"), page.locator(".plate-credit"), ...numerals]) {
+        const r = (await target.boundingBox())!;
+        const selector = (await target.textContent())?.slice(0, 20);
         for (const n of names) {
           const x = Math.min(n.right, r.x + r.width) - Math.max(n.left, r.x);
           const y = Math.min(n.bottom, r.y + r.height) - Math.max(n.top, r.y);

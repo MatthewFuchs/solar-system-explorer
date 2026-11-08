@@ -23,7 +23,7 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
         const numeral = bodyMark(p.body, p.order);
         const distance = bodyDistance(p.body);
         // Room between the label node and the screen edge, so the expanded tagline never clips.
-        const room = p.labelSide === 1 ? layout.width - p.connector.x2 : p.connector.x2;
+        const room = p.labelSide === 1 ? layout.width - p.connector.x2 : p.labelSide === -1 ? p.connector.x2 : layout.width;
         // Left-side labels are anchored by their right edge, so the browser sizes them
         // against the space to their left (where they grow), not the sliver to the right.
         const style = {
@@ -31,15 +31,15 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
           "--label-room": `${Math.max(120, room - layout.inset - 24)}px`,
           "--i": p.order,
         } as CSSProperties;
-        if (p.labelSide === 1) style.left = p.connector.x2;
-        else style.right = layout.width - p.connector.x2;
+        if (p.labelSide === -1) style.right = layout.width - p.connector.x2;
+        else style.left = p.connector.x2;
         return (
           <div key={p.body.id}>
             <div
               className="dest-label"
               data-planet={p.body.id}
               data-focus={focusId === p.body.id}
-              data-side={p.labelSide === 1 ? "right" : "left"}
+              data-side={p.labelSide === 1 ? "right" : p.labelSide === -1 ? "left" : "center"}
               data-state={stateOf(p.body.id)}
               style={style}
               aria-hidden="true"

@@ -57,7 +57,7 @@ export const NEIGHBOURHOOD_PLATE: Plate = {
   path: "neighbourhood",
   title: "The Stellar Neighbourhood",
   intro:
-    "The Sun's nearest neighbours, a few light-years out, where each star is a sun of its own. A light-year is the distance light travels in a year. Choose a star.",
+    "Drawn to scale. Each ring is two light-years: the distance light crosses in two years. At this scale the whole solar system, out past Pluto, is far smaller than the point that marks the Sun. Choose a star.",
   tagline: "The Sun's nearest stars",
   description: "The stars nearest the Sun, drawn like a candlelit astrolabe: Alpha Centauri, Sirius, Barnard's Star and more, with their worlds and stories.",
   backLabel: "Back to the neighbourhood",

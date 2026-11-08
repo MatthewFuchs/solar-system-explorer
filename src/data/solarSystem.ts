@@ -106,6 +106,8 @@ export interface CelestialBody {
   distanceLy?: number;
   /** Spectral class (real value, e.g. "M5.5V"), shown in place of a numeral for other stars. */
   spectralType?: string;
+  /** Right ascension in hours (real value, J2000): the star's direction around the neighbourhood chart. */
+  ra?: number;
   /** How stretched the orbit is (real value, 0 = a circle). Sets the planet's song: how far its
       pitch rises from the far end of its orbit to the near end, as Kepler heard it. */
   eccentricity?: number;

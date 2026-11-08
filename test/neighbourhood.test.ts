@@ -3,6 +3,7 @@ import { NEIGHBOURS, SOL } from "../src/data/neighbourhood";
 import { NEIGHBOURHOOD_PLATE, PLATES, SOLAR_PLATE, plateById } from "../src/data/plates";
 import { isSurfacePOI } from "../src/data/solarSystem";
 import { appearanceFor } from "../src/scene/bodyAppearance";
+import { DIAL_LY, hourAngle } from "../src/scene/layout/neighbourhoodPlate";
 import { composePlate } from "../src/scene/layout/plates";
 
 const VIEWPORTS: [number, number][] = [
@@ -56,33 +57,68 @@ describe("neighbourhood data", () => {
   });
 });
 
-describe.each(VIEWPORTS)("neighbourhood layout at %ix%i", (width, height) => {
+describe.each(VIEWPORTS)("neighbourhood chart at %ix%i", (width, height) => {
   const layout = composePlate(NEIGHBOURHOOD_PLATE, width, height);
+  const { chart, sun } = layout;
 
-  it("places Sol small, in the top-left corner, and every star once", () => {
+  it("centres the chart on Sol, a pinpoint, with every star once", () => {
     expect(layout.star.body).toBe(SOL);
-    expect(layout.sun.x).toBeGreaterThan(0);
-    expect(layout.sun.x).toBeLessThan(width / 4);
-    expect(layout.sun.r).toBeLessThan(Math.min(width, height) * 0.05);
+    expect(layout.star.x).toBe(sun.x);
+    expect(sun.r).toBeLessThanOrEqual(6);
     expect(layout.planets.map((p) => p.body.id)).toEqual(NEIGHBOURS.map((s) => s.id));
+    for (const p of layout.planets) expect(p.r, p.body.id).toBeLessThanOrEqual(6);
   });
 
-  it("sets nearer stars on inner arcs", () => {
-    for (let i = 1; i < layout.planets.length; i++) {
-      expect(layout.planets[i].orbitR, layout.planets[i].body.id).toBeGreaterThanOrEqual(layout.planets[i - 1].orbitR - 1);
+  it("draws distance to scale: every star's distance from Sol is proportional to its light-years", () => {
+    const pxPerLy = chart!.dial / DIAL_LY;
+    for (const p of layout.planets) {
+      expect(Math.hypot(p.x - sun.x, p.y - sun.y), p.body.id).toBeCloseTo(p.body.distanceLy! * pxPerLy, 6);
     }
   });
 
-  it("keeps every star and label on screen, and labels off the credit line", () => {
-    const credit = layout.reserved[1];
+  it("sets each star in the direction of its right ascension", () => {
+    for (const p of layout.planets) {
+      const a = Math.atan2(p.y - sun.y, p.x - sun.x);
+      const want = hourAngle(p.body.ra!, chart!.zeroHour);
+      expect(Math.cos(a - want), p.body.id).toBeCloseTo(1, 6);
+    }
+  });
+
+  it("engraves a ring every two light-years inside the hour dial, every other one stronger", () => {
+    expect(chart!.rings.map((r) => r.strong)).toEqual([false, true, false, true, false, true]);
+    expect(chart!.rings[0].r).toBeCloseTo((2 * chart!.dial) / DIAL_LY, 6);
+    for (const r of chart!.rings) expect(r.r).toBeLessThan(chart!.dial);
+  });
+
+  it("numbers the dial at 0h, 6h, 12h, and 18h, on screen", () => {
+    // Whether a numeral touches a star's name depends on the rendered text: e2e/responsive checks it.
+    expect(chart!.hours.map((h) => h.h)).toEqual([0, 6, 12, 18]);
+    for (const m of chart!.hours) {
+      expect(m.x, `${m.h}h`).toBeGreaterThan(10);
+      expect(m.x, `${m.h}h`).toBeLessThan(width - 10);
+      expect(m.y, `${m.h}h`).toBeGreaterThan(10);
+    }
+  });
+
+  it("keeps every star and label on screen, and labels off the title and credit line", () => {
     for (const p of [layout.star, ...layout.planets]) {
       expect(p.x - p.r, p.body.id).toBeGreaterThan(0);
+      expect(p.x + p.r, p.body.id).toBeLessThan(width);
+      expect(p.y - p.r, p.body.id).toBeGreaterThan(0);
       expect(p.y + p.r, p.body.id).toBeLessThan(height);
       expect(p.labelBox.left, p.body.id).toBeGreaterThanOrEqual(0);
       expect(p.labelBox.right, p.body.id).toBeLessThanOrEqual(width);
-      const overlapsCredit = p.labelBox.right > credit.left && p.labelBox.bottom > credit.top;
-      expect(overlapsCredit, `${p.body.id} label on the credit line`).toBe(false);
+      for (const area of layout.reserved) {
+        const overlaps =
+          p.labelBox.left < area.right && area.left < p.labelBox.right && p.labelBox.top < area.bottom && area.top < p.labelBox.bottom;
+        expect(overlaps, `${p.body.id} label on a reserved area`).toBe(false);
+      }
     }
+  });
+
+  it("keeps the hour dial on screen", () => {
+    expect(sun.y - chart!.dial).toBeGreaterThan(0);
+    expect(sun.y + chart!.dial).toBeLessThan(height);
   });
 });
 
