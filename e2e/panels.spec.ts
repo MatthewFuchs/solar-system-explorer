@@ -37,6 +37,33 @@ test.describe("point-of-interest panel", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
+  test("returns focus to what opened it", async ({ page }) => {
+    await openApp(page, "mars");
+    await expectPlanetView(page, "Mars");
+    const open = page.getByRole("button", { name: "Open details", exact: true });
+    await open.click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(open).toBeFocused();
+  });
+
+  test("closes on a click on empty space, but not on a click inside", async ({ page, isMobile }) => {
+    test.skip(isMobile === true, "The bottom sheet covers most of a phone's empty space");
+    await openApp(page, "saturn");
+    await expectPlanetView(page, "Saturn");
+    await page.getByRole("button", { name: "Open details", exact: true }).click();
+    const panel = page.getByRole("dialog");
+    await panel.locator(".poi-panel__facts li").first().click();
+    await expect(panel).toBeVisible();
+    // Bare plate between the text column and the planet: no control there.
+    const hit = await page.evaluate(() => document.elementFromPoint(innerWidth * 0.45, innerHeight * 0.12)?.closest("button, a, [role='dialog']") ?? null);
+    expect(hit, "the spot clicked should be empty").toBeNull();
+    await page.mouse.click(1440 * 0.45, 900 * 0.12);
+    await expect(panel).toHaveCount(0);
+    await expectPlanetView(page, "Saturn");
+  });
+
   test("opens from a surface marker", async ({ page, isMobile }) => {
     test.skip(isMobile === true, "Markers are small targets; covered on desktop");
     await openApp(page, "earth");
