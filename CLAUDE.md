@@ -216,6 +216,11 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
   localhost (`siteUrl()`).
 - Share images (`public/og/*.jpg`, 1200x630) come from `npm run og`; recapture and
   commit them after visual changes. They are the only JPEGs and are never loaded by the app.
+- **Icons** (`favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `icon-*.png`,
+  `site.webmanifest` in `public/`) are an original mark (a gold ring, the four-point star,
+  one world) drawn by `npm run icons` (`scripts/icons.ts`) from the palette; edit the
+  script, not the files. Both `index.html` and `404.html` link them. These PNGs and the
+  share JPEGs are the only raster images outside `public/textures/`.
 - **404 page:** `404.html` is a second Vite entry with `src/notFound.css` (tokens shared
   through `src/tokens.css`). Static, no script. Its chart (`scripts/notFoundChart.ts`)
   and world links are drawn in by the `notFound` plugin (`scripts/prerender.ts`), in dev and
