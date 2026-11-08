@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BELTS, DESTINATIONS, SPACECRAFT, SUN } from "../src/data/solarSystem";
 import { reachFactor } from "../src/scene/bodyAppearance";
-import { computeFeaturePlacement, computePlateLayout, placeBelts, placeSpacecraft } from "../src/scene/plateLayout";
+import { computeFeaturePlacement, computePlateLayout, featureKeepOut, placeBelts, placeSpacecraft } from "../src/scene/plateLayout";
 
 /** The viewports the project is checked at (CLAUDE.md), plus a desktop. */
 const VIEWPORTS: [number, number][] = [
@@ -57,11 +57,57 @@ describe.each(VIEWPORTS)("overview layout at %ix%i", (width, height) => {
     expect(craft).toHaveLength(SPACECRAFT.length);
   });
 
+  it("keeps every spacecraft inside the plate", () => {
+    for (const s of placeSpacecraft(layout, SPACECRAFT)) {
+      expect(s.x, s.craft.id).toBeGreaterThanOrEqual(layout.bounds.left);
+      expect(s.x, s.craft.id).toBeLessThanOrEqual(layout.bounds.right);
+      expect(s.y, s.craft.id).toBeGreaterThanOrEqual(layout.bounds.top);
+      expect(s.y, s.craft.id).toBeLessThanOrEqual(layout.bounds.bottom);
+    }
+  });
+
+  it("keeps the feature planet clear of the text column", () => {
+    const keepOut = featureKeepOut(width, height);
+    expect(keepOut).toBeGreaterThanOrEqual(0);
+    expect(keepOut).toBeLessThan(width);
+    if (keepOut > 0) {
+      const f = computeFeaturePlacement(width, height, 1);
+      expect(f.x - f.r).toBeGreaterThanOrEqual(keepOut);
+    }
+  });
+
   it("fits each planet's feature view on screen", () => {
     for (const p of layout.planets) {
       const f = computeFeaturePlacement(width, height, reachFactor(p.body.id));
       const values = Object.values(f).filter((v): v is number => typeof v === "number");
       for (const v of values) expect(Number.isFinite(v), p.body.id).toBe(true);
     }
+  });
+});
+
+describe("spacecraft placement", () => {
+  const layout = computePlateLayout(SUN, DESTINATIONS, 1440, 900);
+
+  it("moves off a spot that is already taken", () => {
+    const [first] = placeSpacecraft(layout, SPACECRAFT);
+    const taken = { left: first.x - 30, right: first.x + 30, top: first.y - 30, bottom: first.y + 30 };
+    const [moved] = placeSpacecraft(layout, SPACECRAFT, [taken]);
+    expect(moved.craft.id).toBe(first.craft.id);
+    expect(Math.hypot(moved.x - first.x, moved.y - first.y)).toBeGreaterThan(0);
+  });
+
+  it("keeps spacecraft from landing on each other", () => {
+    const spots = placeSpacecraft(layout, SPACECRAFT);
+    for (let i = 0; i < spots.length; i++)
+      for (let j = i + 1; j < spots.length; j++)
+        expect(Math.hypot(spots[i].x - spots[j].x, spots[i].y - spots[j].y), `${spots[i].craft.id}/${spots[j].craft.id}`).toBeGreaterThan(20);
+  });
+});
+
+describe("feature view keep-out", () => {
+  it("applies only on short landscape screens", () => {
+    expect(featureKeepOut(1440, 900)).toBe(0);
+    expect(featureKeepOut(390, 844)).toBe(0);
+    expect(featureKeepOut(844, 390)).toBeGreaterThan(0);
   });
 });

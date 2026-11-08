@@ -20,7 +20,48 @@ test.describe("overview", () => {
   });
 });
 
+test.describe("hover", () => {
+  test("lights the hovered world, unfolds its tagline, and dims the rest", async ({ page, isMobile }) => {
+    test.skip(isMobile === true, "Touch screens have no hover");
+    await openApp(page);
+    const label = (id: string) => page.locator(`.dest-label[data-planet="${id}"]`);
+    await expect(label("mars")).toHaveAttribute("data-state", "rest");
+    const tagline = label("mars").locator(".dest-label__more");
+    const folded = (await tagline.boundingBox())?.height ?? 0;
+
+    await page.getByRole("button", { name: /^Mars,/ }).hover();
+    await expect(label("mars")).toHaveAttribute("data-state", "active");
+    for (const id of ["sun", "earth", "jupiter", "pluto"]) await expect(label(id)).toHaveAttribute("data-state", "dimmed");
+    await expect.poll(async () => (await tagline.boundingBox())?.height ?? 0).toBeGreaterThan(folded);
+
+    await page.mouse.move(5, 450);
+    await expect(label("mars")).toHaveAttribute("data-state", "rest");
+    await expect(label("earth")).toHaveAttribute("data-state", "rest");
+  });
+});
+
 test.describe("planet view", () => {
+  test("opens from the keyboard", async ({ page }) => {
+    await openApp(page);
+    await page.getByRole("button", { name: /^Earth,/ }).focus();
+    await page.keyboard.press("Enter");
+    await expectPlanetView(page, "Earth");
+    await expect(page).toHaveURL(/\/earth$/);
+  });
+
+  test("turns back cleanly when interrupted mid-zoom", async ({ page }) => {
+    await openApp(page);
+    await page.getByRole("button", { name: /^Mars,/ }).click();
+    await expect(page.locator(".feature")).toHaveAttribute("data-phase", "entering");
+    await page.keyboard.press("Escape");
+    await expectOverview(page);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/");
+    await expect(page).toHaveTitle(/^Solar System Explorer · /);
+    // And the next trip still works.
+    await page.getByRole("button", { name: /^Mars,/ }).click();
+    await expectPlanetView(page, "Mars");
+  });
+
   test("opens a planet on click and records it in the URL", async ({ page }) => {
     await openApp(page);
     await page.getByRole("button", { name: /^Mars,/ }).click();
