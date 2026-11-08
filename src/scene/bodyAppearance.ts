@@ -27,7 +27,23 @@ export interface BodyAppearance {
   ring?: RingAppearance;
   /** Stars other than the Sun: the colour their (borrowed) surface is recast in. */
   tint?: string;
+  /** Deep-sky objects: drawn flat, as a procedural cloud of light, not a sphere (deepSkyShader). */
+  deepSky?: DeepSkyLook;
 }
+
+export interface DeepSkyLook {
+  form: "nebula" | "remnant" | "cluster" | "black-hole";
+  /** Main colour, and a second one the clouds drift into. */
+  colors: [string, string];
+  /** Chooses the cloud's shape; any number, fixed per object so it never changes. */
+  seed: number;
+}
+
+/** The order of forms in deepSkyShader's uForm. */
+export const DEEP_SKY_FORMS: DeepSkyLook["form"][] = ["nebula", "remnant", "cluster", "black-hole"];
+
+/** How far each form's square reaches, in body radii: clouds trail far and fade; a black hole's disk reaches ~1.3. */
+export const DEEP_SKY_SPREAD: Record<DeepSkyLook["form"], number> = { nebula: 2.1, remnant: 1.7, cluster: 1.9, "black-hole": 1.45 };
 
 /** Another star: the Sun's surface, recast in the star's own colour; emissive and still. */
 const star = (tint: string): BodyAppearance => ({
@@ -41,6 +57,17 @@ const star = (tint: string): BodyAppearance => ({
   tint,
 });
 
+/** A deep-sky object: still and flat. The texture is never drawn; the Sun's map is already loaded. */
+const deepSky = (look: DeepSkyLook): BodyAppearance => ({
+  texture: textureUrl("sun.webp"),
+  textureHd: textureUrl("sun.webp"),
+  atmosphere: look.colors[0],
+  rim: 0,
+  spin: 0,
+  spinSpeed: 0,
+  tilt: 0,
+  deepSky: look,
+});
 
 const APPEARANCE: Record<string, BodyAppearance> = {
   // The Sun is emissive (no atmosphere or rim) and holds still; one texture serves both sizes.
@@ -74,8 +101,20 @@ const APPEARANCE: Record<string, BodyAppearance> = {
   pluto: { texture: textureUrl("pluto.webp"), textureHd: textureUrl("2k/pluto.webp"), atmosphere: "#A9C2EE", rim: 0.3, spin: 0, spinSpeed: -0.02, tilt: 0.35 },
 };
 
-// Sol is the Sun, seen from the neighbourhood plate.
+// Sol is the Sun, seen from the neighbourhood and Milky Way plates.
 APPEARANCE.sol = APPEARANCE.sun;
+APPEARANCE["sol-milky-way"] = APPEARANCE.sun;
+
+// The Milky Way's landmarks: muted rose, amber, and smoky violet, never neon.
+Object.assign(APPEARANCE, {
+  "orion-nebula": deepSky({ form: "nebula", colors: ["#E89AA6", "#A994D2"], seed: 3.1 }),
+  "crab-nebula": deepSky({ form: "remnant", colors: ["#E48C66", "#D8DCF0"], seed: 7.4 }),
+  "pillars-of-creation": deepSky({ form: "nebula", colors: ["#DDA062", "#9C88BC"], seed: 11.9 }),
+  "carina-nebula": deepSky({ form: "nebula", colors: ["#E2A272", "#B48CCF"], seed: 5.6 }),
+  "omega-centauri": deepSky({ form: "cluster", colors: ["#F2DCAE", "#FFFFFF"], seed: 2.2 }),
+  // Hot amber light around the shadow, white at the disk's inner edge.
+  "sagittarius-a": deepSky({ form: "black-hole", colors: ["#F0A860", "#F0A860"], seed: 0 }),
+} satisfies Record<string, BodyAppearance>);
 
 const FALLBACK: BodyAppearance = APPEARANCE.mercury;
 

@@ -82,6 +82,38 @@ The rings passed on the voyage out to the neighbourhood (`approach` in `src/data
   years for Voyager 1 to reach it:** NASA Science, "Oort Cloud: Facts".
 - **One light-year = 63,241 AU.**
 
+## The Milky Way (added November 2026)
+Every landmark's position is to scale: its distance and galactic longitude and latitude. The
+longitudes were computed from each object's catalogued J2000 right ascension and declination
+with the IAU galactic rotation, not copied from an encyclopedia.
+
+| Landmark | Distance | Source of distance | l, b (deg) |
+|---|---|---|---|
+| Sagittarius A* | 27,000 ly; 4 million Suns | ESO eso2208 (EHT) | 359.94, -0.05 |
+| Orion Nebula | 1,350 ly | NASA Webb, Orion Bar | 209.01, -19.38 |
+| Crab Nebula | 6,500 ly | NASA/JPL Webb release (2023) | 184.56, -5.78 |
+| Pillars of Creation (M16) | 6,500 ly | ESA/Webb weic2216 | 16.95, 0.79 |
+| Carina Nebula (Cosmic Cliffs) | 7,600 ly | NASA Webb release (2022) | 287.60, -0.63 |
+| Omega Centauri | 17,700 ly | STScI/NASA Hubble (2024) | 309.10, 14.97 |
+
+- The galaxy: about 100,000 ly across (NASA, Imagine the Universe); the Sun 27,000 ly from
+  the centre (the distance to Sagittarius A*).
+- Points of interest cite ESO (EHT), the GRAVITY Collaboration (A&A 2018, S2's 16-year orbit,
+  ~120 AU and ~7,650 km/s at its 2018 closest approach), NobelPrize.org (2020 prize), ESA/Webb,
+  NASA SVS, NASA Chandra (Crab pulsar's 30 pulses a second; Eta Carinae's 10-45 Suns thrown
+  off, its ~90 and ~30 Sun pair, and an older shell from 1200-1800), NASA APOD (the 1054
+  guest star as bright as the full Moon; the cloud more than ten light-years across), ESA/
+  Hubble (proplyds found 1992), STScI (Omega Centauri's ≥8,200-Sun black hole from 500+
+  Hubble images and seven fast stars) and NASA (its ~10 million stars, 10-12 billion years).
+- Dropped as unconfirmed by the cited pages: the Crab pulsar's mass and size, Eta Carinae
+  becoming the second-brightest star (a popular outlet's claim), and the Trapezium's stars
+  carving the nebula.
+- The spiral arms are a sketch (said in the intro and credit line): logarithmic spirals fitted
+  so the Crab lies on the Perseus Arm, the Eagle and Carina nebulae on the Sagittarius-Carina
+  Arm, and the Sun and the Orion Nebula on the Orion Spur; a bar 16,000 ly each way, its near
+  end 27 degrees toward positive longitude.
+- Voyage milestones: 100 light-years, the Orion Nebula (1,350 ly), 10,000 light-years.
+
 ## Still to do
 - **Images:** no point of interest has one yet. Each needs a licence check (NASA images
   are generally public domain; ESA/Hubble and ESO are CC BY 4.0) and a credit line.

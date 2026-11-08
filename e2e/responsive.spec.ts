@@ -21,6 +21,7 @@ const KNOWN_LABEL_COLLISIONS = new Set(["768x1024", "360x740", "375x667"]);
 const PLATES = [
   { path: "", name: "solar system", known: KNOWN_LABEL_COLLISIONS },
   { path: "neighbourhood", name: "neighbourhood", known: new Set<string>() },
+  { path: "milky-way", name: "Milky Way", known: new Set<string>() },
 ];
 
 /** The text's own bounds of each label's name (not its box, which may stretch wider than the word). */

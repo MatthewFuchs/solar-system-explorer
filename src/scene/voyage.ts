@@ -133,12 +133,16 @@ export function ringOpacity(r: number, screen: number): number {
   return smoothstep(18, 70, r) * (1 - smoothstep(screen * 0.75, screen * 1.05, r));
 }
 
-/** "340 AU", "12,000 AU", "1.6 light-years". */
+/** "340 AU", "12,000 AU", "1.6 light-years", "47,000 light-years". */
 export function formatSpan(au: number): string {
   if (au < 0.25 * AU_PER_LY) {
     const rounded = au < 1000 ? Math.round(au / 10) * 10 : Math.round(au / 1000) * 1000;
     return `${rounded.toLocaleString("en-US")} AU`;
   }
   const ly = au / AU_PER_LY;
-  return `${ly < 10 ? ly.toFixed(1) : Math.round(ly)} light-years`;
+  if (ly < 10) return `${ly.toFixed(1)} light-years`;
+  if (ly < 1000) return `${Math.round(ly)} light-years`;
+  // Two figures are plenty across a galaxy: "47,000", not "46,873".
+  const step = 10 ** (Math.floor(Math.log10(ly)) - 1);
+  return `${(Math.round(ly / step) * step).toLocaleString("en-US")} light-years`;
 }

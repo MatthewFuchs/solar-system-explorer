@@ -41,8 +41,10 @@ export interface PlateLayout {
   /** The centre as a selectable body: its label, leader, and hit area (it has no orbit arc). */
   star: PlanetPlacement;
   planets: PlanetPlacement[];
-  /** A to-scale chart's engraving (the neighbourhood): distance rings and the hour dial. */
+  /** A to-scale chart's engraving (the neighbourhood, the Milky Way): distance rings and a dial. */
   chart?: ChartEngraving;
+  /** The galaxy drawn behind the Milky Way plate. */
+  galaxy?: GalaxyPlacement;
   /**
    * Real distance per pixel from the centre, for the voyage between scales. Exact on a
    * to-scale chart; on the stylized solar plate, set by the outermost body's real distance
@@ -51,9 +53,21 @@ export interface PlateLayout {
   auPerPx: number;
 }
 
-/** Concentric distance rings around the centre, and an hour dial of right ascension. */
+/** Where the galaxy is drawn: its centre, the radius of its disc's edge, and which way the Sun lies. */
+export interface GalaxyPlacement {
+  x: number;
+  y: number;
+  /** The disc's edge, 50,000 light-years out, in pixels. */
+  r: number;
+  /** Screen angle (radians, y down) from the centre to the Sun. */
+  sunAngle: number;
+}
+
+/** Concentric distance rings around the centre, and a dial at their rim (an hour dial of right ascension on the neighbourhood). */
 export interface ChartEngraving {
-  /** Ring radii in pixels, every two light-years; every other one (4, 8, 12 ly) is drawn stronger. */
+  /** The rings' centre, if not the plate's centre star (the galaxy's rings circle its core, not the Sun). */
+  centre?: { x: number; y: number };
+  /** Ring radii in pixels (every two light-years on the neighbourhood); every other one is drawn stronger. */
   rings: { r: number; strong: boolean }[];
   /** Radius of the hour dial. */
   dial: number;
@@ -61,7 +75,7 @@ export interface ChartEngraving {
   zeroHour: number;
   /** Rings and the dial are open between these screen angles (from < to, radians), toward the title. */
   gap: { from: number; to: number };
-  /** The dial's numerals (0h, 6h, 12h, 18h) and where they sit. */
+  /** The dial's numerals (0h, 6h, 12h, 18h) and where they sit; none means a plain rim with no ticks. */
   hours: { h: number; x: number; y: number }[];
 }
 

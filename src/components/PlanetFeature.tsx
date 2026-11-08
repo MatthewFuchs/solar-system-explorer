@@ -117,10 +117,11 @@ export function PlanetFeature({
       </button>
 
       <div className="feature__column">
-        <p className="feature__numeral" ref={numeralRef}>
+        {/* A word ("Supernova remnant") is set smaller than a numeral; a long name smaller than a short one. */}
+        <p className="feature__numeral" ref={numeralRef} data-word={planet.mark !== undefined}>
           {numeral}
         </p>
-        <h2 className="feature__name" id="feature-name" ref={nameRef}>
+        <h2 className="feature__name" id="feature-name" ref={nameRef} data-long={planet.name.length > 15}>
           {planet.name}
         </h2>
         <div className="feature__rest">

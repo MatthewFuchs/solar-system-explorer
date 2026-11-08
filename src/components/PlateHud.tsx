@@ -105,9 +105,9 @@ function OrbitArc({ p, sun, state }: { p: PlanetPlacement; sun: { x: number; y: 
 }
 
 /**
- * A to-scale chart's engraving: rings every two light-years, an hour dial of right
- * ascension at the rim, and a faint sight line from Sol to each star that brightens on
- * hover. The layout places everything; rings open toward the title, like partial arcs.
+ * A to-scale chart's engraving: distance rings, a dial at the rim (the neighbourhood's hour
+ * dial of right ascension), and a faint sight line from the Sun to each body that brightens
+ * on hover. The layout places everything; rings open toward the title, like partial arcs.
  */
 function Chart({
   chart,
@@ -124,6 +124,8 @@ function Chart({
 }) {
   const ringState: HudState = hoveredId === null ? "rest" : "dimmed";
   const { gap } = chart;
+  // Sight lines run from the Sun; rings and the dial circle the chart's own centre.
+  const c = chart.centre ?? sun;
   // Each ring runs the long way round, from the opening's far side to its near side.
   const from = gap.to;
   const to = gap.from + Math.PI * 2;
@@ -132,11 +134,11 @@ function Chart({
     return Math.abs(Math.atan2(Math.sin(a - mid), Math.cos(a - mid))) < (gap.to - gap.from) / 2;
   };
   let hourTicks = "";
-  for (let k = 0; k < 48; k++) {
+  for (let k = 0; chart.hours.length > 0 && k < 48; k++) {
     const a = hourAngle(k / 2, chart.zeroHour);
     if (inGap(a)) continue;
     const len = k % 12 === 0 ? 9 : k % 2 === 0 ? 5 : 2.5;
-    hourTicks += `M ${polar(sun, chart.dial, a)} L ${polar(sun, chart.dial + len, a)} `;
+    hourTicks += `M ${polar(c, chart.dial, a)} L ${polar(c, chart.dial + len, a)} `;
   }
   const rings = [...chart.rings, { r: chart.dial, strong: true }];
 
@@ -146,12 +148,12 @@ function Chart({
         <g key={ring.r} className="hud-arc" data-kind="ring" data-state={ringState} style={{ "--i": i } as CSSProperties}>
           <path
             className="hud-arc__line"
-            d={`M ${polar(sun, ring.r, from)} A ${ring.r} ${ring.r} 0 1 1 ${polar(sun, ring.r, to)}`}
+            d={`M ${polar(c, ring.r, from)} A ${ring.r} ${ring.r} 0 1 1 ${polar(c, ring.r, to)}`}
             pathLength={1}
             data-faint={!ring.strong}
           />
-          <circle className="hud-arc__end" cx={sun.x + ring.r * Math.cos(from)} cy={sun.y + ring.r * Math.sin(from)} r={2} />
-          <circle className="hud-arc__end" cx={sun.x + ring.r * Math.cos(to)} cy={sun.y + ring.r * Math.sin(to)} r={2} />
+          <circle className="hud-arc__end" cx={c.x + ring.r * Math.cos(from)} cy={c.y + ring.r * Math.sin(from)} r={2} />
+          <circle className="hud-arc__end" cx={c.x + ring.r * Math.cos(to)} cy={c.y + ring.r * Math.sin(to)} r={2} />
         </g>
       ))}
       <g className="hud-arc" data-kind="dial" data-state={ringState} style={{ "--i": rings.length } as CSSProperties}>

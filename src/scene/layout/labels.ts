@@ -32,6 +32,9 @@ const FAR_PLACEMENTS: Placement[] = [
   [0, 1],
   [0, -1],
   ...PLACEMENTS.flatMap(([side, lift]) => [[side, lift, 2.2] as Placement, [side, lift, 3.4] as Placement]),
+  // Longer still, for a tight cluster of names (the landmarks around the Sun on a phone). Tried
+  // last, so they only win where every shorter leader collides.
+  ...PLACEMENTS.flatMap(([side, lift]) => [[side, lift, 4.8] as Placement, [side, lift, 6.4] as Placement, [side, lift, 8] as Placement]),
 ];
 
 export type LabelSize = { w: number; h: number };
@@ -63,6 +66,24 @@ export interface PlanetPlacement {
   /** 1: right of the leader; -1: left of it; 0: centred over or under the point, with no leader. */
   labelSide: LabelSide;
   connector: Connector;
+}
+
+/**
+ * A label's width for a body with a long name or mark ("The Pillars of Creation", "Supernova
+ * remnant — 6,500 ly"), estimated from the type sizes in index.css; never narrower than the
+ * standard footprint, so plates of short names keep their layout. The charts use it; the solar
+ * plate, whose layout is locked, keeps the standard footprint.
+ */
+export function labelWidthFor(name: string, meta: string, size: LabelSize): number {
+  // The star node and its gap, then italic names (~0.43em) and tracked small capitals (~0.7em).
+  const text = size === LABEL_NARROW ? name.length * 7.4 : Math.max(name.length * 9.6, meta.length * 7.4);
+  return Math.max(size.w, Math.ceil(22 + text));
+}
+
+/** A name split so phones can drop its leading article ("The Crab Nebula" shows "Crab Nebula"; see index.css). */
+export function labelName(name: string): { article: string; rest: string } {
+  const m = /^(The )(.+)$/.exec(name);
+  return m ? { article: m[1], rest: m[2] } : { article: "", rest: name };
 }
 
 /** Phones (and short landscape screens) show names only at rest; see index.css. */
@@ -100,8 +121,8 @@ export interface LabelSpace {
   topMargin: number;
   /** The lowest a label may reach before it counts as clipped. */
   bottom: number;
-  /** Every body on the plate, so a label keeps off all but its own. */
-  bodies: { x: number; y: number; r: number; reach: number }[];
+  /** Every body on the plate, so a label keeps off all but its own; `labelW` overrides the label width (labelWidthFor). */
+  bodies: { x: number; y: number; r: number; reach: number; labelW?: number }[];
   /** Labels placed so far; each new label is added. */
   placed: Box[];
   /** Further areas to keep clear of (the title, the credit line), weighted above a body. */
@@ -117,7 +138,8 @@ export interface LabelSpace {
 export function placeLabel(index: number, space: LabelSpace): { labelSide: LabelSide; labelBox: Box; connector: Connector } {
   const p = space.bodies[index];
   const r = p.r;
-  const { labelSize, margin, topMargin, width } = space;
+  const { margin, topMargin, width } = space;
+  const labelSize = { w: p.labelW ?? space.labelSize.w, h: space.labelSize.h };
   const connectorFor = (side: LabelSide, lift: 1 | -1, far = 1): Connector => {
     if (side === 0) {
       // No leader: the label's anchor (y1, 11px below its top) sits just past the point.

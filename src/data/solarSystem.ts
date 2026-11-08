@@ -14,7 +14,11 @@ export type POICategory =
   | "surface"
   | "star"
   | "planet"
-  | "disk";
+  | "disk"
+  | "nebula"
+  | "cluster"
+  | "black hole"
+  | "history";
 
 /** A measurement with real units, shown as a small data label. */
 export interface POIStat {
@@ -86,8 +90,13 @@ export function isSurfacePOI(poi: POI): poi is SurfacePOI {
 export interface CelestialBody {
   id: string;
   name: string;
-  /** Stars (the Sun and its neighbours); dwarf planets get a destination but no Roman numeral. Defaults to planet. */
-  kind?: "star" | "planet" | "dwarf";
+  /**
+   * Stars (the Sun and its neighbours); dwarf planets get a destination but no Roman numeral;
+   * deep-sky objects (nebulae, clusters, black holes) are drawn as clouds of light. Defaults to planet.
+   */
+  kind?: "star" | "planet" | "dwarf" | "deep-sky";
+  /** What a deep-sky object is ("Nebula", "Black hole"), shown in place of a numeral. */
+  mark?: string;
   /** Hex color used for the stylized sphere/material. */
   color: string;
   /** Stylized display radius in scene units (not to scale). */
@@ -108,6 +117,10 @@ export interface CelestialBody {
   spectralType?: string;
   /** Right ascension in hours (real value, J2000): the star's direction around the neighbourhood chart. */
   ra?: number;
+  /** Galactic longitude in degrees (real value): its direction from the Sun across the Milky Way plate. */
+  glon?: number;
+  /** Galactic latitude in degrees (real value): how far above or below the galaxy's plane it lies. */
+  glat?: number;
   /** How stretched the orbit is (real value, 0 = a circle). Sets the planet's song: how far its
       pitch rises from the far end of its orbit to the near end, as Kepler heard it. */
   eccentricity?: number;

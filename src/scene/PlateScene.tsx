@@ -1,8 +1,11 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense, useEffect } from "react";
+import { AdditiveBlending, BufferGeometry, Mesh, PlaneGeometry, Points, Scene, ShaderMaterial } from "three";
 import type { POI } from "../data/solarSystem";
 import { BeltField } from "./BeltField";
+import { galaxyFragmentShader, galaxyGlowFragmentShader, galaxyGlowVertexShader, galaxyVertexShader, GalaxyField } from "./GalaxyField";
+import { deepSkyShader } from "./shaders";
 import { PALETTE } from "../lib/palette";
 import { appearanceFor } from "./bodyAppearance";
 import type { BeltShape, PlateLayout } from "./layout/solarPlate";
@@ -72,8 +75,10 @@ export function PlateScene({
       }}
     >
       <color attach="background" args={[PALETTE.abyss]} />
+      <ShaderWarmup />
       <Starfield width={width} height={height} />
       <BeltField belts={belts} width={width} height={height} zoom={zoom} zoomFrame={zoomFrame} stage={stage} />
+      {layout.galaxy && <GalaxyField galaxy={layout.galaxy} width={width} height={height} zoom={zoom} zoomFrame={zoomFrame} stage={stage} />}
       <Suspense fallback={null}>
         {/* The Sun: the same body component in star mode, so it can be hovered and opened. */}
         <PlanetBody
@@ -154,5 +159,31 @@ function SceneReady({ onReady }: { onReady?: () => void }) {
       cancelAnimationFrame(second);
     };
   }, [onReady]);
+  return null;
+}
+
+/**
+ * Compiles the shaders another plate will need (deep-sky objects, the galaxy's stipple) while
+ * the scene starts, so the voyage between scales doesn't stall when that plate swaps in. The
+ * materials are kept, so their compiled programs stay cached.
+ */
+const warmMaterials = [
+  new ShaderMaterial({ ...deepSkyShader, transparent: true, premultipliedAlpha: true, depthWrite: false }),
+  new ShaderMaterial({ vertexShader: galaxyGlowVertexShader, fragmentShader: galaxyGlowFragmentShader, transparent: true, depthWrite: false, blending: AdditiveBlending }),
+  new ShaderMaterial({ vertexShader: galaxyVertexShader, fragmentShader: galaxyFragmentShader, transparent: true, depthWrite: false, blending: AdditiveBlending }),
+];
+
+function ShaderWarmup() {
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    const scene = new Scene();
+    const plane = new PlaneGeometry(1, 1);
+    const dots = new BufferGeometry();
+    scene.add(new Mesh(plane, warmMaterials[0]), new Mesh(plane, warmMaterials[1]), new Points(dots, warmMaterials[2]));
+    gl.compile(scene, camera);
+    plane.dispose();
+    dots.dispose();
+  }, [gl, camera]);
   return null;
 }

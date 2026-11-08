@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import { bodyDistance, bodyMark, bodyNoun } from "../lib/format";
+import { hitRadius } from "../scene/layout/geometry";
+import { labelName } from "../scene/layout/labels";
 import type { PlateLayout } from "../scene/layout/solarPlate";
 import { StatList } from "./StatList";
 
@@ -15,11 +17,13 @@ interface DestinationLabelsProps {
 /** Game-map destination labels, plus an invisible focusable hit target over each planet. */
 export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelect }: DestinationLabelsProps) {
   const stateOf = (id: string) => (hoveredId === null ? "rest" : hoveredId === id ? "active" : "dimmed");
+  const bodies = [layout.star, ...layout.planets];
 
   return (
     <>
-      {[layout.star, ...layout.planets].map((p) => {
-        const hitR = Math.max(p.r + 10, 22);
+      {bodies.map((p) => {
+        const hitR = hitRadius(p, bodies);
+        const { article, rest } = labelName(p.body.name);
         const numeral = bodyMark(p.body, p.order);
         const distance = bodyDistance(p.body);
         // Room between the label node and the screen edge, so the expanded tagline never clips.
@@ -48,8 +52,17 @@ export function DestinationLabels({ layout, hoveredId, focusId, onHover, onSelec
               <svg className="dest-label__node" viewBox="0 0 12 12" width="12" height="12">
                 <path d="M6 0 C6.4 4 8 5.6 12 6 C8 6.4 6.4 8 6 12 C5.6 8 4 6.4 0 6 C4 5.6 5.6 4 6 0 Z" />
               </svg>
-              <div className="dest-label__text">
-                <span className="dest-label__name">{p.body.name}</span>
+              {/* The name is a second, larger target for the pointer; the button below serves keys and screen readers. */}
+              <div
+                className="dest-label__text"
+                onClick={() => onSelect(p.body.id)}
+                onPointerEnter={() => onHover(p.body.id)}
+                onPointerLeave={() => onHover(null)}
+              >
+                <span className="dest-label__name">
+                  {article && <span className="dest-label__article">{article}</span>}
+                  {rest}
+                </span>
                 <span className="dest-label__meta">
                   {/* Dwarf planets show only their distance here; the dashed orbit sets them apart. */}
                   {p.body.kind !== "dwarf" && (

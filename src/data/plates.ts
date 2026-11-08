@@ -1,6 +1,7 @@
-// The site's plates: each scale of the map (the solar system, and later the stellar
-// neighbourhood, the Milky Way, the Local Group) is one fixed, art-directed composition.
+// The site's plates: each scale of the map (the solar system, the stellar neighbourhood,
+// the Milky Way, and later the Local Group) is one fixed, art-directed composition.
 // A plate's own words live here; its bodies' content lives in their data files.
+import { LANDMARKS, SOL_IN_GALAXY } from "./milkyWay.ts";
 import { NEIGHBOURS, SOL } from "./neighbourhood.ts";
 import { BELTS, SITE, SPACECRAFT, VIEWABLE, type Belt, type CelestialBody, type Spacecraft } from "./solarSystem.ts";
 
@@ -76,6 +77,7 @@ export const NEIGHBOURHOOD_PLATE: Plate = {
   description: "The stars nearest the Sun, drawn like a candlelit astrolabe: Alpha Centauri, Sirius, Barnard's Star and more, with their worlds and stories.",
   backLabel: "Back to the neighbourhood",
   credit: "Star surfaces: Solar System Scope, CC BY 4.0, recoloured.",
+  outward: "milky-way",
   inward: { body: SOL, plate: "solar" },
   centre: SOL,
   bodies: NEIGHBOURS,
@@ -90,8 +92,30 @@ export const NEIGHBOURHOOD_PLATE: Plate = {
   ],
 };
 
+export const MILKY_WAY_PLATE: Plate = {
+  id: "milky-way",
+  path: "milky-way",
+  title: "The Milky Way",
+  intro:
+    "Our galaxy from above, to scale: each ring is ten thousand light-years. Its arms are a sketch; no one has seen it whole. Every star you met in the neighbourhood fits inside the Sun's point of light.",
+  tagline: "Our galaxy and its landmarks",
+  description: "Our galaxy drawn like a candlelit astrolabe, to scale: the black hole at its heart, the Pillars of Creation, the Crab and Orion nebulae, and where the Sun sits among them.",
+  backLabel: "Back to the galaxy",
+  credit: "Galaxy: a sketch of the spiral arms; landmarks placed by their real distances.",
+  inward: { body: SOL_IN_GALAXY, plate: "neighbourhood" },
+  centre: SOL_IN_GALAXY,
+  bodies: LANDMARKS,
+  // Light-years as AU (63,241 AU each). The Orion Nebula: NASA Webb, 1,350 ly. The galaxy is
+  // about 100,000 light-years across (NASA, Imagine the Universe).
+  approach: [
+    { au: 100 * 63241, name: "A hundred light-years", note: "Light from here set out a century ago" },
+    { au: 1350 * 63241, name: "The Orion Nebula", note: "1,350 light-years: the nearest great nursery of stars" },
+    { au: 10000 * 63241, name: "Ten thousand light-years", note: "A tenth of the way across the galaxy" },
+  ],
+};
+
 /** Every plate, innermost first. */
-export const PLATES: Plate[] = [SOLAR_PLATE, NEIGHBOURHOOD_PLATE];
+export const PLATES: Plate[] = [SOLAR_PLATE, NEIGHBOURHOOD_PLATE, MILKY_WAY_PLATE];
 
 export function plateById(id: string): Plate {
   const plate = PLATES.find((p) => p.id === id);

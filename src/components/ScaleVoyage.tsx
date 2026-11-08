@@ -17,6 +17,9 @@ import {
   type VoyageEnds,
 } from "../scene/voyage";
 
+/** The layers that move with the plate: its line work, and its labels. */
+const STAGED = ".hud-layer, .plate-stage";
+
 interface ScaleVoyageProps {
   /** Out: from the inner plate to the outer one. In: the reverse. */
   direction: "out" | "in";
@@ -26,7 +29,7 @@ interface ScaleVoyageProps {
   height: number;
   /** Read every frame by the 3D scene. */
   stage: StageRef;
-  /** The plate element: the line work and labels follow the CSS variables set on it. */
+  /** The plate element: its line work and labels (STAGED) follow the stage transform. */
   root: HTMLElement;
   /** Swap the plates: called once, while neither shows. */
   onSwap: () => void;
@@ -63,8 +66,14 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
       const showingOuter = direction === "out" ? swapped : !swapped;
       const st = showingOuter ? outerStage(z, ends) : innerStage(z, ends);
       stage.current = st;
-      root.style.setProperty("--stage-transform", stageCss(st));
-      root.style.setProperty("--stage-opacity", st.lines.toFixed(3));
+      // Written straight onto the two moving layers: a CSS variable on the plate would make
+      // the browser restyle every element on the page, every frame.
+      const transform = stageCss(st);
+      const opacity = st.lines.toFixed(3);
+      for (const el of root.querySelectorAll<HTMLElement | SVGElement>(STAGED)) {
+        el.style.transform = transform;
+        el.style.opacity = opacity;
+      }
 
       const sol = solPoint(z, ends);
       const reach = Math.max(Math.hypot(sol.x, sol.y), Math.hypot(width - sol.x, sol.y), Math.hypot(sol.x, height - sol.y), Math.hypot(width - sol.x, height - sol.y));
@@ -105,8 +114,10 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
 
     const finish = () => {
       stage.current = IDENTITY_STAGE;
-      root.style.removeProperty("--stage-transform");
-      root.style.removeProperty("--stage-opacity");
+      for (const el of root.querySelectorAll<HTMLElement | SVGElement>(STAGED)) {
+        el.style.removeProperty("transform");
+        el.style.removeProperty("opacity");
+      }
       callbacks.current.onDone();
     };
 

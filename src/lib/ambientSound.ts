@@ -168,9 +168,9 @@ const SONG_LEVEL = 0.085;
 const SUN_CHORD = [73.42, 110, 146.83];
 
 export interface SongSource {
-  kind?: "star" | "planet" | "dwarf";
+  kind?: "star" | "planet" | "dwarf" | "deep-sky";
   distanceAU?: number;
-  /** Other stars have no song yet; only the Sun's chord and its worlds' glides sound. */
+  /** Other stars (and deep-sky objects) have no song yet; only the Sun's chord and its worlds' glides sound. */
   spectralType?: string;
   eccentricity?: number;
 }
@@ -292,7 +292,8 @@ export class AmbientSound {
   /** Sing a body's song when it is chosen. Silent unless sound is on; a new song cuts off the last. */
   sing(body: SongSource) {
     const g = this.graph;
-    if (!this.on || !g || body.spectralType) return;
+    // Other stars and deep-sky objects have no song yet.
+    if (!this.on || !g || body.spectralType || body.kind === "deep-sky") return;
     if (this.song) {
       const { gain } = this.song;
       gain.cancelScheduledValues(g.ctx.currentTime);

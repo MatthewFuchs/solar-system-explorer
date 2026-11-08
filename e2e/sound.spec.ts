@@ -110,3 +110,13 @@ test("leaves other stars silent: they borrow neither the Sun's chord nor a glide
   expect(starts.filter((f) => f > 20 && f < 200)).toEqual([]);
   expect(curves).toEqual([]);
 });
+
+test("leaves the galaxy's landmarks silent too", async ({ page }) => {
+  await openApp(page, "milky-way");
+  await page.getByRole("button", { name: "Sound" }).click();
+  await page.getByRole("button", { name: /^The Crab Nebula,/ }).click();
+  await expectPlanetView(page, "The Crab Nebula");
+  const { starts, curves } = await audio(page);
+  expect(starts.filter((f) => f > 20 && f < 200)).toEqual([]);
+  expect(curves).toEqual([]);
+});

@@ -17,9 +17,9 @@ import {
 } from "three";
 import { isSurfacePOI, type POI } from "../data/solarSystem";
 import { applyStage, IDENTITY_STAGE, type StageRef } from "./voyage";
-import { orbiterFor, type BodyAppearance } from "./bodyAppearance";
+import { DEEP_SKY_FORMS, DEEP_SKY_SPREAD, orbiterFor, type BodyAppearance } from "./bodyAppearance";
 import { featureKeepOut } from "./layout/screen";
-import { atmosphereShader, planetShader, ringShader, sunShader } from "./shaders";
+import { atmosphereShader, deepSkyShader, planetShader, ringShader, sunShader } from "./shaders";
 import { configureTextures } from "./textureSetup";
 import { setUniform } from "./uniforms";
 import {
@@ -181,6 +181,12 @@ export function PlanetBody({
       uLight: { value: 0 },
       uDim: { value: 0 },
       uFade: { value: 0 },
+      // Deep-sky objects only (deepSkyShader).
+      uForm: { value: 0 },
+      uColA: { value: new Color() },
+      uColB: { value: new Color() },
+      uSeed: { value: 0 },
+      uSpread: { value: 1 },
     }),
     [],
   );
@@ -221,6 +227,14 @@ export function PlanetBody({
     p.uRim.value = appearance.rim;
     p.uTint.value.set(appearance.tint ?? "#ffffff");
     p.uTintMix.value = appearance.tint ? 1 : 0;
+    const look = appearance.deepSky;
+    if (look) {
+      p.uForm.value = DEEP_SKY_FORMS.indexOf(look.form);
+      p.uColA.value.set(look.colors[0]);
+      p.uColB.value.set(look.colors[1]);
+      p.uSeed.value = look.seed;
+      p.uSpread.value = DEEP_SKY_SPREAD[look.form];
+    }
     if (s) {
       s.uAtmosphere.value.set(appearance.atmosphere);
       s.uRim.value = appearance.rim;
@@ -368,10 +382,18 @@ export function PlanetBody({
   return (
     <group ref={groupRef} rotation={[0, 0, appearance.tilt]}>
       <group rotation={[ring ? RING_VIEW_TILT : 0, 0, 0]}>
-        <mesh ref={sphereRef}>
-          <sphereGeometry args={[base.r, 64, 48]} />
-          <shaderMaterial ref={planetRef} {...(star ? sunShader : planetShader)} uniforms={planetUniforms} />
-        </mesh>
+        {appearance.deepSky ? (
+          // A flat cloud of light facing the viewer, added to the dark; premultiplied, so a black hole's shadow covers what's behind.
+          <mesh ref={sphereRef}>
+            <planeGeometry args={[base.r * 2 * DEEP_SKY_SPREAD[appearance.deepSky.form], base.r * 2 * DEEP_SKY_SPREAD[appearance.deepSky.form]]} />
+            <shaderMaterial ref={planetRef} {...deepSkyShader} uniforms={planetUniforms} transparent premultipliedAlpha depthWrite={false} />
+          </mesh>
+        ) : (
+          <mesh ref={sphereRef}>
+            <sphereGeometry args={[base.r, 64, 48]} />
+            <shaderMaterial ref={planetRef} {...(star ? sunShader : planetShader)} uniforms={planetUniforms} />
+          </mesh>
+        )}
         {ringGeometry && (
           <mesh geometry={ringGeometry} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
             <shaderMaterial
@@ -385,7 +407,7 @@ export function PlanetBody({
           </mesh>
         )}
       </group>
-      {!star && (
+      {!star && !appearance.deepSky && (
         <mesh ref={shellMeshRef} scale={SHELL_SCALE} renderOrder={1}>
           <sphereGeometry args={[base.r, 48, 32]} />
           <shaderMaterial

@@ -95,6 +95,51 @@ test.describe("between scales", () => {
   });
 });
 
+test.describe("the Milky Way", () => {
+  test("goes out to the galaxy from the neighbourhood, past its landmarks", async ({ page }) => {
+    await openApp(page, "neighbourhood");
+    await page.getByRole("link", { name: "And beyond: The Milky Way" }).click();
+    await expect(page).toHaveURL(/\/milky-way$/);
+    await arrive(page);
+    await expectPlate(page, "milky-way", /Milky\s*Way/i);
+    await expect(page).toHaveTitle("Solar System Explorer · Our galaxy and its landmarks");
+    for (const name of ["The Orion Nebula", "The Crab Nebula", "The Pillars of Creation", "The Carina Nebula", "Omega Centauri", "Sagittarius A*"]) {
+      await expect(page.getByRole("button", { name: new RegExp(`^${name.replace("*", "\\*")},`) })).toBeAttached();
+    }
+    // The outermost plate so far: no way further out yet.
+    await expect(page.getByRole("link", { name: /^And beyond/ })).toHaveCount(0);
+  });
+
+  test("returns to the neighbourhood through the Sun's name, though the Orion Nebula is drawn beside it", async ({ page }) => {
+    await openApp(page, "milky-way");
+    // The Sun's point and the nebula's are a few pixels apart: its name is the larger target.
+    await page.locator('.dest-label[data-planet="sol-milky-way"] .dest-label__name').click();
+    await expect(page).toHaveURL(/\/neighbourhood$/);
+    await arrive(page);
+    await expectPlate(page, "neighbourhood", /Stellar\s*Neighbourhood/i);
+  });
+
+  test("opens the black hole at the galaxy's heart, and goes back to the galaxy", async ({ page }) => {
+    await openApp(page, "milky-way");
+    await page.getByRole("button", { name: /^Sagittarius A\*,/ }).click();
+    await expect(page).toHaveURL(/\/sagittarius-a$/);
+    await expectPlanetView(page, "Sagittarius A*");
+    await expect(page.locator(".feature__numeral")).toHaveText("Black hole");
+    await expect(page.getByText("27,000 light-years from the Sun")).toBeVisible();
+    await page.getByRole("button", { name: "Back to the galaxy" }).click();
+    await expectPlate(page, "milky-way", /Milky\s*Way/i);
+  });
+
+  test("keeps a long name and its mark below the masthead on a short laptop screen", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await openApp(page, "pillars-of-creation");
+    await expectPlanetView(page, "The Pillars of Creation");
+    // The column starts below the masthead (52px, --bar-h); it used to spill up behind it.
+    const mark = await page.locator(".feature__numeral").boundingBox();
+    expect(mark!.y).toBeGreaterThanOrEqual(52);
+  });
+});
+
 test.describe("the voyage between scales", () => {
   test("pulls back through the emptiness past true-scale milestones, then arrives on its own", async ({ page }) => {
     test.slow();

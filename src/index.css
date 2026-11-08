@@ -549,6 +549,8 @@ body,
 .dest-label__text {
   display: flex;
   flex-direction: column;
+  /* The name is clickable too: a larger target than a pinpoint (the label itself stays inert). */
+  pointer-events: auto;
 }
 
 .dest-label[data-side='left'] .dest-label__text {
@@ -883,7 +885,10 @@ body,
   width: min(36vw, 500px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* Centred while it fits; a tall column starts at the top and scrolls, never under the bar. */
+  justify-content: safe center;
+  overflow-y: auto;
+  pointer-events: auto;
 }
 
 .feature__numeral,
@@ -905,11 +910,26 @@ body,
 .feature__name {
   margin: 0.1em 0 0;
   font-family: var(--font-body);
-  font-size: clamp(64px, 9.5vw, 156px);
+  /* Shorter screens shrink it too, so the column fits (unchanged from 900px tall up). */
+  font-size: clamp(64px, min(9.5vw, 15.5vh), 156px);
   font-style: italic;
   font-weight: 500;
   line-height: 0.92;
   color: var(--ivory);
+}
+
+/* Wide screens only (phones and short landscape set their own, smaller sizes below). */
+@media (min-aspect-ratio: 17/20) and (min-height: 520px) {
+  /* What a deep-sky object is ("Supernova remnant"): a word, set smaller than a numeral. */
+  .feature__numeral[data-word='true'] {
+    font-size: clamp(18px, 1.7vw, 26px);
+    letter-spacing: 0.16em;
+  }
+
+  /* Long names ("The Pillars of Creation") would fill the column at full size. */
+  .feature__name[data-long='true'] {
+    font-size: clamp(52px, min(6.2vw, 10.5vh), 104px);
+  }
 }
 
 .feature__tagline {
@@ -2088,6 +2108,14 @@ body,
   }
 }
 
+/* Phones and short landscape screens: labels drop a leading "The" (labelName), as map labels do.
+   Matches labelSizeFor in src/scene/layout/labels.ts. */
+@media (max-width: 639px), (max-height: 519px) {
+  .dest-label__article {
+    display: none;
+  }
+}
+
 /* Short landscape screens (phones on their side). Matches SHORT_HEIGHT in src/scene/layout/screen.ts. */
 @media (max-height: 519px) and (min-aspect-ratio: 17/20) {
   .plate-title {
@@ -2324,9 +2352,8 @@ body,
 /* Mid-voyage, the plate's line work, labels, and sunglow follow the stage transform the
    voyage writes each frame (the 3D bodies read the same transform). The title steps aside. */
 .plate[data-voyage] :is(.hud-layer, .plate-stage) {
+  /* ScaleVoyage writes transform and opacity onto these two layers each frame. */
   transform-origin: 0 0;
-  transform: var(--stage-transform, none);
-  opacity: var(--stage-opacity, 1);
   will-change: transform, opacity;
 }
 

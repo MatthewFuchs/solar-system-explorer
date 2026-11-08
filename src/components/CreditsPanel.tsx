@@ -59,7 +59,7 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
       {
         title: "Sources",
         detail:
-          "Compiled from NASA (NASA Science, the NASA Exoplanet Catalog, the Chandra X-ray Center, and the Astrophysics Data System), NOAA Ocean Service, ESA/Hubble, the European Southern Observatory, NSF NOIRLab, W. M. Keck Observatory, Green Bank Observatory, the American Astronomical Society, peer-reviewed papers via arXiv, Sky & Telescope, and EarthSky. Each point of interest links to its source. Figures are rounded; sizes and distances on the map are not to scale.",
+          "Compiled from NASA (NASA Science, Webb, the NASA Exoplanet Catalog, the Chandra X-ray Center, the Scientific Visualization Studio, JPL, and the Astrophysics Data System), the Space Telescope Science Institute, NOAA Ocean Service, ESA/Hubble, ESA/Webb, the European Southern Observatory and the Event Horizon Telescope, NSF NOIRLab, W. M. Keck Observatory, Green Bank Observatory, the American Astronomical Society, the Nobel Foundation, peer-reviewed papers via arXiv, Sky & Telescope, and EarthSky. Each point of interest links to its source. Figures are rounded. The solar system's sizes and distances are not to scale; the neighbourhood and the Milky Way place everything at its real distance, and the galaxy's spiral arms are a sketch.",
         link: { label: "NASA Science", url: "https://science.nasa.gov/" },
       },
     ],
