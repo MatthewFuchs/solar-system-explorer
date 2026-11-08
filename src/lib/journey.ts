@@ -49,6 +49,8 @@ export function triggered(trigger: Trigger, s: JourneyState): boolean {
       return trigger.ids.every((id) => s.visited.includes(id));
     case "read-count":
       return s.read.length >= trigger.min;
+    case "secret":
+      return false;
   }
 }
 
@@ -60,6 +62,8 @@ export interface Journey {
   subscribe(listener: () => void): () => void;
   /** Note a visit or a read; returns any mysteries it solved, in order. */
   record(event: JourneyEvent): Mystery[];
+  /** Mark an easter egg found (a "secret" mystery); returns it if it's newly found. */
+  discover(id: string): Mystery[];
   /** Forget everything, here and in storage. */
   forget(): void;
 }
@@ -101,6 +105,14 @@ export function createJourney(storage: Store | null, mysteries: Mystery[] = MYST
       save();
       emit();
       return solved;
+    },
+    discover(id) {
+      const mystery = mysteries.find((m) => m.id === id);
+      if (!mystery || state.found[id] !== undefined) return [];
+      state = { ...state, found: { ...state.found, [id]: now() } };
+      save();
+      emit();
+      return [mystery];
     },
     forget() {
       state = EMPTY_JOURNEY;

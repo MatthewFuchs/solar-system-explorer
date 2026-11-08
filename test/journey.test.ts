@@ -87,6 +87,22 @@ describe("the journey store", () => {
   });
 });
 
+describe("easter eggs", () => {
+  it("are found only by discover(), once, never by a trigger", () => {
+    const eggs: Mystery[] = [{ id: "egg", title: "Egg", clue: "", entry: "", trigger: { kind: "secret" } }];
+    const j = createJourney(memoryStorage(), eggs, () => 7);
+    expect(j.record({ type: "visit", id: "mars" })).toEqual([]);
+    expect(j.discover("egg").map((m) => m.id)).toEqual(["egg"]);
+    expect(j.discover("egg")).toEqual([]);
+    expect(j.discover("no-such-egg")).toEqual([]);
+    expect(j.get().found).toEqual({ egg: 7 });
+  });
+
+  it("each have a reveal, the line shown the moment they're found", () => {
+    for (const m of MYSTERIES.filter((m) => m.trigger.kind === "secret")) expect(m.reveal, m.id).toBeTruthy();
+  });
+});
+
 describe("the logbook's mysteries", () => {
   it("each have an id, title, clue, and entry, ids unique", () => {
     expect(new Set(MYSTERIES.map((m) => m.id)).size).toBe(MYSTERIES.length);
@@ -95,7 +111,7 @@ describe("the logbook's mysteries", () => {
 
   it("only ask for pages that exist", () => {
     for (const m of MYSTERIES) {
-      if (m.trigger.kind === "read-count") continue;
+      if (m.trigger.kind === "read-count" || m.trigger.kind === "secret") continue;
       for (const id of m.trigger.ids) {
         const page = id.startsWith("plate:") ? routeFor(id.slice(6) === "solar" ? "" : id.slice(6)) : routeFor(id);
         expect(page, `${m.id}: ${id}`).not.toBeNull();

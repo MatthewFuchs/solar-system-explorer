@@ -443,6 +443,28 @@ export class AmbientSound {
     this.graph = null;
   }
 
+  /**
+   * The Music of the Spheres: every world's song at once, each holding its lowest note, swelling
+   * and resolving, after `delay` seconds (so the last song can finish). Silent unless sound is on.
+   */
+  harmony(bodies: SongSource[], delay = 0) {
+    const g = this.graph;
+    if (!this.on || !g) return;
+    const { ctx, notes } = g;
+    const t0 = ctx.currentTime + delay;
+    const end = t0 + 9;
+    const env = ctx.createGain();
+    env.connect(notes);
+    env.gain.setValueAtTime(0, t0);
+    env.gain.linearRampToValueAtTime(SONG_LEVEL * 0.35, t0 + 2.5);
+    env.gain.setValueAtTime(SONG_LEVEL * 0.35, t0 + 4.5);
+    env.gain.exponentialRampToValueAtTime(0.0001, end - 0.1);
+    for (const body of bodies) {
+      const pitch = songPitch(body);
+      if (pitch) voice(ctx, env, pitch.low, t0, end);
+    }
+  }
+
   /** A discovery: its own short rising figure (playDiscovery). Silent unless sound is on. */
   chime() {
     const g = this.graph;

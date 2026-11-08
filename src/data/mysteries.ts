@@ -10,7 +10,9 @@ export type Trigger =
   /** Open every one of them. */
   | { kind: "visited-all"; ids: string[] }
   /** Open the details of this many points of interest, spacecraft, or belts. */
-  | { kind: "read-count"; min: number };
+  | { kind: "read-count"; min: number }
+  /** An easter egg: found by doing something particular, which calls journey.discover(id). */
+  | { kind: "secret" };
 
 export interface Mystery {
   id: string;
@@ -20,6 +22,8 @@ export interface Mystery {
   /** What the logbook says once it's found. */
   entry: string;
   trigger: Trigger;
+  /** Shown large for a moment when it's found, above the "Noted in your logbook" line. */
+  reveal?: string;
 }
 
 export const MYSTERIES: Mystery[] = [
@@ -62,4 +66,43 @@ export const MYSTERIES: Mystery[] = [
     entry: "You have looked into the centre of the Milky Way: four million Suns' worth of mass, seen only as a shadow inside a ring of light.",
     trigger: { kind: "visited-any", ids: ["sagittarius-a"] },
   },
+  // ---------- Easter eggs ----------
+  {
+    id: "pale-blue-dot",
+    title: "The Pale Blue Dot",
+    clue: "From far away, look back toward home, and wait a while.",
+    // NASA Photojournal, "Solar System Portrait: Earth as 'Pale Blue Dot'".
+    reveal: "Voyager 1, six billion kilometres out, 14 February 1990: Earth less than a pixel across.",
+    entry: "You lingered over the Sun from among the stars. Voyager 1 once looked back from six billion kilometres away; in its photograph, Earth fills 0.12 of one pixel.",
+    trigger: { kind: "secret" },
+  },
+  {
+    id: "music-of-the-spheres",
+    title: "Music of the Spheres",
+    clue: "With sound on, let the worlds sing in their order, outward from the Sun.",
+    reveal: "Mercury to Neptune, sung in order: the harmony of the worlds.",
+    entry: "Kepler believed the planets sang together. You heard all eight, nearest to farthest, and then all at once.",
+    trigger: { kind: "secret" },
+  },
+  {
+    id: "kepler",
+    title: "Kepler",
+    clue: "Speak the name of the man who heard the planets sing.",
+    // Kepler, Harmonices Mundi (1619): the first statement of his third law.
+    reveal: "Johannes Kepler, 1619: the square of a planet's year is as the cube of its distance from the Sun.",
+    entry: "In Harmonices Mundi, the book in which he heard the worlds sing, Kepler also set down his third law: a planet's year, squared, keeps step with its distance, cubed.",
+    trigger: { kind: "secret" },
+  },
+  {
+    id: "hubble",
+    title: "Hubble",
+    clue: "Speak the name of the astronomer who found the universe growing.",
+    // Hubble 1929, PNAS 15, 168: more distant galaxies recede faster.
+    reveal: "Edwin Hubble, 1929: the farther a galaxy, the faster it is carried away.",
+    entry: "In 1929 Edwin Hubble showed that galaxies are moving away from us, the more distant ones faster: the first great sign that the universe is expanding.",
+    trigger: { kind: "secret" },
+  },
 ];
+
+/** The names that, typed anywhere, are easter eggs: name → mystery id. */
+export const SPOKEN_NAMES: Record<string, string> = { KEPLER: "kepler", HUBBLE: "hubble" };

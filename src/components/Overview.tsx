@@ -22,7 +22,8 @@ import { SpacecraftLayer } from "./SpacecraftLayer";
 import { TopBar } from "./TopBar";
 import { AmbientSound } from "../lib/ambientSound";
 import { journey } from "../lib/journey";
-import { MYSTERIES } from "../data/mysteries";
+import { MYSTERIES, SPOKEN_NAMES } from "../data/mysteries";
+import { PLANETS } from "../data/solarSystem";
 import { pagePath, pageTitle } from "../lib/seo";
 import { HOME, routeFromLocation, type Route } from "../lib/routes";
 import { crossesPlates, initialNav, navReducer, samePage } from "../state/navigation";
@@ -39,6 +40,8 @@ const ENTRANCE_MS = 2700;
 const FADE_MS = 500;
 /** If the scene is slow to arrive, start the entrance anyway. */
 const ENTRANCE_WAIT_MS = 2500;
+/** How long to linger over the Sun, from the neighbourhood or the galaxy, for the Pale Blue Dot. */
+const PALE_BLUE_DOT_MS = 3500;
 /** Reduced motion: the dissolve that replaces the zoom, each way. */
 const VEIL_MS = 220;
 /** Between plates (a change of scale): a slower dissolve, each way. Matches --dur in CSS. */
@@ -217,12 +220,33 @@ export function Overview() {
     if (!samePage(routeFromUrl(), targetRef.current)) window.setTimeout(() => followUrlRef.current?.(), 0);
   }, []);
 
+  // Easter egg, the Music of the Spheres: with sound on, choose the planets in order, Mercury to
+  // Neptune (going back to the overview between them is fine; any other world starts over).
+  // The last song is answered by all eight together.
+  const spheresRef = useRef(0);
+  const soundOnRef = useRef(false);
+  const listenForSpheres = useCallback(
+    (id: string) => {
+      if (!soundOnRef.current) return;
+      const next = PLANETS[spheresRef.current]?.id;
+      spheresRef.current = id === next ? spheresRef.current + 1 : id === PLANETS[0].id ? 1 : 0;
+      if (spheresRef.current < PLANETS.length) return;
+      spheresRef.current = 0;
+      sound.harmony(PLANETS, 3.5);
+      window.setTimeout(() => journey.discover("music-of-the-spheres"), 3500);
+    },
+    [sound],
+  );
+
   /** Change view and record it in the URL, so it can be linked and the back button works. */
   const navigate = useCallback(
     (to: Route) => {
       if (voyageRef.current || samePage(to, targetRef.current)) return;
       // Choosing a world sings its song (only when sound is on).
-      if (to.body) sound.sing(to.body);
+      if (to.body) {
+        sound.sing(to.body);
+        listenForSpheres(to.body.id);
+      }
       const change = () => {
         window.history.pushState(null, "", pagePath(to));
         go(to);
@@ -238,11 +262,11 @@ export function Overview() {
       // change the view, dissolve back.
       dissolve(change, crossing ? "scale" : "quick");
     },
-    [go, reducedMotion, sound, dissolve, voyageFor, startVoyage],
+    [go, reducedMotion, sound, dissolve, voyageFor, startVoyage, listenForSpheres],
   );
 
   // A discovery is noted with a quiet line (and two soft notes, if sound is on).
-  const [noted, setNoted] = useState<{ key: number; title: string } | null>(null);
+  const [noted, setNoted] = useState<{ key: number; title: string; reveal?: string } | null>(null);
   useEffect(() => {
     let known = new Set(Object.keys(journey.get().found));
     return journey.subscribe(() => {
@@ -251,11 +275,36 @@ export function Overview() {
       known = new Set(ids);
       const mystery = MYSTERIES.find((m) => m.id === fresh.at(-1));
       if (!mystery) return;
-      setNoted({ key: performance.now(), title: mystery.title });
+      setNoted({ key: performance.now(), title: mystery.title, reveal: mystery.reveal });
       sound.chime();
     });
   }, [sound]);
   const clearNoted = useCallback(() => setNoted(null), []);
+
+  useEffect(() => {
+    soundOnRef.current = soundOn;
+    if (!soundOn) spheresRef.current = 0;
+  }, [soundOn]);
+
+  // Easter egg, the Pale Blue Dot: from among the stars, linger over the Sun.
+  useEffect(() => {
+    if (hoveredId !== "sol" && hoveredId !== "sol-milky-way") return;
+    const t = window.setTimeout(() => journey.discover("pale-blue-dot"), PALE_BLUE_DOT_MS);
+    return () => window.clearTimeout(t);
+  }, [hoveredId]);
+
+  // Easter eggs, spoken names: typing KEPLER or HUBBLE anywhere.
+  useEffect(() => {
+    let typed = "";
+    const longest = Math.max(...Object.keys(SPOKEN_NAMES).map((n) => n.length));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.key.length !== 1) return;
+      typed = (typed + e.key.toUpperCase()).slice(-longest);
+      for (const [name, id] of Object.entries(SPOKEN_NAMES)) if (typed.endsWith(name)) journey.discover(id);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // The journey: every plate and body shown is a visit, which may solve a mystery. (After the
   // listener above, so a discovery made on arriving at a page is noted too.)
@@ -530,7 +579,8 @@ export function Overview() {
       )}
       <p className="discovery" role="status">
         {noted && (
-          <span key={noted.key} className="discovery__line" onAnimationEnd={clearNoted}>
+          <span key={noted.key} className="discovery__line" data-reveal={noted.reveal !== undefined} onAnimationEnd={clearNoted}>
+            {noted.reveal && <span className="discovery__reveal">{noted.reveal}</span>}
             <span className="discovery__label">Noted in your logbook</span> <span className="discovery__title">{noted.title}</span>
           </span>
         )}
