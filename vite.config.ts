@@ -30,14 +30,28 @@ const cspMeta = (): Plugin => ({
   ],
 })
 
+/** True only for the local coverage build, which must never be deployed. */
+function coverageBuild() {
+  if (process.env.COVERAGE !== '1') return false
+  if (process.env.GITHUB_PAGES || process.env.VERCEL) throw new Error('COVERAGE builds carry source maps and must not be deployed')
+  return true
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   // prerender writes a page per world, sitemap.xml, and robots.txt after the build.
   base,
   plugins: [react(), prerender(), notFound(), previewNotFound(), ...(process.env.GITHUB_PAGES ? [cspMeta()] : [])],
   preview: { headers: siteHeaders },
-  test: { include: ['test/**/*.test.ts'] },
+  test: {
+    include: ['test/**/*.test.ts'],
+    // `npm run coverage`; the e2e half lands in coverage/e2e (e2e/coverage.ts).
+    coverage: { include: ['src/**', 'scripts/**'], reporter: ['text-summary', 'json', 'html'], reportsDirectory: 'coverage/unit' },
+  },
   build: {
+    // Source maps only for measuring e2e coverage (`npm run coverage`); never in a build
+    // that ships (the source is proprietary). e2e/security.spec.ts checks the real build.
+    sourcemap: coverageBuild(),
     // The lazily loaded 3D chunk (three.js, React Three Fiber, postprocessing) is about
     // 1 MB minified, 270 KB gzipped; the main chunk the page paints from is far smaller.
     chunkSizeWarningLimit: 1100,

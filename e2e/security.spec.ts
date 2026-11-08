@@ -48,3 +48,18 @@ test("makes no requests to other sites", async ({ page }) => {
   await page.waitForLoadState("networkidle");
   expect(offsite).toEqual([]);
 });
+
+test("publishes no source maps", async ({ page, request }) => {
+  test.skip(process.env.COVERAGE === "1", "The coverage build carries maps on purpose and is never deployed");
+  const scripts: string[] = [];
+  page.on("response", (r) => {
+    if (r.url().endsWith(".js")) scripts.push(r.url());
+  });
+  await page.goto("/mars");
+  await expect(page.locator(".plate-canvas canvas")).toBeVisible();
+  expect(scripts.length).toBeGreaterThan(1); // the main chunk and the lazy 3D chunk
+  for (const url of scripts) {
+    expect(await (await request.get(url)).text(), url).not.toContain("sourceMappingURL");
+    expect((await request.get(`${url}.map`)).status(), `${url}.map`).toBe(404);
+  }
+});

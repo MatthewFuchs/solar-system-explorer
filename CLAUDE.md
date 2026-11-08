@@ -12,6 +12,13 @@ surface, and click a POI to read facts.
 - Tests: Vitest unit tests in `test/` (`npm test`); Playwright end-to-end tests in
   `e2e/` (`npm run test:e2e`) against `vite preview`, so they run under the real CSP.
   Run `npm run test:all` before committing a feature.
+- **Coverage:** `npm run coverage` measures both halves: unit (`coverage/unit`) and e2e in
+  Chromium, mapped back to `src/` through a source-mapped build (`COVERAGE=1`, never
+  deployed; `vite.config.ts` refuses it on Vercel/Pages). Stop any running `npm run preview`
+  first, or Playwright reuses it and the e2e half can't map. Goal: every behavior tested,
+  not a percentage. Every line runs under one suite or the other except unmount cleanup
+  (the app never unmounts) and `scripts/og-images.ts` (a manual capture tool). A new
+  behavior gets a test that fails without it; check by breaking the code once.
 
 ## Project rules
 - **Stylized layout, not to scale.** Display radii, orbit distances, and orbit

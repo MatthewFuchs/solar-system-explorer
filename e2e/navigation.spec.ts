@@ -20,6 +20,63 @@ test.describe("overview", () => {
   });
 });
 
+test.describe("private browsing", () => {
+  test("plays the entrance and works when session storage is blocked", async ({ page }) => {
+    await page.addInitScript(() =>
+      Object.defineProperty(window, "sessionStorage", {
+        get() {
+          throw new DOMException("The operation is insecure.", "SecurityError");
+        },
+      }),
+    );
+    await page.goto("/");
+    await expect(page.locator(".plate")).toHaveAttribute("data-entrance", "done", { timeout: 10_000 });
+    await page.getByRole("button", { name: /^Mars,/ }).click();
+    await expectPlanetView(page, "Mars");
+  });
+});
+
+test.describe("cursor", () => {
+  test("is a point of light that follows the mouse and brightens over a world", async ({ page, isMobile }) => {
+    test.skip(isMobile === true, "Touch screens keep no cursor");
+    await openApp(page);
+    const cursor = page.locator(".plate-cursor");
+    await expect(cursor).toHaveAttribute("data-visible", "false");
+    await page.mouse.move(400, 300);
+    await expect(cursor).toHaveAttribute("data-visible", "true");
+    await expect
+      .poll(() => cursor.evaluate((el) => (new DOMMatrix(getComputedStyle(el).transform).m41 + new DOMMatrix(getComputedStyle(el).transform).m42)))
+      .toBeCloseTo(700, 0);
+    await page.getByRole("button", { name: /^Mars,/ }).hover();
+    await expect(cursor).toHaveAttribute("data-active", "true");
+  });
+
+  test("hides when the pointer leaves the window or the window loses focus", async ({ page, isMobile }) => {
+    test.skip(isMobile === true, "Touch screens keep no cursor");
+    await openApp(page);
+    const cursor = page.locator(".plate-cursor");
+    await page.mouse.move(400, 300);
+    await expect(cursor).toHaveAttribute("data-visible", "true");
+
+    // An element vanishing under a still pointer is not leaving: the cursor stays.
+    await page.evaluate(() => document.dispatchEvent(new MouseEvent("mouseout", { clientX: 400, clientY: 300 })));
+    await expect(cursor).toHaveAttribute("data-visible", "true");
+    await page.evaluate(() => document.dispatchEvent(new MouseEvent("mouseout", { clientX: 0, clientY: 200 })));
+    await expect(cursor).toHaveAttribute("data-visible", "false");
+
+    await page.mouse.move(420, 320);
+    await expect(cursor).toHaveAttribute("data-visible", "true");
+    await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+    await expect(cursor).toHaveAttribute("data-visible", "false");
+  });
+
+  test("is left to the system on touch screens", async ({ page, isMobile }) => {
+    test.skip(isMobile !== true, "Checked on the phone project");
+    await openApp(page);
+    await expect(page.locator(".plate-cursor")).toBeHidden();
+  });
+});
+
 test.describe("hover", () => {
   test("lights the hovered world, unfolds its tagline, and dims the rest", async ({ page, isMobile }) => {
     test.skip(isMobile === true, "Touch screens have no hover");
