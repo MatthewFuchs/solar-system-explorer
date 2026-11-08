@@ -2,7 +2,7 @@ import { expectOverview, expectPlanetView, openApp, test, expect } from "./fixtu
 
 declare global {
   interface Window {
-    __audio: { contexts: number; curves: number[][] };
+    __audio: { contexts: number; curves: number[][]; starts: number[]; cutoffs: number };
   }
 }
 
@@ -12,13 +12,24 @@ declare global {
  */
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    window.__audio = { contexts: 0, curves: [] };
+    window.__audio = { contexts: 0, curves: [], starts: [], cutoffs: 0 };
     const Native = window.AudioContext;
     window.AudioContext = class extends Native {
       constructor(...args: ConstructorParameters<typeof AudioContext>) {
         super(...args);
         window.__audio.contexts++;
       }
+    };
+    // Every oscillator's starting pitch, and every song cut short (a fast fade to silence).
+    const start = OscillatorNode.prototype.start;
+    OscillatorNode.prototype.start = function (...args) {
+      window.__audio.starts.push(this.frequency.value);
+      return start.apply(this, args);
+    };
+    const setTarget = AudioParam.prototype.setTargetAtTime;
+    AudioParam.prototype.setTargetAtTime = function (value, time, constant) {
+      if (value === 0 && constant === 0.08) window.__audio.cutoffs++;
+      return setTarget.call(this, value, time, constant);
     };
     const setCurve = AudioParam.prototype.setValueCurveAtTime;
     AudioParam.prototype.setValueCurveAtTime = function (values, ...rest) {
@@ -37,7 +48,7 @@ test("stays silent until the sound toggle is clicked", async ({ page }) => {
   await expectPlanetView(page, "Mars");
   await page.keyboard.press("Escape");
   // No AudioContext at all: nothing plays, or is even prepared, without the toggle.
-  expect(await audio(page)).toEqual({ contexts: 0, curves: [] });
+  expect(await audio(page)).toEqual({ contexts: 0, curves: [], starts: [], cutoffs: 0 });
 });
 
 test("sings a world's song, gliding by Kepler's ratio, only while sound is on", async ({ page }) => {
@@ -64,4 +75,26 @@ test("sings a world's song, gliding by Kepler's ratio, only while sound is on", 
   await expectPlanetView(page, "Jupiter");
   expect(await audio(page)).toMatchObject({ contexts: 1 });
   expect((await audio(page)).curves).toHaveLength(before);
+});
+
+test("plays the Sun a low chord instead of a glide", async ({ page }) => {
+  await openApp(page);
+  await page.getByRole("button", { name: "Sound" }).click();
+  await page.getByRole("button", { name: /^Sun,/ }).click();
+  const near = (f: number) => async () => (await audio(page)).starts.some((s) => Math.abs(s - f) < 0.01);
+  // D2, A2, D3.
+  for (const f of [73.42, 110, 146.83]) await expect.poll(near(f), `${f} Hz`).toBe(true);
+  expect((await audio(page)).curves).toEqual([]);
+});
+
+test("cuts the last song short when another world is chosen", async ({ page }) => {
+  await openApp(page);
+  await page.getByRole("button", { name: "Sound" }).click();
+  await page.getByRole("button", { name: /^Mars,/ }).click();
+  await expectPlanetView(page, "Mars");
+  expect((await audio(page)).cutoffs).toBe(0);
+  await page.keyboard.press("Escape");
+  await expectOverview(page);
+  await page.getByRole("button", { name: /^Jupiter,/ }).click();
+  await expect.poll(async () => (await audio(page)).cutoffs).toBe(1);
 });

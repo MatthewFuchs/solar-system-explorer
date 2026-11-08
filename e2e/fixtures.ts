@@ -1,4 +1,5 @@
 import { test as base, expect, type Page } from "@playwright/test";
+import { withCoverage } from "./coverage";
 
 /** Console output that is expected and harmless: driver chatter and a deprecation inside R3F. */
 const IGNORED = [/GL Driver Message/, /THREE\.Clock: This module has been deprecated/, /GPU stall due to ReadPixels/];
@@ -11,13 +12,13 @@ const IGNORED = [/GL Driver Message/, /THREE\.Clock: This module has been deprec
 export const test = base.extend<{ allowErrors: boolean; errors: string[] }>({
   allowErrors: [false, { option: true }],
   errors: [
-    async ({ page, allowErrors }, use) => {
+    async ({ page, allowErrors, javaScriptEnabled }, use) => {
       const errors: string[] = [];
       page.on("console", (m) => {
         if (m.type() === "error" && !IGNORED.some((re) => re.test(m.text()))) errors.push(m.text());
       });
       page.on("pageerror", (e) => errors.push(e.message));
-      await use(errors);
+      await withCoverage(page, javaScriptEnabled !== false, () => use(errors));
       if (!allowErrors) expect(errors, "console errors").toEqual([]);
     },
     { auto: true },
