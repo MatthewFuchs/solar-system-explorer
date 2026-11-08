@@ -4,6 +4,18 @@
 import { NEIGHBOURS, SOL } from "./neighbourhood.ts";
 import { BELTS, SITE, SPACECRAFT, VIEWABLE, type Belt, type CelestialBody, type Spacecraft } from "./solarSystem.ts";
 
+/**
+ * A distance passed on the voyage out to a plate: drawn as a true-scale ring around the Sun
+ * that sweeps inward as the view pulls back. Facts checked like any other content.
+ */
+export interface Milestone {
+  /** Real distance from the Sun, in AU. */
+  au: number;
+  name: string;
+  /** One short line under the name. */
+  note: string;
+}
+
 export interface Plate {
   /** Stable id, used in code and CSS (`data-plate`). */
   id: string;
@@ -29,6 +41,8 @@ export interface Plate {
   centre: CelestialBody;
   /** Every body with its own view on this plate, in reading order. */
   bodies: CelestialBody[];
+  /** Distances passed on the voyage out to this plate from the one inside it. */
+  approach?: Milestone[];
   /** Stippled belts between bodies' orbits (solar plate). */
   belts?: Belt[];
   /** Spacecraft drawn beside their bodies (solar plate). */
@@ -65,6 +79,15 @@ export const NEIGHBOURHOOD_PLATE: Plate = {
   inward: { body: SOL, plate: "solar" },
   centre: SOL,
   bodies: NEIGHBOURS,
+  // Sources: NASA Voyager 1 mission page and its November 2026 light-day milestone;
+  // NASA Science, "Oort Cloud: Facts" (inner edge 2,000-5,000 AU, outer 10,000-100,000 AU,
+  // about 300 years for Voyager 1 to reach it and 30,000 to pass beyond it).
+  approach: [
+    { au: 173, name: "Voyager 1", note: "About one light-day out: the farthest any spacecraft has gone" },
+    { au: 2000, name: "The Oort Cloud", note: "Its inner edge, 2,000 to 5,000 AU out. Voyager 1 needs some 300 years to reach it" },
+    { au: 63241, name: "One light-year", note: "63,241 AU: the distance light crosses in a year" },
+    { au: 100000, name: "The Oort Cloud's outer edge", note: "Perhaps 100,000 AU out, more than a light-year and a half" },
+  ],
 };
 
 /** Every plate, innermost first. */

@@ -43,6 +43,12 @@ export interface PlateLayout {
   planets: PlanetPlacement[];
   /** A to-scale chart's engraving (the neighbourhood): distance rings and the hour dial. */
   chart?: ChartEngraving;
+  /**
+   * Real distance per pixel from the centre, for the voyage between scales. Exact on a
+   * to-scale chart; on the stylized solar plate, set by the outermost body's real distance
+   * (Pluto's 39.5 AU) at its drawn distance.
+   */
+  auPerPx: number;
 }
 
 /** Concentric distance rings around the centre, and an hour dial of right ascension. */
@@ -154,7 +160,15 @@ export function computePlateLayout(star: CelestialBody, planets: CelestialBody[]
     sun: { x: sx, y: sy, r: sunR },
     star: starPlacement,
     planets: placed,
+    auPerPx: outermostScale(placed),
   };
+}
+
+/** AU per pixel from the Sun, read off the outermost body with a real distance. */
+function outermostScale(placed: PlanetPlacement[]): number {
+  const known = placed.filter((p) => p.body.distanceAU !== undefined && p.orbitR > 0);
+  const far = known.reduce((a, b) => (b.body.distanceAU! > a.body.distanceAU! ? b : a), known[0]);
+  return far ? far.body.distanceAU! / far.orbitR : 1;
 }
 
 const DEG = Math.PI / 180;

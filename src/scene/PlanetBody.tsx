@@ -16,6 +16,7 @@ import {
   type Texture,
 } from "three";
 import { isSurfacePOI, type POI } from "../data/solarSystem";
+import { applyStage, IDENTITY_STAGE, type StageRef } from "./voyage";
 import { orbiterFor, type BodyAppearance } from "./bodyAppearance";
 import { featureKeepOut } from "./layout/screen";
 import { atmosphereShader, planetShader, ringShader, sunShader } from "./shaders";
@@ -89,6 +90,8 @@ interface PlanetBodyProps {
   /** The focused planet's POIs and their marker elements, positioned every frame. */
   pois?: POI[];
   markerEls?: Map<string, HTMLElement>;
+  /** The voyage between scales: scales and fades the whole plate (identity otherwise). */
+  stage?: StageRef;
 }
 
 interface Turn {
@@ -135,6 +138,7 @@ function loadHd(url: string) {
 const scratch = new Vector3();
 
 export function PlanetBody({
+  stage,
   star = false,
   base,
   sun,
@@ -273,11 +277,12 @@ export function PlanetBody({
 
     // Placement through the zoom.
     const e = zoom.value(now);
-    const me = zoomPlacement(base, zoomFrame, e, isFocus);
-    const sunNow = zoomPlacement(sun, zoomFrame, e, false);
+    const st = stage?.current ?? IDENTITY_STAGE;
+    const me = applyStage(zoomPlacement(base, zoomFrame, e, isFocus), st);
+    const sunNow = applyStage(zoomPlacement(sun, zoomFrame, e, false), st);
     group.position.set(me.x - halfW, halfH - me.y, 0);
     group.scale.setScalar(me.r / base.r);
-    const fade = zoomFrame && !isFocus ? smoothstep(0, 0.55, e) : 0;
+    const fade = Math.max(zoomFrame && !isFocus ? smoothstep(0, 0.55, e) : 0, 1 - st.opacity);
     if (star) setUniform(planetRef.current, "uIntensity", lerp(SUN_GLOW, closeGlow, isFocus ? e : 0));
     group.visible = fade < 0.995;
 

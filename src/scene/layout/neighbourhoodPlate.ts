@@ -6,6 +6,7 @@ import { boxAround, clamp, type Box } from "./geometry";
 import { labelSizeFor, placeLabel, reservedAreas, type PlanetPlacement } from "./labels";
 import { PORTRAIT_ASPECT, TOP_BAR_HEIGHT } from "./screen";
 import type { ChartEngraving, PlateLayout } from "./solarPlate";
+import { AU_PER_LY } from "../voyage";
 
 /** The hour dial's radius, in light-years: just past the farthest star. */
 export const DIAL_LY = 12.5;
@@ -128,5 +129,6 @@ export function computeNeighbourhoodLayout(
     star: placed[0],
     planets: placed.slice(1),
     chart: { rings, dial: R, zeroHour, gap, hours },
+    auPerPx: AU_PER_LY / scale,
   };
 }

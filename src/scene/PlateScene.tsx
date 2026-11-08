@@ -10,6 +10,7 @@ import { Orbiters } from "./Orbiters";
 import { PlanetBody } from "./PlanetBody";
 import { Starfield } from "./Starfield";
 import type { Timeline, ZoomFrame } from "./viewTransition";
+import type { StageRef } from "./voyage";
 
 interface PlateSceneProps {
   layout: PlateLayout;
@@ -22,6 +23,8 @@ interface PlateSceneProps {
   facing: POI | null;
   turnMs: number;
   markerEls: Map<string, HTMLElement>;
+  /** The voyage between scales: scales and fades the plate's bodies and belts. */
+  stage?: StageRef;
   /** Called once every texture has loaded and the first full frame has been drawn. */
   onReady?: () => void;
 }
@@ -43,6 +46,7 @@ export function PlateScene({
   facing,
   turnMs,
   markerEls,
+  stage,
   onReady,
 }: PlateSceneProps) {
   const { width, height, sun, star, planets } = layout;
@@ -69,7 +73,7 @@ export function PlateScene({
     >
       <color attach="background" args={[PALETTE.abyss]} />
       <Starfield width={width} height={height} />
-      <BeltField belts={belts} width={width} height={height} zoom={zoom} zoomFrame={zoomFrame} />
+      <BeltField belts={belts} width={width} height={height} zoom={zoom} zoomFrame={zoomFrame} stage={stage} />
       <Suspense fallback={null}>
         {/* The Sun: the same body component in star mode, so it can be hovered and opened. */}
         <PlanetBody
@@ -87,6 +91,7 @@ export function PlateScene({
           turnMs={turnMs}
           pois={sunFocus ? star.body.pois : undefined}
           markerEls={sunFocus ? markerEls : undefined}
+          stage={stage}
         />
         {planets.map((p) => {
           const isFocus = focusId === p.body.id;
@@ -107,6 +112,7 @@ export function PlateScene({
               turnMs={turnMs}
               pois={isFocus ? p.body.pois : undefined}
               markerEls={isFocus ? markerEls : undefined}
+              stage={stage}
             />
           );
         })}
