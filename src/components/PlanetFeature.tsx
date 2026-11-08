@@ -5,8 +5,7 @@ import { ZOOM_EASING_CSS } from "../scene/viewTransition";
 import { PoiMarkers } from "./PoiMarkers";
 import { PoiPanel, type PanelState } from "./PoiPanel";
 import { StatList } from "./StatList";
-
-export type ViewPhase = "overview" | "entering" | "planet" | "leaving";
+import type { ViewPhase } from "../state/navigation";
 
 interface PlanetFeatureProps {
   planet: CelestialBody;

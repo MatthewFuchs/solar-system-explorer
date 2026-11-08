@@ -1,4 +1,5 @@
 import { memo, useCallback, useState } from "react";
+import { HOME } from "../lib/routes";
 import { pagePath } from "../lib/seo";
 import { CreditsPanel } from "./CreditsPanel";
 import type { PanelState } from "./SidePanel";
@@ -36,7 +37,7 @@ export const TopBar = memo(function TopBar({
   return (
     <>
       <header className="masthead">
-        <a className="masthead__brand" href={pagePath(null)} onClick={toOverview}>
+        <a className="masthead__brand" href={pagePath(HOME)} onClick={toOverview}>
           Solar System Explorer
         </a>
         <nav className="masthead__nav" aria-label="Main">
@@ -50,7 +51,7 @@ export const TopBar = memo(function TopBar({
             <span className="masthead__toggle-mark" aria-hidden="true" />
             Sound
           </button>
-          <a className="masthead__overview" href={pagePath(null)} aria-current={inOverview ? "page" : undefined} onClick={toOverview}>
+          <a className="masthead__overview" href={pagePath(HOME)} aria-current={inOverview ? "page" : undefined} onClick={toOverview}>
             Overview
           </a>
           <button

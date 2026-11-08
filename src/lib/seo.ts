@@ -1,11 +1,12 @@
-import { SITE, type CelestialBody } from "../data/solarSystem.ts";
+import { SITE } from "../data/solarSystem.ts";
+import { pathFor, type Route } from "./routes.ts";
 
-/** The page title for a world, or the overview. The prerendered pages use the same titles. */
-export function pageTitle(body?: CelestialBody): string {
-  return body ? `${body.name} · ${SITE.name}` : `${SITE.name} · An interactive map of the solar system`;
+/** The page title for a world, or a plate's overview. The prerendered pages use the same titles. */
+export function pageTitle(route: Route): string {
+  return route.body ? `${route.body.name} · ${SITE.name}` : `${SITE.name} · ${route.plate.tagline}`;
 }
 
-/** The path of a world's page, or the overview. */
-export function pagePath(id: string | null): string {
-  return `${import.meta.env.BASE_URL}${id ?? ""}`;
+/** The path of a page in the running app, under Vite's base path. */
+export function pagePath(route: Route): string {
+  return pathFor(route, import.meta.env.BASE_URL);
 }

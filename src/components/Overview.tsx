@@ -1,5 +1,5 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BELTS, DESTINATIONS, SITE, SPACECRAFT, SUN, VIEWABLE, type Belt, type Spacecraft } from "../data/solarSystem";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { BELTS, DESTINATIONS, SPACECRAFT, SUN, type Belt, type Spacecraft } from "../data/solarSystem";
 import { useElementSize } from "../hooks/useElementSize";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { reachFactor } from "../scene/bodyAppearance";
@@ -8,7 +8,7 @@ import { computePlateLayout, placeBelts, placeSpacecraft } from "../scene/layout
 import { Timeline, TURN_MS, ZOOM_MS, type ZoomFrame } from "../scene/viewTransition";
 import { BeltLabels } from "./BeltLabels";
 import { DestinationLabels } from "./DestinationLabels";
-import { PlanetFeature, type ViewPhase } from "./PlanetFeature";
+import { PlanetFeature } from "./PlanetFeature";
 import { PlateCursor } from "./PlateCursor";
 import { PlateHud } from "./PlateHud";
 import { PoiPanel, type PanelState } from "./PoiPanel";
@@ -18,6 +18,8 @@ import { SpacecraftLayer } from "./SpacecraftLayer";
 import { TopBar } from "./TopBar";
 import { AmbientSound } from "../lib/ambientSound";
 import { pagePath, pageTitle } from "../lib/seo";
+import { routeFromLocation, type Route } from "../lib/routes";
+import { initialNav, navReducer, samePage } from "../state/navigation";
 
 // The 3D engine (three.js and friends) is most of the JavaScript; load it in its own
 // chunk so the typography and HUD can paint while it downloads.
@@ -45,23 +47,15 @@ function entrancePlayed() {
   }
 }
 
-/** The destination named by `/mars`, or by an older `#mars` link, if it exists. */
-function planetFromUrl(): string | null {
-  const fromPath = window.location.pathname.slice(import.meta.env.BASE_URL.length).replace(/\/$/, "");
-  let fromHash = "";
-  try {
-    fromHash = decodeURIComponent(window.location.hash.slice(1));
-  } catch {
-    // A malformed hash such as "#%" names nothing.
-  }
-  const id = fromPath || fromHash;
-  return VIEWABLE.some((p) => p.id === id) ? id : null;
+/** The page the address bar names. */
+function routeFromUrl(): Route {
+  return routeFromLocation(window.location.pathname, window.location.hash, import.meta.env.BASE_URL);
 }
 
 /** Turn an older `#mars` link into `/mars`, so the address bar shows the page's real URL. */
 function upgradeHashLink() {
-  const id = planetFromUrl();
-  if (window.location.hash && id) window.history.replaceState(null, "", pagePath(id));
+  const route = routeFromUrl();
+  if (window.location.hash && route.body) window.history.replaceState(null, "", pagePath(route));
 }
 
 /** Something in the overview itself (not on a planet) whose details are open. */
@@ -74,13 +68,15 @@ type OverviewDetail = { kind: "spacecraft"; item: Spacecraft } | { kind: "belt";
 export function Overview() {
   const [ref, size] = useElementSize<HTMLDivElement>();
   const reducedMotion = usePrefersReducedMotion();
-  const [initialFocus] = useState(() => {
+  const [initialRoute] = useState(() => {
     upgradeHashLink();
-    return planetFromUrl();
+    return routeFromUrl();
   });
-  const [focusId, setFocusId] = useState<string | null>(initialFocus);
-  const [phase, setPhase] = useState<ViewPhase>(initialFocus ? "planet" : "overview");
-  const [poiIndex, setPoiIndex] = useState(0);
+  const initialFocus = initialRoute.body !== null;
+  const [nav, dispatch] = useReducer(navReducer, initialRoute, initialNav);
+  const { phase, poiIndex } = nav;
+  const plate = nav.shown.plate;
+  const focusId = nav.shown.body?.id ?? null;
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [markerHover, setMarkerHover] = useState(false);
   const [showSpacecraft, setShowSpacecraft] = useState(true);
@@ -93,7 +89,7 @@ export function Overview() {
   const [veil, setVeil] = useState(false);
   const [sound] = useState(() => new AmbientSound());
   const [soundOn, setSoundOn] = useState(false);
-  const targetRef = useRef<string | null>(initialFocus);
+  const targetRef = useRef<Route>(initialRoute);
   const timerRef = useRef(0);
 
   const zoomMs = reducedMotion ? 0 : ZOOM_MS;
@@ -119,45 +115,34 @@ export function Overview() {
     };
   }, [layout, focus]);
 
-  /** Run the transition to a planet (or back to the overview with null). */
+  /** Run the transition to a page: into a body's view, or back out to its plate. */
   const go = useCallback(
-    (id: string | null) => {
-      if (id === targetRef.current) return;
-      targetRef.current = id;
+    (to: Route) => {
+      if (samePage(to, targetRef.current)) return;
+      targetRef.current = to;
       window.clearTimeout(timerRef.current);
       const now = performance.now();
-      if (id) {
-        setFocusId(id);
-        setPoiIndex(0);
+      dispatch({ type: "go", to });
+      setMarkerHover(false);
+      if (to.body) {
         setHoveredId(null);
-        setMarkerHover(false);
         setDetail(null);
-        setPhase("entering");
-        zoom.play(1, zoomMs, now);
-        timerRef.current = window.setTimeout(() => setPhase("planet"), zoom.remaining(now));
-      } else {
-        setPhase("leaving");
-        setMarkerHover(false);
-        zoom.play(0, zoomMs, now);
-        timerRef.current = window.setTimeout(() => {
-          setPhase("overview");
-          setFocusId(null);
-        }, zoom.remaining(now));
       }
+      zoom.play(to.body ? 1 : 0, zoomMs, now);
+      timerRef.current = window.setTimeout(() => dispatch({ type: "settle" }), zoom.remaining(now));
     },
     [zoom, zoomMs],
   );
 
   /** Change view and record it in the URL, so it can be linked and the back button works. */
   const navigate = useCallback(
-    (id: string | null) => {
-      if (id === targetRef.current) return;
+    (to: Route) => {
+      if (samePage(to, targetRef.current)) return;
       // Choosing a world sings its song (only when sound is on).
-      const body = id ? VIEWABLE.find((b) => b.id === id) : undefined;
-      if (body) sound.sing(body);
+      if (to.body) sound.sing(to.body);
       const change = () => {
-        window.history.pushState(null, "", pagePath(id));
-        go(id);
+        window.history.pushState(null, "", pagePath(to));
+        go(to);
       };
       if (!reducedMotion) return change();
       // Reduced motion: no zoom; dissolve to the abyss, change the view, dissolve back.
@@ -172,13 +157,13 @@ export function Overview() {
 
   // The tab title follows the open world, as the prerendered pages' titles do.
   useEffect(() => {
-    document.title = pageTitle(VIEWABLE.find((b) => b.id === focusId));
-  }, [focusId]);
+    document.title = pageTitle(nav.shown);
+  }, [nav.shown]);
 
   useEffect(() => {
     const sync = () => {
       upgradeHashLink();
-      go(planetFromUrl());
+      go(routeFromUrl());
     };
     window.addEventListener("popstate", sync);
     window.addEventListener("hashchange", sync);
@@ -190,7 +175,8 @@ export function Overview() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.defaultPrevented && targetRef.current) navigate(null);
+      const { plate, body } = targetRef.current;
+      if (e.key === "Escape" && !e.defaultPrevented && body) navigate({ plate, body: null });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -250,7 +236,15 @@ export function Overview() {
     setSoundOn(!soundOn);
   }, [sound, soundOn]);
 
-  const toOverview = useCallback(() => navigate(null), [navigate]);
+  const toOverview = useCallback(() => navigate({ plate: targetRef.current.plate, body: null }), [navigate]);
+  const selectBody = useCallback(
+    (id: string) => {
+      const body = plate.bodies.find((b) => b.id === id);
+      if (body) navigate({ plate, body });
+    },
+    [navigate, plate],
+  );
+  const setPoiIndex = useCallback((index: number) => dispatch({ type: "poi", index }), []);
 
   const inOverview = phase === "overview";
   const hoverPlanet = useCallback(
@@ -270,6 +264,7 @@ export function Overview() {
       data-phase={phase}
       data-overview={overviewShown ? "shown" : "hidden"}
       data-entrance={entrance}
+      data-plate={plate.id}
       data-focus={focusId ?? undefined}
     >
       {layout && (
@@ -310,9 +305,9 @@ export function Overview() {
           <div className="plate-title">
             <h1>
               {/* Two spans, so the title can break onto two lines. */}
-              <span>{SITE.title.split(" ").slice(0, -1).join(" ")}</span> <span>{SITE.title.split(" ").at(-1)}</span>
+              <span>{plate.title.split(" ").slice(0, -1).join(" ")}</span> <span>{plate.title.split(" ").at(-1)}</span>
             </h1>
-            <p>{SITE.intro}</p>
+            <p>{plate.intro}</p>
             {sceneFailure && <SceneNotice failure={sceneFailure} />}
           </div>
           {layout && (
@@ -330,7 +325,7 @@ export function Overview() {
                 hoveredId={hoveredId}
                 focusId={focusId}
                 onHover={hoverPlanet}
-                onSelect={navigate}
+                onSelect={selectBody}
               />
             </>
           )}
@@ -364,7 +359,7 @@ export function Overview() {
           />
         )}
       </main>
-      <p className="plate-credit">Textures: Solar System Scope, CC BY 4.0. Pluto: NASA/JHUAPL/SwRI.</p>
+      <p className="plate-credit">{plate.credit}</p>
       <div className="view-veil" data-on={veil} aria-hidden="true" />
       <PlateCursor active={hoveredId !== null || markerHover} />
     </div>

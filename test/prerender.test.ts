@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { describe as describePage, notFoundPage, renderPage, robots, siteUrl, sitemap } from "../scripts/prerender";
 import { VIEWABLE } from "../src/data/solarSystem";
+import { PAGES, routeFor } from "../src/lib/routes";
 
 const TEMPLATE = `<!doctype html><html><head><title>Solar System Explorer</title>
 <!--seo-->
 </head><body><div id="root"></div></body></html>`;
 const SITE = "https://example.com";
-const mars = VIEWABLE.find((b) => b.id === "mars")!;
+const mars = routeFor("mars")!;
+const marsBody = mars.body!;
 
 describe("siteUrl", () => {
   it("prefers SITE_URL, then Vercel's production URL, then local preview", () => {
@@ -18,8 +20,8 @@ describe("siteUrl", () => {
 
 describe("descriptions", () => {
   it("stay within 160 characters and end on a whole word", () => {
-    for (const body of [undefined, ...VIEWABLE]) {
-      const d = describePage(body);
+    for (const route of PAGES) {
+      const d = describePage(route);
       expect(d.length).toBeLessThanOrEqual(160);
       expect(d).not.toMatch(/\s…$/);
     }
@@ -41,14 +43,14 @@ describe("renderPage", () => {
     const json = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1];
     const data = JSON.parse(json);
     const page = data["@graph"].find((n: { "@type": string }) => n["@type"] === "WebPage");
-    expect(page.about.sameAs).toBe(mars.wikipedia);
+    expect(page.about.sameAs).toBe(marsBody.wikipedia);
     expect(json).not.toContain("<");
   });
 
   it("puts the world's text in #root, escaped", () => {
     expect(html).toContain('<div id="root"><article class="prerendered">');
     expect(html).toContain("<h1>Mars</h1>");
-    for (const poi of mars.pois) expect(html).toContain(poi.summary.replace(/&/g, "&amp;").replace(/"/g, "&quot;"));
+    for (const poi of marsBody.pois) expect(html).toContain(poi.summary.replace(/&/g, "&amp;").replace(/"/g, "&quot;"));
     expect(renderPage(TEMPLATE, SITE)).toContain('<a href="/mars">Mars</a>');
   });
 
@@ -72,7 +74,7 @@ describe("renderPage", () => {
 
 describe("crawling files", () => {
   it("list every page and point to the sitemap", () => {
-    expect(sitemap(SITE).match(/<loc>/g)).toHaveLength(VIEWABLE.length + 1);
+    expect(sitemap(SITE).match(/<loc>/g)).toHaveLength(PAGES.length);
     expect(robots(SITE)).toContain(`Sitemap: ${SITE}/sitemap.xml`);
   });
 });

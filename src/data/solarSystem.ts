@@ -108,12 +108,9 @@ export interface CelestialBody {
   pois: POI[];
 }
 
-/** The site's own words: its name and the introduction under the overview title. */
+/** The site's own words. Each plate's title and introduction live in plates.ts. */
 export const SITE = {
   name: "Solar System Explorer",
-  title: "The Solar System",
-  intro:
-    "A chart of the Sun's family, from the scorched to the frozen. Distances are in AU, the span from Earth to the Sun. Choose a world, and it will come to you.",
   /** One line for search results and link previews. */
   description: "An interactive map of the solar system, drawn like a candlelit astrolabe. Fly to each world and read its stories.",
 };

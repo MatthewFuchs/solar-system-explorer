@@ -6,7 +6,8 @@
 import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { chromium } from "@playwright/test";
-import { VIEWABLE } from "../src/data/solarSystem.ts";
+import { PAGES, segmentOf } from "../src/lib/routes.ts";
+import { ogImageName } from "./prerender.ts";
 
 const PORT = 4174;
 const base = `http://localhost:${PORT}`;
@@ -25,10 +26,11 @@ try {
   await context.addInitScript(() => sessionStorage.setItem("sse-entrance-played", "1"));
   const page = await context.newPage();
 
-  for (const id of ["home", ...VIEWABLE.map((b) => b.id)]) {
+  for (const route of PAGES) {
+    const id = ogImageName(route);
     // Wait for the textures (and, in a planet view, its full-size map and moons) to arrive.
-    await page.goto(id === "home" ? base : `${base}/${id}`, { waitUntil: "networkidle" });
-    if (id === "home") await page.locator('.plate[data-entrance="done"]').waitFor();
+    await page.goto(`${base}/${segmentOf(route)}`, { waitUntil: "networkidle" });
+    if (!route.body) await page.locator('.plate[data-entrance="done"]').waitFor();
     else await page.locator('.feature[data-phase="planet"]').waitFor();
     await page.waitForTimeout(4000); // shaders compile and the maps upload before they draw
     await page.screenshot({ path: `${outDir}${id}.jpg`, type: "jpeg", quality: 82 });
