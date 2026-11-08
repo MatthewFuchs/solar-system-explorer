@@ -92,6 +92,30 @@ test.describe("404", () => {
     await expectOverview(page);
   });
 
+  test("uses the point-of-light cursor, wider over links, within the CSP", async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { cspViolations: string[] }).cspViolations = [];
+      document.addEventListener("securitypolicyviolation", (e) =>
+        (window as unknown as { cspViolations: string[] }).cspViolations.push(e.blockedURI),
+      );
+    });
+    await page.goto("/no-such-world");
+    const cursor = (selector: string) => page.locator(selector).first().evaluate((el) => getComputedStyle(el).cursor);
+    expect(await cursor("body")).toMatch(/^url\(.+\) 16 16, auto$/);
+    const link = await cursor(".lost__home");
+    expect(link).toMatch(/^url\(.+\) 32 32, url\(.+\) 16 16, pointer$/);
+    expect(link).not.toBe(await cursor("body"));
+    expect(await page.evaluate(() => (window as unknown as { cspViolations: string[] }).cspViolations)).toEqual([]);
+  });
+
+  test.describe("on touch screens", () => {
+    test.use({ hasTouch: true, isMobile: true });
+    test("keeps the system cursor", async ({ page }) => {
+      await page.goto("/no-such-world");
+      expect(await page.locator("body").evaluate((el) => getComputedStyle(el).cursor)).toBe("auto");
+    });
+  });
+
   test("covers missing files too", async ({ request }) => {
     expect((await request.get("/assets/missing.js")).status()).toBe(404);
   });
