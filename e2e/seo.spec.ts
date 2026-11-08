@@ -58,6 +58,26 @@ test.describe("prerendered text", () => {
   });
 });
 
+test.describe("icons", () => {
+  for (const path of ["/", "/mars", "/no-such-world"]) {
+    test(`${path} links the favicon, touch icon, and manifest`, async ({ request }) => {
+      const html = await (await request.get(path)).text();
+      for (const [rel, href, type] of [
+        ["icon", "/favicon.ico", /image\/(x-icon|vnd\.microsoft\.icon)/],
+        ["icon", "/favicon.svg", /image\/svg\+xml/],
+        ["apple-touch-icon", "/apple-touch-icon.png", /image\/png/],
+        ["manifest", "/site.webmanifest", /json|manifest/],
+      ] as const) {
+        expect(html, `${path} ${href}`).toContain(`<link rel="${rel}"`);
+        expect(html, `${path} ${href}`).toContain(`href="${href}"`);
+        const res = await request.get(href);
+        expect(res.status(), href).toBe(200);
+        expect(res.headers()["content-type"], href).toMatch(type);
+      }
+    });
+  }
+});
+
 test.describe("404", () => {
   // The browser logs the 404 response itself as a console error.
   test.use({ allowErrors: true });
