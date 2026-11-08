@@ -108,9 +108,20 @@ test.describe("planet view", () => {
 
   test("turns back cleanly when interrupted mid-zoom", async ({ page }) => {
     await openApp(page);
-    await page.getByRole("button", { name: /^Mars,/ }).click();
-    await expect(page.locator(".feature")).toHaveAttribute("data-phase", "entering");
-    await page.keyboard.press("Escape");
+    // Click and press Escape from inside the page, 400ms apart, so the interruption lands
+    // mid-zoom (it lasts 1.5s) however slow the test runner is.
+    const phaseAtEscape = await page.evaluate(
+      () =>
+        new Promise<string | null>((resolve) => {
+          document.querySelector<HTMLButtonElement>('.plate-hit[aria-label^="Mars,"]')!.click();
+          setTimeout(() => {
+            const phase = document.querySelector(".feature")?.getAttribute("data-phase") ?? null;
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+            resolve(phase);
+          }, 400);
+        }),
+    );
+    expect(phaseAtEscape).toBe("entering");
     await expectOverview(page);
     await expect.poll(() => new URL(page.url()).pathname).toBe("/");
     await expect(page).toHaveTitle(/^Solar System Explorer · /);
