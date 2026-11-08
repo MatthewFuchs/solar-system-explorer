@@ -2311,3 +2311,153 @@ body,
     0 0 7px var(--halo),
     0 0 16px var(--halo);
 }
+
+/* ---------- The voyage between scales ---------- */
+
+/* The labels move with their plate (positioned exactly as before; only transformed mid-voyage). */
+.plate-stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Mid-voyage, the plate's line work, labels, and sunglow follow the stage transform the
+   voyage writes each frame (the 3D bodies read the same transform). The title steps aside. */
+.plate[data-voyage] :is(.hud-layer, .plate-stage) {
+  transform-origin: 0 0;
+  transform: var(--stage-transform, none);
+  opacity: var(--stage-opacity, 1);
+  will-change: transform, opacity;
+}
+
+/* The sunglow is a full-screen layer: scaling it would show its edges, so it steps aside too. */
+.plate[data-voyage] :is(.plate-title, .plate-credit, .space-sunglow) {
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.voyage {
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.voyage__rings {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.voyage__ring text {
+  transition: opacity var(--dur) var(--ease);
+}
+
+.voyage__ring circle {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 0.8;
+  stroke-opacity: 0.55;
+}
+
+.voyage__ring-name {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--gold);
+}
+
+.voyage__ring-note {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-style: italic;
+  fill: var(--ivory-soft);
+}
+
+/* The Sun as a lone point of light, while neither plate shows. */
+.voyage__sol {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.voyage__sol::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  top: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6e0 0, #ffd68a 18%, rgba(240, 162, 90, 0.35) 40%, transparent 70%);
+}
+
+.voyage__sol-name {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.voyage__span {
+  position: absolute;
+  bottom: calc(var(--hud-inset) + 18px);
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.voyage__span-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.voyage__span-value {
+  margin-left: 0.5em;
+  font-size: 22px;
+  font-style: italic;
+  color: var(--ivory);
+}
+
+.voyage__skip {
+  position: absolute;
+  top: calc(var(--bar-h) + 12px);
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%);
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ivory-soft);
+  animation: voyage-hint 2.4s var(--ease) both;
+}
+
+/* The hint shows briefly, then gets out of the way. */
+@keyframes voyage-hint {
+  0%,
+  10% {
+    opacity: 0;
+  }
+  25%,
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}

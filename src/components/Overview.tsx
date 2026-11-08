@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { plateById } from "../data/plates";
+import { plateById, type Milestone } from "../data/plates";
 import type { Belt, Spacecraft } from "../data/solarSystem";
 import { useElementSize } from "../hooks/useElementSize";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
@@ -8,6 +8,8 @@ import { computeFeaturePlacement } from "../scene/layout/screen";
 import { composePlate } from "../scene/layout/plates";
 import { placeBelts, placeSpacecraft } from "../scene/layout/solarPlate";
 import { Timeline, TURN_MS, ZOOM_MS, type ZoomFrame } from "../scene/viewTransition";
+import { IDENTITY_STAGE, type StageRef, type VoyageEnds } from "../scene/voyage";
+import { ScaleVoyage } from "./ScaleVoyage";
 import { BeltLabels } from "./BeltLabels";
 import { DestinationLabels } from "./DestinationLabels";
 import { PlanetFeature } from "./PlanetFeature";
@@ -62,6 +64,18 @@ function upgradeHashLink() {
   if (window.location.hash && route.body) window.history.replaceState(null, "", pagePath(route));
 }
 
+/** A voyage between scales in progress: which way, where to, and what it passes. */
+interface Voyage {
+  /** Each voyage gets its own overlay, even one that starts the moment another ends. */
+  id: number;
+  direction: "out" | "in";
+  /** The plate element, whose CSS variables carry the stage transform. */
+  root: HTMLElement;
+  to: Route;
+  ends: VoyageEnds;
+  milestones: Milestone[];
+}
+
 /** Something in the overview itself (not on a planet) whose details are open. */
 type OverviewDetail = { kind: "spacecraft"; item: Spacecraft } | { kind: "belt"; item: Belt };
 
@@ -97,6 +111,16 @@ export function Overview() {
   const [soundOn, setSoundOn] = useState(false);
   const targetRef = useRef<Route>(initialRoute);
   const timerRef = useRef(0);
+  const [voyage, setVoyage] = useState<Voyage | null>(null);
+  const voyageRef = useRef<Voyage | null>(null);
+  /** The latest followUrl, for the voyage's end (declared before it). */
+  const followUrlRef = useRef<(() => void) | null>(null);
+  const [stage] = useState<StageRef>(() => ({ current: IDENTITY_STAGE }));
+  /** Whether the shown page is a plate's overview at rest (read from event handlers). */
+  const restingRef = useRef(phase === "overview");
+  useEffect(() => {
+    restingRef.current = phase === "overview";
+  }, [phase]);
 
   const zoomMs = reducedMotion ? 0 : ZOOM_MS;
   const turnMs = reducedMotion ? 0 : TURN_MS;
@@ -150,10 +174,51 @@ export function Overview() {
     }, ms);
   }, []);
 
+  /**
+   * The voyage for a move between neighbouring scales, from one plate's overview at rest to
+   * the other's; null for any other move (those keep the dissolve), or with reduced motion.
+   */
+  const voyageFor = useCallback(
+    (from: Route, to: Route): Voyage | null => {
+      const root = ref.current;
+      if (reducedMotion || from.body || to.body || !restingRef.current || size.width === 0 || !root) return null;
+      const out = from.plate.outward === to.plate.id;
+      if (!out && to.plate.outward !== from.plate.id) return null;
+      const [inner, outer] = out ? [from.plate, to.plate] : [to.plate, from.plate];
+      const a = composePlate(inner, size.width, size.height);
+      const b = composePlate(outer, size.width, size.height);
+      return {
+        id: performance.now(),
+        direction: out ? "out" : "in",
+        root,
+        to,
+        ends: { inner: { x: a.sun.x, y: a.sun.y, auPerPx: a.auPerPx }, outer: { x: b.sun.x, y: b.sun.y, auPerPx: b.auPerPx } },
+        milestones: outer.approach ?? [],
+      };
+    },
+    [reducedMotion, size.width, size.height, ref],
+  );
+
+  const startVoyage = useCallback((v: Voyage) => {
+    voyageRef.current = v;
+    setVoyage(v);
+    setHoveredId(null);
+    setDetail(null);
+  }, []);
+  const voyageSwap = useCallback(() => {
+    if (voyageRef.current) go(voyageRef.current.to);
+  }, [go]);
+  const voyageDone = useCallback(() => {
+    voyageRef.current = null;
+    setVoyage(null);
+    // If the address bar moved on during the voyage (the back button), follow it now.
+    if (!samePage(routeFromUrl(), targetRef.current)) window.setTimeout(() => followUrlRef.current?.(), 0);
+  }, []);
+
   /** Change view and record it in the URL, so it can be linked and the back button works. */
   const navigate = useCallback(
     (to: Route) => {
-      if (samePage(to, targetRef.current)) return;
+      if (voyageRef.current || samePage(to, targetRef.current)) return;
       // Choosing a world sings its song (only when sound is on).
       if (to.body) sound.sing(to.body);
       const change = () => {
@@ -161,12 +226,17 @@ export function Overview() {
         go(to);
       };
       const crossing = crossesPlates(targetRef.current, to);
+      const v = crossing ? voyageFor(targetRef.current, to) : null;
+      if (v) {
+        window.history.pushState(null, "", pagePath(to));
+        return startVoyage(v);
+      }
       if (!reducedMotion && !crossing) return change();
       // A change of scale, or any change with reduced motion: dissolve to the abyss,
       // change the view, dissolve back.
       dissolve(change, crossing ? "scale" : "quick");
     },
-    [go, reducedMotion, sound, dissolve],
+    [go, reducedMotion, sound, dissolve, voyageFor, startVoyage],
   );
 
   // The tab title follows the open world, as the prerendered pages' titles do.
@@ -174,12 +244,25 @@ export function Overview() {
     document.title = pageTitle(nav.shown);
   }, [nav.shown]);
 
+  /** Go wherever the address bar says (after back/forward, or once a voyage ends). */
+  const followUrl = useCallback(() => {
+    // Mid-voyage the move waits: when the voyage ends it checks the address bar again.
+    if (voyageRef.current) return;
+    const to = routeFromUrl();
+    const crossing = crossesPlates(targetRef.current, to);
+    const v = crossing ? voyageFor(targetRef.current, to) : null;
+    if (v) startVoyage(v);
+    else if (crossing) dissolve(() => go(to), "scale");
+    else go(to);
+  }, [go, dissolve, voyageFor, startVoyage]);
+  useEffect(() => {
+    followUrlRef.current = followUrl;
+  }, [followUrl]);
+
   useEffect(() => {
     const sync = () => {
       upgradeHashLink();
-      const to = routeFromUrl();
-      if (crossesPlates(targetRef.current, to)) dissolve(() => go(to), "scale");
-      else go(to);
+      followUrl();
     };
     window.addEventListener("popstate", sync);
     window.addEventListener("hashchange", sync);
@@ -187,7 +270,7 @@ export function Overview() {
       window.removeEventListener("popstate", sync);
       window.removeEventListener("hashchange", sync);
     };
-  }, [go, dissolve]);
+  }, [followUrl]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -294,6 +377,7 @@ export function Overview() {
       data-entrance={entrance}
       data-plate={plate.id}
       data-focus={focusId ?? undefined}
+      data-voyage={voyage?.direction}
     >
       {layout && (
         <>
@@ -311,6 +395,7 @@ export function Overview() {
                   facing={facing}
                   turnMs={phase === "entering" ? zoomMs : turnMs}
                   markerEls={markerEls}
+                  stage={stage}
                   onReady={startEntrance}
                 />
               </Suspense>
@@ -353,7 +438,8 @@ export function Overview() {
             {sceneFailure && <SceneNotice failure={sceneFailure} />}
           </div>
           {layout && (
-            <>
+            // The labels move with the plate on the voyage between scales; the title doesn't.
+            <div className="plate-stage">
               <BeltLabels shapes={beltShapes} onSelect={openBelt} onHover={setMarkerHover} />
               <SpacecraftLayer
                 spots={craftSpots}
@@ -369,7 +455,7 @@ export function Overview() {
                 onHover={hoverPlanet}
                 onSelect={selectBody}
               />
-            </>
+            </div>
           )}
         </div>
         {detail && inOverview && (
@@ -403,6 +489,20 @@ export function Overview() {
         )}
       </main>
       <p className="plate-credit">{plate.credit}</p>
+      {voyage && (
+        <ScaleVoyage
+          key={voyage.id}
+          direction={voyage.direction}
+          ends={voyage.ends}
+          milestones={voyage.milestones}
+          width={size.width}
+          height={size.height}
+          stage={stage}
+          root={voyage.root}
+          onSwap={voyageSwap}
+          onDone={voyageDone}
+        />
+      )}
       <div className="view-veil" data-on={veil} data-kind={veilKind} aria-hidden="true" />
       <PlateCursor active={hoveredId !== null || markerHover} />
     </div>

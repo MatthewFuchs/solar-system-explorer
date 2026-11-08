@@ -23,18 +23,24 @@ export interface StageTransform {
   ay: number;
   px: number;
   py: number;
+  /** The bodies' fade (3D). */
   opacity: number;
+  /** The line work and labels' fade: they leave early and arrive late, as text can't be read tiny or huge. */
+  lines: number;
 }
 
-export const IDENTITY_STAGE: StageTransform = { s: 1, ax: 0, ay: 0, px: 0, py: 0, opacity: 1 };
+export const IDENTITY_STAGE: StageTransform = { s: 1, ax: 0, ay: 0, px: 0, py: 0, opacity: 1, lines: 1 };
 
 /** A shared, mutable holder the scene reads every frame (no React re-render per frame). */
 export type StageRef = { current: StageTransform };
 
-/** Where a point of a plate is drawn under a stage transform. */
+/**
+ * Where a point of a plate is drawn under a stage transform. Bodies shrink as the view pulls
+ * back but never grow past their resting size: closing in from far off, a star stays a point.
+ */
 export function applyStage<T extends { x: number; y: number; r: number }>(p: T, stage: StageTransform): T {
   if (stage.s === 1 && stage.px === stage.ax && stage.py === stage.ay) return p;
-  return { ...p, x: stage.px + (p.x - stage.ax) * stage.s, y: stage.py + (p.y - stage.ay) * stage.s, r: p.r * stage.s };
+  return { ...p, x: stage.px + (p.x - stage.ax) * stage.s, y: stage.py + (p.y - stage.ay) * stage.s, r: p.r * Math.min(1, stage.s) };
 }
 
 /** The same transform as CSS, for the line work and labels. */
@@ -87,6 +93,7 @@ export function innerStage(z: number, ends: VoyageEnds): StageTransform {
     px: ends.inner.x + (ends.outer.x - ends.inner.x) * drift,
     py: ends.inner.y + (ends.outer.y - ends.inner.y) * drift,
     opacity: smoothstep(lg(INNER_GONE), lg(INNER_FADE_FROM), lg(z)),
+    lines: smoothstep(lg(0.22), lg(0.6), lg(z)),
   };
 }
 
@@ -100,6 +107,7 @@ export function outerStage(z: number, ends: VoyageEnds): StageTransform {
     px: ends.outer.x,
     py: ends.outer.y,
     opacity: 1 - smoothstep(lg(OUTER_FADE_TO), lg(OUTER_GONE), lg(s)),
+    lines: 1 - smoothstep(lg(1.03), lg(1.8), lg(s)),
   };
 }
 
@@ -123,4 +131,14 @@ export function ringRadius(au: number, z: number, ends: VoyageEnds): number {
 /** A ring shows while it's between a small circle and just past the screen's edge. */
 export function ringOpacity(r: number, screen: number): number {
   return smoothstep(18, 70, r) * (1 - smoothstep(screen * 0.75, screen * 1.05, r));
+}
+
+/** "340 AU", "12,000 AU", "1.6 light-years". */
+export function formatSpan(au: number): string {
+  if (au < 0.25 * AU_PER_LY) {
+    const rounded = au < 1000 ? Math.round(au / 10) * 10 : Math.round(au / 1000) * 1000;
+    return `${rounded.toLocaleString("en-US")} AU`;
+  }
+  const ly = au / AU_PER_LY;
+  return `${ly < 10 ? ly.toFixed(1) : Math.round(ly)} light-years`;
 }

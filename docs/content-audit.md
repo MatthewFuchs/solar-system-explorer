@@ -74,6 +74,14 @@ Spot's 16,350 km width in 2017 and ~500 km depth from Juno; Parker Solar Probe's
 rather than a page about the feature itself (e.g. Valles Marineris → Mariner 9, the ring
 arcs → Voyager); the facts hold, but "Learn more" could point somewhere more specific.
 
+## Voyage milestones (added November 2026)
+The rings passed on the voyage out to the neighbourhood (`approach` in `src/data/plates.ts`):
+- **Voyager 1, about one light-day out** (~173 AU): NASA; the one-light-day crossing is
+  expected on 18 November 2026.
+- **The Oort Cloud's inner edge, 2,000–5,000 AU; outer edge 10,000–100,000 AU; about 300
+  years for Voyager 1 to reach it:** NASA Science, "Oort Cloud: Facts".
+- **One light-year = 63,241 AU.**
+
 ## Still to do
 - **Images:** no point of interest has one yet. Each needs a licence check (NASA images
   are generally public domain; ESA/Hubble and ESO are CC BY 4.0) and a credit line.

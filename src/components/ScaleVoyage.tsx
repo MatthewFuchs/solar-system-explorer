@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Milestone } from "../data/plates";
 import {
-  AU_PER_LY,
+  formatSpan,
   IDENTITY_STAGE,
   innerStage,
   outerStage,
@@ -33,16 +33,6 @@ interface ScaleVoyageProps {
   onDone: () => void;
 }
 
-/** "340 AU", "12,000 AU", "1.6 light-years". */
-export function formatSpan(au: number): string {
-  if (au < 0.25 * AU_PER_LY) {
-    const rounded = au < 1000 ? Math.round(au / 10) * 10 : Math.round(au / 1000) * 1000;
-    return `${rounded.toLocaleString("en-US")} AU`;
-  }
-  const ly = au / AU_PER_LY;
-  return `${ly < 10 ? ly.toFixed(1) : Math.round(ly)} light-years`;
-}
-
 /**
  * The voyage between scales: drives the stage transform of both plates through one
  * continuous logarithmic zoom, and draws what lies between them: true-scale rings at each
@@ -52,6 +42,7 @@ export function formatSpan(au: number): string {
 export function ScaleVoyage({ direction, ends, milestones, width, height, stage, root, onSwap, onDone }: ScaleVoyageProps) {
   const ringRefs = useRef<(SVGGElement | null)[]>([]);
   const solRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const spanRef = useRef<HTMLSpanElement>(null);
   // The callbacks may change identity while the voyage runs; read the latest.
   const callbacks = useRef({ onSwap, onDone });
@@ -65,13 +56,15 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
     let skipFrom = 0;
     let t = 0;
     let raf = 0;
+    /** Each ring name's width, measured once. */
+    const labelWidths: number[] = [];
 
     const draw = (z: number) => {
       const showingOuter = direction === "out" ? swapped : !swapped;
       const st = showingOuter ? outerStage(z, ends) : innerStage(z, ends);
       stage.current = st;
       root.style.setProperty("--stage-transform", stageCss(st));
-      root.style.setProperty("--stage-opacity", st.opacity.toFixed(3));
+      root.style.setProperty("--stage-opacity", st.lines.toFixed(3));
 
       const sol = solPoint(z, ends);
       const reach = Math.max(Math.hypot(sol.x, sol.y), Math.hypot(width - sol.x, sol.y), Math.hypot(sol.x, height - sol.y), Math.hypot(width - sol.x, height - sol.y));
@@ -83,7 +76,8 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
         const g = ringRefs.current[i];
         if (!g) return;
         const r = ringRadius(m.au, z, ends);
-        const opacity = ringOpacity(r, reach);
+        // Rings stay clear of the chart's own line work, whether it is arriving or leaving.
+        const opacity = ringOpacity(r, reach) * (1 - outerStage(z, ends).lines);
         g.style.opacity = opacity.toFixed(3);
         g.style.visibility = opacity < 0.01 ? "hidden" : "visible";
         if (opacity < 0.01) return;
@@ -92,11 +86,21 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
         circle.setAttribute("cy", sol.y.toFixed(1));
         circle.setAttribute("r", r.toFixed(1));
         // The name sits where the ring crosses the upper right, on screen while the ring is.
-        const a = -Math.PI / 4;
+        // The name sits where the ring crosses the upper right, or the upper left (set flush
+        // right) if it wouldn't fit; hidden if neither fits, or under the masthead. Only a large
+        // ring carries its name, so names on small, close rings never collide.
         const text = g.querySelector("text")!;
-        text.setAttribute("transform", `translate(${(sol.x + r * Math.cos(a) + 10).toFixed(1)} ${(sol.y + r * Math.sin(a)).toFixed(1)})`);
+        const textWidth = (labelWidths[i] ??= text.getBBox().width);
+        const up = sol.y - r * Math.SQRT1_2;
+        const right = sol.x + r * Math.SQRT1_2 + 10;
+        const left = sol.x - r * Math.SQRT1_2 - 10;
+        const fitsRight = right + textWidth < width - 16;
+        const fitsLeft = left - textWidth > 16;
+        text.setAttribute("text-anchor", fitsRight ? "start" : "end");
+        text.setAttribute("transform", `translate(${(fitsRight ? right : left).toFixed(1)} ${up.toFixed(1)})`);
+        text.style.opacity = r > 140 && (fitsRight || fitsLeft) && up > 90 && up < height - 90 ? "1" : "0";
       });
-      if (spanRef.current) spanRef.current.textContent = formatSpan((2 * reach * ends.inner.auPerPx) / z);
+      if (spanRef.current) spanRef.current.textContent = formatSpan((width * ends.inner.auPerPx) / z);
     };
 
     const finish = () => {
@@ -123,6 +127,7 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
       if (skipAt) return;
       skipAt = performance.now();
       skipFrom = t;
+      rootRef.current?.setAttribute("data-skipped", "true");
     };
     // Capture, so a key that hurries the voyage doesn't also act on the page beneath it.
     const onKey = (e: KeyboardEvent) => {
@@ -145,7 +150,7 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
   }, []);
 
   return (
-    <div className="voyage" data-direction={direction} aria-hidden="true">
+    <div className="voyage" ref={rootRef} data-direction={direction} aria-hidden="true">
       <svg className="voyage__rings" width={width} height={height}>
         {milestones.map((m, i) => (
           <g
