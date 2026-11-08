@@ -281,6 +281,19 @@ body {
   outline: none;
 }
 
+/* The point-of-light cursor of the main site, for mouse and pen. The page has no script,
+   so it is a CSS cursor image rather than the app's following layer: the same soft dot and
+   halo at rest, and the wider halo over a link. Touch keeps the system default. */
+@media (hover: hover) and (pointer: fine) {
+  html {
+    cursor: url("./assets/cursor.svg") 16 16, auto;
+  }
+
+  a {
+    cursor: url("./assets/cursor-active.svg") 32 32, url("./assets/cursor.svg") 16 16, pointer;
+  }
+}
+
 /* Short landscape screens: a smaller title, and no world list. */
 @media (max-height: 520px) {
   .lost__code,

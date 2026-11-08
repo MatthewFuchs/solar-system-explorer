@@ -217,7 +217,8 @@ All defined in `src/data/solarSystem.ts`; nothing about them is hard-coded in co
 - Share images (`public/og/*.jpg`, 1200x630) come from `npm run og`; recapture and
   commit them after visual changes. They are the only JPEGs and are never loaded by the app.
 - **404 page:** `404.html` is a second Vite entry with `src/notFound.css` (tokens shared
-  through `src/tokens.css`). Static, no script. Its chart (`scripts/notFoundChart.ts`)
+  through `src/tokens.css`). Static, no script, so its point-of-light cursor is a CSS
+  cursor image (`src/assets/cursor*.svg`, a wider halo over links) matching `.plate-cursor`. Its chart (`scripts/notFoundChart.ts`)
   and world links are drawn in by the `notFound` plugin (`scripts/prerender.ts`), in dev and
   in the build; the dev server also answers unknown paths with it.
 
