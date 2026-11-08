@@ -2500,3 +2500,148 @@ body,
     opacity: 0;
   }
 }
+
+/* ---------- The journey: discoveries and the logbook ---------- */
+
+/* A discovery: one quiet line near the foot of the screen that inks in, rests, and fades. Not a
+   toast: no box, no icon. */
+.discovery {
+  position: absolute;
+  /* Beneath the panels (9): an open logbook covers the line rather than wearing it. */
+  z-index: 8;
+  left: 50%;
+  bottom: calc(var(--hud-inset) + 52px);
+  margin: 0;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 2 * var(--hud-inset));
+  text-align: center;
+  pointer-events: none;
+}
+
+.discovery__line {
+  display: inline-block;
+  animation: discovery 5200ms var(--ease) both;
+}
+
+.discovery__label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.discovery__title {
+  display: block;
+  margin-top: 4px;
+  font-size: clamp(20px, 2vw, 26px);
+  font-style: italic;
+  color: var(--ivory);
+  text-shadow: var(--halo);
+}
+
+@keyframes discovery {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  14%,
+  78% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The masthead's logbook appears once, softly, with the first discovery. */
+.masthead__logbook {
+  animation: ent-fade 1200ms var(--ease) both;
+}
+
+.logbook__entries {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logbook__entry {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--gold-faint);
+}
+
+.logbook__title {
+  margin: 0;
+  font-size: 22px;
+  font-style: italic;
+  color: var(--ivory);
+}
+
+.logbook__date {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.logbook__text {
+  margin: 10px 0 0;
+  line-height: 1.5;
+  color: var(--ivory);
+}
+
+/* A clue to what hasn't been found: engraved faintly, not yet inked. */
+.logbook__clue {
+  margin: 0;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ivory);
+  opacity: 0.42;
+}
+
+.logbook__forget {
+  margin-top: 26px;
+  font-size: 16px;
+}
+
+.logbook__forget button {
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid var(--gold-faint);
+  background: none;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.logbook__forget p {
+  margin: 0;
+  line-height: 2;
+  color: var(--ivory);
+}
+
+/* Phones: the sound toggle shows only its mark (its name stays for screen readers), so the
+   masthead keeps clear of the body view's way back once the logbook joins it. */
+@media (max-width: 639px) {
+  /* The text column fills the foot of a phone's body view: the line comes in at the top. */
+  .discovery {
+    top: calc(var(--bar-h) + 4px);
+    bottom: auto;
+  }
+
+  .masthead__toggle-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

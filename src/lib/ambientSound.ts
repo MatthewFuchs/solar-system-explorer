@@ -289,6 +289,14 @@ export class AmbientSound {
     this.graph = null;
   }
 
+  /** A discovery: two soft notes a fifth apart, high in the scale. Silent unless sound is on. */
+  chime() {
+    const g = this.graph;
+    if (!this.on || !g) return;
+    playNote(g, NOTES[5]);
+    playNote(g, NOTES[8], 0.45);
+  }
+
   /** Sing a body's song when it is chosen. Silent unless sound is on; a new song cuts off the last. */
   sing(body: SongSource) {
     const g = this.graph;

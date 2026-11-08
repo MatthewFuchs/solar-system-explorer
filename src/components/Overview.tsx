@@ -21,6 +21,8 @@ import { SpaceBackdrop } from "./SpaceBackdrop";
 import { SpacecraftLayer } from "./SpacecraftLayer";
 import { TopBar } from "./TopBar";
 import { AmbientSound } from "../lib/ambientSound";
+import { journey } from "../lib/journey";
+import { MYSTERIES } from "../data/mysteries";
 import { pagePath, pageTitle } from "../lib/seo";
 import { HOME, routeFromLocation, type Route } from "../lib/routes";
 import { crossesPlates, initialNav, navReducer, samePage } from "../state/navigation";
@@ -238,6 +240,29 @@ export function Overview() {
     },
     [go, reducedMotion, sound, dissolve, voyageFor, startVoyage],
   );
+
+  // A discovery is noted with a quiet line (and two soft notes, if sound is on).
+  const [noted, setNoted] = useState<{ key: number; title: string } | null>(null);
+  useEffect(() => {
+    let known = new Set(Object.keys(journey.get().found));
+    return journey.subscribe(() => {
+      const ids = Object.keys(journey.get().found);
+      const fresh = ids.filter((id) => !known.has(id));
+      known = new Set(ids);
+      const mystery = MYSTERIES.find((m) => m.id === fresh.at(-1));
+      if (!mystery) return;
+      setNoted({ key: performance.now(), title: mystery.title });
+      sound.chime();
+    });
+  }, [sound]);
+  const clearNoted = useCallback(() => setNoted(null), []);
+
+  // The journey: every plate and body shown is a visit, which may solve a mystery. (After the
+  // listener above, so a discovery made on arriving at a page is noted too.)
+  useEffect(() => {
+    journey.record({ type: "visit", id: `plate:${plate.id}` });
+    if (focusId) journey.record({ type: "visit", id: focusId });
+  }, [plate.id, focusId]);
 
   // The tab title follows the open world, as the prerendered pages' titles do.
   useEffect(() => {
@@ -503,6 +528,13 @@ export function Overview() {
           onDone={voyageDone}
         />
       )}
+      <p className="discovery" role="status">
+        {noted && (
+          <span key={noted.key} className="discovery__line" onAnimationEnd={clearNoted}>
+            <span className="discovery__label">Noted in your logbook</span> <span className="discovery__title">{noted.title}</span>
+          </span>
+        )}
+      </p>
       <div className="view-veil" data-on={veil} data-kind={veilKind} aria-hidden="true" />
       <PlateCursor active={hoveredId !== null || markerHover} />
     </div>

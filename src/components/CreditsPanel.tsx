@@ -65,6 +65,16 @@ const SECTIONS: { heading: string; entries: CreditEntry[] }[] = [
     ],
   },
   {
+    heading: "Your logbook",
+    entries: [
+      {
+        title: "Kept only in this browser",
+        detail:
+          "Once you discover something, a logbook appears. It and the places you've been are kept in this browser's local storage (one entry, sse-journey-v1) and are never sent anywhere: this site has no server, no cookies, and no analytics. Forget it from the logbook at any time.",
+      },
+    ],
+  },
+  {
     heading: "Made with",
     entries: [
       {

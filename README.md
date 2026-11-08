@@ -76,7 +76,11 @@ and submit `/sitemap.xml`.
 
 The site sets no cookies and has no analytics or tracking, so it needs no cookie
 banner. Fonts and textures are self-hosted: a visit makes no requests to other sites.
-One `sessionStorage` flag remembers that the opening animation has played.
+One `sessionStorage` flag remembers that the opening animation has played. Once a visitor
+discovers something, a logbook appears: it and the places they've been are kept in this
+browser's `localStorage` (one key, `sse-journey-v1`), are never sent anywhere, and can be
+forgotten from the logbook at any time. Storage the visitor's own use needs is "strictly
+necessary", so this needs no consent banner either.
 
 ## Tests
 
