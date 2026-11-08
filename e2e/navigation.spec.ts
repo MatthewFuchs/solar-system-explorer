@@ -82,6 +82,9 @@ test.describe("hover", () => {
     test.skip(isMobile === true, "Touch screens have no hover");
     await openApp(page);
     const label = (id: string) => page.locator(`.dest-label[data-planet="${id}"]`);
+    // The pointer starts at the top-left corner, over the Sun's hit target; on a slow machine
+    // Chromium can count that as hovering it. Start from empty space.
+    await page.mouse.move(5, 450);
     await expect(label("mars")).toHaveAttribute("data-state", "rest");
     const tagline = label("mars").locator(".dest-label__more");
     const folded = (await tagline.boundingBox())?.height ?? 0;
