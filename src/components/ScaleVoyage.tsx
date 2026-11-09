@@ -11,8 +11,9 @@ import {
   stageCss,
   swapScale,
   voyageScale,
-  VOYAGE_MS,
-  VOYAGE_SKIP_MS,
+  hurryVoyageClock,
+  startVoyageClock,
+  tickVoyageClock,
   type StageRef,
   type VoyageEnds,
 } from "../scene/voyage";
@@ -52,12 +53,9 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
   callbacks.current = { onSwap, onDone };
 
   useEffect(() => {
-    const start = performance.now();
+    let clock = startVoyageClock(performance.now());
     const zSwap = swapScale(ends);
     let swapped = false;
-    let skipAt = 0;
-    let skipFrom = 0;
-    let t = 0;
     let raf = 0;
     /** Each ring name's width, measured once. */
     const labelWidths: number[] = [];
@@ -122,8 +120,8 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
     };
 
     const frame = (now: number) => {
-      t = skipAt ? skipFrom + ((now - skipAt) / VOYAGE_SKIP_MS) * (1 - skipFrom) : (now - start) / VOYAGE_MS;
-      t = Math.min(1, t);
+      clock = tickVoyageClock(clock, now);
+      const t = clock.t;
       const z = voyageScale(direction === "out" ? t : 1 - t, ends);
       if (!swapped && (direction === "out" ? z < zSwap : z > zSwap)) {
         swapped = true;
@@ -135,9 +133,8 @@ export function ScaleVoyage({ direction, ends, milestones, width, height, stage,
     };
 
     const skip = () => {
-      if (skipAt) return;
-      skipAt = performance.now();
-      skipFrom = t;
+      if (clock.hurried) return;
+      clock = hurryVoyageClock(clock);
       rootRef.current?.setAttribute("data-skipped", "true");
     };
     // Capture, so a key that hurries the voyage doesn't also act on the page beneath it.
