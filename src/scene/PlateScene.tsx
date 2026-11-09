@@ -1,7 +1,7 @@
 import { Canvas, useThree } from "@react-three/fiber";
-import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { Suspense, useEffect } from "react";
-import { AdditiveBlending, BufferGeometry, Mesh, PlaneGeometry, Points, Scene, ShaderMaterial } from "three";
+import { Suspense, useEffect, useMemo } from "react";
+import { AdditiveBlending, BufferGeometry, HalfFloatType, Mesh, PlaneGeometry, Points, Scene, ShaderMaterial, WebGLRenderTarget } from "three";
+import { LinearOutput } from "./LinearOutput";
 import type { POI } from "../data/solarSystem";
 import { BeltField } from "./BeltField";
 import { galaxyFragmentShader, galaxyGlowFragmentShader, galaxyGlowVertexShader, galaxyVertexShader, GalaxyField } from "./GalaxyField";
@@ -53,17 +53,23 @@ export function PlateScene({
   onReady,
 }: PlateSceneProps) {
   const { width, height, sun, star, planets } = layout;
+  // The linear buffer the scene is drawn into (LinearOutput).
+  const target = useMemo(() => new WebGLRenderTarget(1, 1, { type: HalfFloatType, depthBuffer: true }), []);
+  useEffect(() => () => target.dispose(), [target]);
   const sunFocus = focusId === star.body.id;
   const focusPlanet = planets.find((p) => p.body.id === focusId);
 
   return (
     <Canvas
       orthographic
+      // No tone mapping: the shaders' linear colours are only encoded for the screen (LinearOutput).
+      flat
       // Planets spin continuously; with reduced motion nothing moves, so render only on change.
       frameloop={reducedMotion ? "demand" : "always"}
       // 1.5x keeps edges crisp on retina screens at roughly half the fill cost of 2x.
       dpr={[1, 1.5]}
       camera={{ position: [0, 0, 1000], zoom: 1, near: 1, far: 3000 }}
+      // The scene is drawn into its own buffer (LinearOutput), so the canvas needs no antialiasing.
       gl={{ antialias: false, powerPreference: "high-performance" }}
       style={{ pointerEvents: "none" }}
       // The scene unmounts only when it fails (SceneBoundary) or the page goes away. R3F then
@@ -75,7 +81,8 @@ export function PlateScene({
       }}
     >
       <color attach="background" args={[PALETTE.abyss]} />
-      <ShaderWarmup />
+      <LinearOutput target={target} />
+      <ShaderWarmup target={target} />
       <Starfield width={width} height={height} />
       <BeltField belts={belts} width={width} height={height} zoom={zoom} zoomFrame={zoomFrame} stage={stage} />
       {layout.galaxy && <GalaxyField galaxy={layout.galaxy} width={width} height={height} zoom={zoom} zoomFrame={zoomFrame} stage={stage} />}
@@ -135,10 +142,6 @@ export function PlateScene({
           selectedId={facing?.id ?? null}
         />
       )}
-      {/* Threshold 1 means only the over-bright Sun blooms. */}
-      <EffectComposer multisampling={4}>
-        <Bloom mipmapBlur luminanceThreshold={1} luminanceSmoothing={0.4} intensity={2.4} radius={0.88} />
-      </EffectComposer>
     </Canvas>
   );
 }
@@ -173,17 +176,21 @@ const warmMaterials = [
   new ShaderMaterial({ vertexShader: galaxyVertexShader, fragmentShader: galaxyFragmentShader, transparent: true, depthWrite: false, blending: AdditiveBlending }),
 ];
 
-function ShaderWarmup() {
+function ShaderWarmup({ target }: { target: WebGLRenderTarget }) {
   const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
   useEffect(() => {
+    // Compiled for the buffer the scene is drawn into, so the programs match the ones used.
+    const previous = gl.getRenderTarget();
+    gl.setRenderTarget(target);
     const scene = new Scene();
     const plane = new PlaneGeometry(1, 1);
     const dots = new BufferGeometry();
     scene.add(new Mesh(plane, warmMaterials[0]), new Mesh(plane, warmMaterials[1]), new Points(dots, warmMaterials[2]));
     gl.compile(scene, camera);
+    gl.setRenderTarget(previous);
     plane.dispose();
     dots.dispose();
-  }, [gl, camera]);
+  }, [gl, camera, target]);
   return null;
 }

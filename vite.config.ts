@@ -52,7 +52,7 @@ export default defineConfig({
     // Source maps only for measuring e2e coverage (`npm run coverage`); never in a build
     // that ships (the source is proprietary). e2e/security.spec.ts checks the real build.
     sourcemap: coverageBuild(),
-    // The lazily loaded 3D chunk (three.js, React Three Fiber, postprocessing) is about
+    // The lazily loaded 3D chunk (three.js, React Three Fiber, drei) is about
     // 1 MB minified, 270 KB gzipped; the main chunk the page paints from is far smaller.
     chunkSizeWarningLimit: 1100,
     // Fonts stay files: the CSP allows fonts from 'self' only, not data: URLs.

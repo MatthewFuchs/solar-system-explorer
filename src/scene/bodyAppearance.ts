@@ -43,6 +43,15 @@ export interface DeepSkyLook {
 export const DEEP_SKY_FORMS: DeepSkyLook["form"][] = ["nebula", "remnant", "cluster", "black-hole"];
 
 /** How far each form's square reaches, in body radii: clouds trail far and fade; a black hole's disk reaches ~1.3. */
+/**
+ * How far a star's drawn glow carries past its disc, in screen pixels, for a disc of radius
+ * `r` px: a pinpoint keeps a small halo, a large disc a soft band in proportion, never wider
+ * than a candle's flare. Sized on screen, so it never swells with the zoom.
+ */
+export function glowWidthPx(r: number) {
+  return Math.min(40, Math.max(3.5, r * 0.09));
+}
+
 export const DEEP_SKY_SPREAD: Record<DeepSkyLook["form"], number> = { nebula: 2.1, remnant: 1.7, cluster: 1.9, "black-hole": 1.45 };
 
 /** Another star: the Sun's surface, recast in the star's own colour; emissive and still. */

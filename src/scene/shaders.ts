@@ -1,5 +1,5 @@
 // Shaders for the deep-space overview. All output linear color and finish with
-// three's colorspace chunk, so they compose correctly with the bloom pass.
+// three's colorspace chunk, which converts it for the screen (no tone mapping: `flat`).
 
 const sphereVertex = /* glsl */ `
   varying vec2 vUv;
@@ -104,7 +104,7 @@ export const ringShader = {
   `,
 };
 
-/** Emissive Sun: values above 1.0 feed the bloom pass. Limb darkening keeps it spherical. */
+/** Emissive Sun: bright enough to burn white at its heart. Limb darkening keeps it spherical. */
 export const sunShader = {
   vertexShader: sphereVertex,
   fragmentShader: /* glsl */ `
@@ -131,6 +131,47 @@ export const sunShader = {
       vec3 col = tex * limb * uIntensity + core * pow(mu, 2.0) * 0.3 * uIntensity;
       col *= (1.0 + uLight * 0.2) * (1.0 - uDim * 0.35);
       gl_FragColor = vec4(col * (1.0 - uFade), 1.0);
+      #include <colorspace_fragment>
+    }
+  `,
+};
+
+/**
+ * A star's glow: light added to the dark around its disc, drawn rather than computed by a
+ * full-screen bloom pass (which cost most of each frame on modest graphics chips). On a flat
+ * square around the star, in the star's own units: `uR` the disc's radius, `uW` how far the
+ * glow carries. A bright, close inner halo over a wide faint one, as light scatters.
+ */
+export const starGlowShader = {
+  vertexShader: /* glsl */ `
+    uniform float uEdge;
+    varying vec2 vPos;
+    void main() {
+      // A unit square scaled to the glow's reach; vPos is in the star's own units.
+      vPos = position.xy * 2.0 * uEdge;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform vec3 uColor;
+    uniform float uR;
+    uniform float uW;
+    uniform float uStrength;
+    uniform float uFade;
+    uniform float uLight;
+    uniform float uDim;
+    uniform float uEdge;
+    varying vec2 vPos;
+    void main() {
+      float d = length(vPos);
+      float out_ = max(d - uR, 0.0);
+      float g = 0.55 * exp(-out_ / (uW * 0.28)) + 0.45 * exp(-out_ / uW);
+      // Over the disc itself, almost nothing: the surface carries its own light.
+      g *= mix(0.08, 1.0, smoothstep(uR * 0.9, uR, d));
+      // Nothing at the square's edge, so the glow never shows a border.
+      g *= 1.0 - smoothstep(uEdge * 0.7, uEdge, d);
+      vec3 col = uColor * g * uStrength * (1.0 + uLight * 0.3) * (1.0 - uDim * 0.5) * (1.0 - uFade);
+      gl_FragColor = vec4(col, 1.0);
       #include <colorspace_fragment>
     }
   `,

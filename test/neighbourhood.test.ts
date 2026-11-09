@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { NEIGHBOURS, SOL } from "../src/data/neighbourhood";
 import { NEIGHBOURHOOD_PLATE, PLATES, SOLAR_PLATE, plateById } from "../src/data/plates";
 import { isSurfacePOI } from "../src/data/solarSystem";
-import { appearanceFor } from "../src/scene/bodyAppearance";
+import { appearanceFor, glowWidthPx } from "../src/scene/bodyAppearance";
 import { DIAL_LY, hourAngle } from "../src/scene/layout/neighbourhoodPlate";
 import { composePlate } from "../src/scene/layout/plates";
 
@@ -146,5 +146,15 @@ describe("plate composition", () => {
     expect(layout.star.body.id).toBe("sun");
     expect(layout.planets.map((p) => p.body.id)).not.toContain("sun");
     expect(layout.planets).toHaveLength(SOLAR_PLATE.bodies.length - 1);
+  });
+});
+
+describe("a star's drawn glow", () => {
+  it("keeps a small halo round a pinpoint, grows with a large disc, and stops at a candle's flare", () => {
+    expect(glowWidthPx(3)).toBe(3.5);
+    expect(glowWidthPx(200)).toBeCloseTo(18, 6);
+    expect(glowWidthPx(2000)).toBe(40);
+    // Sized on screen: the same disc on screen, the same glow, whatever the zoom.
+    for (const r of [1, 5, 50, 300, 900]) expect(glowWidthPx(r)).toBeLessThanOrEqual(Math.max(3.5, r));
   });
 });

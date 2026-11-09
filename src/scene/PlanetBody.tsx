@@ -17,9 +17,10 @@ import {
 } from "three";
 import { isSurfacePOI, type POI } from "../data/solarSystem";
 import { applyStage, IDENTITY_STAGE, type StageRef } from "./voyage";
-import { DEEP_SKY_FORMS, DEEP_SKY_SPREAD, orbiterFor, type BodyAppearance } from "./bodyAppearance";
+import { DEEP_SKY_FORMS, DEEP_SKY_SPREAD, glowWidthPx, orbiterFor, type BodyAppearance } from "./bodyAppearance";
 import { featureKeepOut } from "./layout/screen";
-import { atmosphereShader, deepSkyShader, planetShader, ringShader, sunShader } from "./shaders";
+import { atmosphereShader, deepSkyShader, planetShader, ringShader, starGlowShader, sunShader } from "./shaders";
+import { PALETTE } from "../lib/palette";
 import { configureTextures } from "./textureSetup";
 import { setUniform } from "./uniforms";
 import {
@@ -54,12 +55,23 @@ function objectRadius(poi: POI, planetR: number) {
 /** Room a marker's name needs beside it before it moves to the other side. */
 const LABEL_ROOM = 210;
 
-/** The Sun's brightness: values above 1 feed the bloom. Eased down up close so its surface reads. */
+/** The Sun's brightness: above 1, so its heart burns white. Eased down up close so its surface reads. */
 const SUN_GLOW = 3.0;
 const SUN_GLOW_CLOSE = 0.95;
+/** A star's drawn glow (starGlowShader; its width, glowWidthPx). Up close it fades to GLOW_CLOSE of its strength, so the surface reads. */
+const GLOW_STRENGTH = 0.6;
+const GLOW_CLOSE = 0.2;
+/** How many glow widths the glow's square reaches past the disc. */
+const GLOW_REACH = 6;
 /**
- * Other stars, up close: bright enough that their centre just passes the bloom threshold and
- * glows, whatever their colour. A white star (Sirius) needs far less than a red dwarf, so the
+ * A black hole's photon ring glows too: warm white light spilling over its shadow (drawn on
+ * top, from HOLE_GLOW_R of its radius, just inside the shadow's edge), gone up close.
+ */
+const HOLE_GLOW = "#FFE6BE";
+const HOLE_GLOW_R = 0.3;
+/**
+ * Other stars, up close: bright enough that their centre just glows, whatever their colour.
+ * A white star (Sirius) needs far less than a red dwarf, so the
  * brightness is set from the star's own luminance, aiming its centre at this level.
  */
 const STAR_PEAK_CLOSE = 1.2;
@@ -164,6 +176,8 @@ export function PlanetBody({
   const shellMeshRef = useRef<Mesh>(null);
   const planetRef = useRef<ShaderMaterial>(null);
   const shellRef = useRef<ShaderMaterial>(null);
+  const glowMeshRef = useRef<Mesh>(null);
+  const glowRef = useRef<ShaderMaterial>(null);
   const ringRef = useRef<ShaderMaterial>(null);
   const rotRef = useRef({ x: 0, y: appearance.spin });
   const closeGlow = useMemo(() => (appearance.tint ? starGlowClose(appearance.tint) : SUN_GLOW_CLOSE), [appearance.tint]);
@@ -201,6 +215,19 @@ export function PlanetBody({
       uFade: { value: 0 },
     }),
     [],
+  );
+  const glowUniforms = useMemo(
+    () => ({
+      uColor: { value: new Color(appearance.deepSky ? HOLE_GLOW : (appearance.tint ?? PALETTE.ember)) },
+      uR: { value: appearance.deepSky ? base.r * HOLE_GLOW_R : base.r },
+      uW: { value: glowWidthPx(base.r) },
+      uEdge: { value: base.r + GLOW_REACH * glowWidthPx(base.r) },
+      uStrength: { value: GLOW_STRENGTH },
+      uLight: { value: 0 },
+      uDim: { value: 0 },
+      uFade: { value: 0 },
+    }),
+    [appearance.deepSky, appearance.tint, base.r],
   );
   const ringUniforms = useMemo(
     () => ({
@@ -298,6 +325,17 @@ export function PlanetBody({
     group.scale.setScalar(me.r / base.r);
     const fade = Math.max(zoomFrame && !isFocus ? smoothstep(0, 0.55, e) : 0, 1 - st.opacity);
     if (star) setUniform(planetRef.current, "uIntensity", lerp(SUN_GLOW, closeGlow, isFocus ? e : 0));
+    // The glow, sized on screen: the group's scale would otherwise blow it up with the disc.
+    const glowMesh = glowMeshRef.current;
+    if (glowMesh && me.r > 0) {
+      const k = me.r / base.r;
+      const w = glowWidthPx(me.r) / k;
+      const edge = glowUniforms.uR.value + GLOW_REACH * w;
+      glowMesh.scale.setScalar(edge * 2);
+      setUniform(glowRef.current, "uW", w);
+      setUniform(glowRef.current, "uEdge", edge);
+      setUniform(glowRef.current, "uStrength", GLOW_STRENGTH * lerp(1, star ? GLOW_CLOSE : 0, isFocus ? e : 0));
+    }
     group.visible = fade < 0.995;
 
     // Rotation: a timed turn toward a POI, otherwise the slow spin.
@@ -329,7 +367,7 @@ export function PlanetBody({
     const targetDim = dimmed ? 1 : 0;
     const light = current.uLight.value + (targetLight - current.uLight.value) * t;
     const dim = current.uDim.value + (targetDim - current.uDim.value) * t;
-    for (const m of [planetRef.current, shellRef.current, ringRef.current]) {
+    for (const m of [planetRef.current, shellRef.current, ringRef.current, glowRef.current]) {
       setUniform(m, "uLight", light);
       setUniform(m, "uDim", dim);
       setUniform(m, "uFade", fade);
@@ -381,6 +419,14 @@ export function PlanetBody({
 
   return (
     <group ref={groupRef} rotation={[0, 0, appearance.tilt]}>
+      {(star || appearance.deepSky?.form === "black-hole") && (
+        // Added to the dark: drawn first for a star, so the disc sits on its own light; last for
+        // a black hole, so the ring's light spills over the shadow.
+        <mesh ref={glowMeshRef} renderOrder={star ? -1 : 3}>
+          <planeGeometry args={[1, 1]} />
+          <shaderMaterial ref={glowRef} {...starGlowShader} uniforms={glowUniforms} transparent depthWrite={false} depthTest={false} blending={AdditiveBlending} />
+        </mesh>
+      )}
       <group rotation={[ring ? RING_VIEW_TILT : 0, 0, 0]}>
         {appearance.deepSky ? (
           // A flat cloud of light facing the viewer, added to the dark; premultiplied, so a black hole's shadow covers what's behind.
