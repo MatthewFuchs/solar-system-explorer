@@ -10,6 +10,39 @@ export const VOYAGE_MS = 6000;
 /** A click, a key, or the wheel cuts what's left of the voyage to this. */
 export const VOYAGE_SKIP_MS = 450;
 
+/**
+ * The most a single frame may advance the voyage. A stalled frame (a plate's textures and
+ * shaders arriving at the swap, a slow graphics chip) pauses the voyage instead of skipping it.
+ */
+export const VOYAGE_MAX_STEP_MS = 250;
+
+/**
+ * The voyage's clock: progress 0..1, advanced per frame by at most `VOYAGE_MAX_STEP_MS` of
+ * time; once hurried, what's left takes `VOYAGE_SKIP_MS` of real time, however slow the frames
+ * (the visitor asked for the end).
+ */
+export interface VoyageClock {
+  t: number;
+  last: number;
+  /** Progress per millisecond. */
+  rate: number;
+  hurried: boolean;
+}
+
+export function startVoyageClock(now: number): VoyageClock {
+  return { t: 0, last: now, rate: 1 / VOYAGE_MS, hurried: false };
+}
+
+export function tickVoyageClock(c: VoyageClock, now: number): VoyageClock {
+  const dt = Math.max(0, now - c.last);
+  const step = c.hurried ? dt : Math.min(dt, VOYAGE_MAX_STEP_MS);
+  return { ...c, last: now, t: Math.min(1, c.t + step * c.rate) };
+}
+
+export function hurryVoyageClock(c: VoyageClock): VoyageClock {
+  return c.hurried ? c : { ...c, hurried: true, rate: (1 - c.t) / VOYAGE_SKIP_MS };
+}
+
 /** AU in one light-year. */
 export const AU_PER_LY = 63241;
 

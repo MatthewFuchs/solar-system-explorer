@@ -14,6 +14,12 @@ import {
   swapScale,
   voyageProgress,
   voyageScale,
+  hurryVoyageClock,
+  startVoyageClock,
+  tickVoyageClock,
+  VOYAGE_MAX_STEP_MS,
+  VOYAGE_MS,
+  VOYAGE_SKIP_MS,
   type VoyageEnds,
 } from "../src/scene/voyage";
 
@@ -110,5 +116,38 @@ describe("what lies between", () => {
     expect(formatSpan(12345)).toBe("12,000 AU");
     expect(formatSpan(1.6 * AU_PER_LY)).toBe("1.6 light-years");
     expect(formatSpan(47 * AU_PER_LY)).toBe("47 light-years");
+  });
+});
+
+describe("the voyage's clock", () => {
+  it("runs the whole voyage in VOYAGE_MS at a steady frame rate", () => {
+    let c = startVoyageClock(1000);
+    for (let now = 1016; now <= 1000 + VOYAGE_MS; now += 16) c = tickVoyageClock(c, now);
+    expect(c.t).toBeGreaterThan(0.99);
+    expect(tickVoyageClock(c, 1000 + VOYAGE_MS + 50).t).toBe(1);
+  });
+
+  it("pauses through a stalled frame instead of skipping ahead", () => {
+    let c = startVoyageClock(0);
+    // A three-second hitch, longer than half the voyage, moves it on by one step only.
+    c = tickVoyageClock(c, 3000);
+    expect(c.t).toBeCloseTo(VOYAGE_MAX_STEP_MS / VOYAGE_MS, 6);
+    // The first frame arriving after the whole voyage's time still starts it from the beginning.
+    expect(tickVoyageClock(startVoyageClock(0), VOYAGE_MS * 2).t).toBeLessThan(0.05);
+  });
+
+  it("once hurried, finishes what's left in VOYAGE_SKIP_MS, once", () => {
+    let c = startVoyageClock(0);
+    for (let now = 16; now <= 1600; now += 16) c = tickVoyageClock(c, now);
+    const from = c.t;
+    c = hurryVoyageClock(c);
+    expect(hurryVoyageClock(c)).toBe(c);
+    for (let now = 1616; now < 1600 + VOYAGE_SKIP_MS - 16; now += 16) c = tickVoyageClock(c, now);
+    expect(c.t).toBeGreaterThan(from);
+    expect(c.t).toBeLessThan(1);
+    c = tickVoyageClock(c, 1600 + VOYAGE_SKIP_MS + 16);
+    expect(c.t).toBe(1);
+    // However slow the frames: one long frame after a hurry still ends it.
+    expect(tickVoyageClock(hurryVoyageClock(startVoyageClock(0)), 2000).t).toBe(1);
   });
 });
